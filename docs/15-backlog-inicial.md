@@ -12,7 +12,7 @@ O backlog foi reorganizado para iniciar implementação sem exigir validação m
 - [x] Documentar comandos de desenvolvimento e arquitetura.
 
 ## EPIC 1 — Núcleo compartilhado
-- [ ] Modelos e schemas versionados: Session, CaptureSource, AudioChunk, TranscriptSegment, Speaker, Topic, Decision, ActionItem e Report.
+- [x] Tipos iniciais de Session, CaptureSource, AudioChunk, TranscriptSegment, Speaker e Report; schemas de validação ainda pendentes.
 - [x] Máquina de estados inicial da sessão.
 - [x] Contratos iniciais de captura, transcrição, diarização e análise.
 - [ ] Contratos de armazenamento temporário e exportação.
@@ -40,14 +40,14 @@ O backlog foi reorganizado para iniciar implementação sem exigir validação m
 - [ ] Armazenamento temporário e descarte.
 
 ## EPIC 4 — Provedores de IA
-- [ ] Interface comum para provedores de transcrição.
+- [x] Contratos comuns iniciais para provedores de transcrição e análise.
 - [ ] Adaptadores oficiais para OpenAI, Gemini, Claude e Grok conforme APIs/capacidades disponíveis.
 - [ ] Suporte genérico a endpoint compatível com API OpenAI.
 - [ ] Configuração de provedor personalizado: nome, URL, modelo, autenticação e capacidades.
-- [ ] Separar transcrição, diarização e análise textual.
+- [x] Separação conceitual de tarefas e capacidades de provedores.
 - [ ] Cofre local para chaves BYOK.
 - [ ] Teste de conexão e indicação de capacidades/limitações.
-- [ ] Seleção de provedores por tarefa.
+- [x] Registro extensível de adaptadores por identificador; seleção por tarefa ainda pendente.
 
 ## EPIC 5 — Transcrição e participantes
 - [ ] Transcrição incremental e pós-processamento.
