@@ -42,3 +42,27 @@ Este registro distingue decisões já estabelecidas de recomendações e questõ
 
 ## Regras de atualização
 Toda nova decisão deve registrar: contexto, opções consideradas, decisão, justificativa, impactos, data e estado (proposta/aceita/substituída). Não apagar decisões substituídas; marcar como substituídas e apontar a decisão sucessora.
+
+
+## Decisões adicionais — 20/11/2026
+| ID | Decisão | Estado |
+|---|---|---|
+| D-014 | O produto terá aplicativo desktop instalável e extensão Chrome/Firefox | Aceita |
+| D-015 | Windows será a primeira plataforma desktop-alvo | Aceita |
+| D-016 | O usuário poderá selecionar tela inteira, janela de aplicativo ou aba compatível como fonte de análise | Aceita |
+| D-017 | O usuário poderá acompanhar vídeo reproduzido em outro aplicativo/monitor, sem importar nem reproduzir o vídeo dentro do Ouve | Aceita |
+| D-018 | O compartilhamento de tela/janela será privado com o próprio Ouve, sem transmissão a terceiros | Aceita |
+| D-019 | A extensão poderá ser usada diretamente na aba da audiência quando compatível | Aceita |
+| D-020 | Núcleo de domínio/aplicação compartilhado entre desktop e extensão | Diretriz aceita; validar arquitetura |
+
+## Pendências técnicas novas
+| ID | Questão | Próxima ação |
+|---|---|---|
+| P-012 | Electron ou Tauri? | Comparar por prova de conceito em Windows |
+| P-013 | Captura de áudio de sistema em Windows | Validar loopback e APIs do framework |
+| P-014 | Captura de áudio/vídeo de aba no Chrome | Spike com seleção explícita de fonte |
+| P-015 | Captura equivalente no Firefox | Spike e documentação de diferenças |
+| P-016 | Captura de áudio de janela externa/reprodutor | Testar VLC e outras fontes no Windows |
+| P-017 | Sincronização entre áudio e quadros de vídeo | Protótipo com timestamps e métricas |
+| P-018 | Captura de janelas minimizadas/protegidas | Identificar limites e comunicar ao usuário |
+| P-019 | Frequência/resolução de quadros e retenção | Definir estratégia sem gravar tela continuamente |
