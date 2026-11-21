@@ -4,31 +4,32 @@ O backlog foi reorganizado para iniciar implementação sem exigir validação m
 
 ## EPIC 0 — Fundação e scaffold
 - [x] Consolidar decisões de produto: captura selecionada, processamento exclusivamente de áudio, IA extensível e BYOK.
-- [ ] Criar monorepo pnpm e TypeScript estrito.
-- [ ] Criar pacotes compartilhados de domínio e contratos.
-- [ ] Criar scaffold Electron + React para Windows.
-- [ ] Criar scaffold WebExtension para Chrome/Firefox.
-- [ ] Configurar lint, typecheck, testes e CI.
-- [ ] Documentar comandos de desenvolvimento e arquitetura.
+- [x] Criar monorepo pnpm e TypeScript estrito.
+- [x] Criar pacotes compartilhados de domínio e contratos iniciais.
+- [x] Criar scaffold Electron + React para Windows.
+- [x] Criar scaffold WebExtension para Chrome/Firefox.
+- [x] Configurar typecheck, testes e CI (lint ainda não configurado).
+- [x] Documentar comandos de desenvolvimento e arquitetura.
 
 ## EPIC 1 — Núcleo compartilhado
 - [ ] Modelos e schemas versionados: Session, CaptureSource, AudioChunk, TranscriptSegment, Speaker, Topic, Decision, ActionItem e Report.
-- [ ] Máquina de estados da sessão.
-- [ ] Contratos de captura, armazenamento temporário, transcrição, diarização, análise e exportação.
+- [x] Máquina de estados inicial da sessão.
+- [x] Contratos iniciais de captura, transcrição, diarização e análise.
+- [ ] Contratos de armazenamento temporário e exportação.
 - [ ] Normalização de timestamps e segmentos.
 - [ ] Validação de saídas de IA e evidências.
-- [ ] Descarte seguro e cancelamento.
+- [x] Fronteira utilitária que mantém trilhas de áudio e interrompe trilhas não áudio, com testes.
 
 ## EPIC 2 — Captura exclusivamente de áudio
 - [ ] Seleção explícita de tela, janela ou aba.
 - [ ] Capturar apenas a trilha de áudio da fonte selecionada.
-- [ ] Descartar imediatamente qualquer quadro visual exigido pela API de seleção.
+- [x] Utilitário defensivo para descartar trilhas não áudio imediatamente.
 - [ ] Microfone opcional e mixagem configurável.
 - [ ] Indicador persistente, pausa, retomada e parada.
 - [ ] Adaptadores separados para Electron/Windows, Chrome e Firefox.
 - [ ] Detecção de ausência de áudio e mensagens de compatibilidade.
 - [ ] Testes de integração em ambiente real quando disponível.
-- [ ] Não implementar gravação de tela, OCR, visão computacional ou pipeline A/V.
+- [x] Escopo visual excluído: não implementar gravação de tela, OCR, visão computacional ou pipeline A/V.
 
 ## EPIC 3 — Arquivos e pipeline de áudio
 - [ ] Importar áudio e vídeo.
@@ -67,7 +68,7 @@ O backlog foi reorganizado para iniciar implementação sem exigir validação m
 - [ ] Exportação local PDF/DOCX.
 
 ## EPIC 7 — Qualidade, segurança e distribuição
-- [ ] Testes unitários, integração e E2E.
+- [ ] Testes unitários, integração e E2E ampliados.
 - [ ] Revisão de permissões e segurança.
 - [ ] Testes de sessões longas e consumo de memória.
 - [ ] Revisão de política de privacidade e termos.
