@@ -907,3 +907,112 @@ button {
 .quick-setup a {
   color: var(--accent);
 }
+
+/* ---- Sessão em tela única (21/11): só a transcrição rola ---- */
+.content {
+  display: flex;
+  flex-direction: column;
+}
+.page.fit {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 1400px;
+  padding: 14px 20px;
+  gap: 10px;
+  overflow: hidden;
+}
+.page.fit .page-head h1 {
+  font-size: 19px;
+  margin: 0;
+}
+.page.fit .page-head p {
+  font-size: 13px;
+}
+.page.fit .status-bar {
+  padding: 7px 10px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.page.fit .status-bar button {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+.page.fit > .panel,
+.page.fit > .callout {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  gap: 4px;
+}
+.page.fit .messages {
+  flex-shrink: 0;
+  max-height: 74px;
+  overflow-y: auto;
+}
+.page.fit .message {
+  padding: 5px 10px;
+}
+.page.fit .session-grid {
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 12px;
+  align-items: stretch;
+}
+.page.fit .session-main {
+  min-height: 0;
+  gap: 8px;
+}
+.page.fit .tabs .tab {
+  padding: 5px 10px;
+}
+.page.fit .transcript-panel {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  padding: 10px 12px;
+}
+.page.fit .transcript {
+  gap: 4px;
+}
+.page.fit .segment {
+  padding: 6px 8px;
+}
+.page.fit .session-side {
+  position: static;
+  min-height: 0;
+  overflow-y: auto;
+  gap: 8px;
+}
+.page.fit .session-side .panel {
+  padding: 10px 12px;
+  gap: 8px;
+}
+.page.fit .stats {
+  gap: 6px;
+}
+.page.fit .stat {
+  padding: 6px 8px;
+}
+.page.fit .stat b {
+  font-size: 15px;
+}
+.page.fit .steps {
+  gap: 5px;
+  font-size: 13px;
+}
+.page.fit .steps li .step-dot {
+  width: 18px;
+  height: 18px;
+}
+.page.fit .side-actions button {
+  padding: 6px 10px;
+}
+.page.fit progress {
+  height: 8px;
+}
+@media (max-width: 1180px) {
+  .page.fit .session-grid {
+    grid-template-columns: minmax(0, 1fr) 220px;
+  }
+}

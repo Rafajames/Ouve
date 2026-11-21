@@ -32,7 +32,14 @@ export async function startMockProvider(): Promise<MockProvider> {
         res.statusCode = 400;
         return res.end("{}");
       }
-      return res.end(JSON.stringify({ text: "Maria vai enviar o parecer até sexta-feira. Fica decidido que a audiência será remarcada." }));
+      const first = "Maria vai enviar o parecer até sexta-feira. Fica decidido que a audiência será remarcada.";
+      // Muitos trechos curtos: simula uma audiência longa para testar a rolagem só da transcrição.
+      const segments = [first, ...Array.from({ length: 39 }, (_, i) => `Trecho de teste número ${i + 2} da gravação.`)].map((text, i) => ({
+        start: i * 0.15,
+        end: i * 0.15 + 0.14,
+        text
+      }));
+      return res.end(JSON.stringify({ text: first, segments }));
     }
     if (req.method === "POST" && path === "/v1/chat/completions") {
       const ids = [...raw.matchAll(/\[(seg-\d+-\d+) \|/g)].map((m) => m[1]);

@@ -95,6 +95,24 @@ test("importa áudio, transcreve, analisa com validação e exporta PDF/DOCX", a
   await expect(page.locator(".status-pill")).toHaveText(/Concluído/, { timeout: 60_000 });
   await expect(page.getByText(/Maria vai enviar o parecer/).first()).toBeVisible();
   expect(mock.requests.filter((r) => r.path === "/v1/audio/transcriptions").length).toBeGreaterThan(0);
+
+  // Sessão em tela única: a página não rola; só a lista de falas rola (1366×768 e 1280×720).
+  for (const size of [
+    { width: 1366, height: 768 },
+    { width: 1280, height: 720 }
+  ]) {
+    await page.setViewportSize(size);
+    await page.waitForTimeout(150);
+    const layout = await page.evaluate(() => {
+      const content = document.querySelector(".content") as HTMLElement;
+      const transcript = document.querySelector(".transcript-panel") as HTMLElement;
+      return {
+        pageScrolls: content.scrollHeight > content.clientHeight + 1,
+        transcriptScrolls: transcript.scrollHeight > transcript.clientHeight
+      };
+    });
+    expect(layout, `${size.width}x${size.height}`).toEqual({ pageScrolls: false, transcriptScrolls: true });
+  }
   if (process.env.OUVE_E2E_SCREENSHOTS) await page.screenshot({ path: join(process.env.OUVE_E2E_SCREENSHOTS, "sessao.png") });
 
   await page.getByRole("button", { name: "Analisar e gerar relatório" }).click();

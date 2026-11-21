@@ -48,6 +48,7 @@ Total: 76 testes unitários e 9 testes E2E (7 desktop + 2 extensão) passando lo
 
 ## Histórico
 - **20/11/2026:** scaffold do monorepo, núcleo inicial (máquina de estados, contratos, `selectAudioTracks`, registro de provedores), Electron/React com captura desabilitada, base da extensão e CI aprovada (commits a4b628c, cbe8a15).
+- **21/11/2026 (noite):** tela da sessão em tela única — sem rolagem da página; só a transcrição rola (validado por E2E em 1366×768 e 1280×720).
 - **21/11/2026 (tarde, 5):** importação rápida automática (D-068) com MP3, pedaços longos, paralelismo adaptativo e exibição do tempo total; chaves Google "AQ." reconhecidas. 89 testes unitários e 9 E2E passando.
 - **21/11/2026 (tarde, 4):** configuração rápida só com a chave (D-065), Gemini com modelo dedicado de transcrição e plano B (D-066), espera automática em limite de uso (D-067), aviso do plano gratuito. 85 testes unitários e 9 E2E passando. Nada validado com chave real.
 - **21/11/2026 (tarde, 3):** instalador Windows gerado pelo GitHub Actions e publicado em Releases (`teste-windows`); empacotamento validado em Linux com ffmpeg embutido.

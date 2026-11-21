@@ -7,15 +7,18 @@ export function Page({
   title,
   subtitle,
   actions,
-  children
+  children,
+  fit = false
 }: {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
   children: ReactNode;
+  /** Ocupa exatamente a altura da janela, sem rolagem da página (só áreas internas rolam). */
+  fit?: boolean;
 }) {
   return (
-    <section className="page">
+    <section className={fit ? "page fit" : "page"}>
       <header className="page-head">
         <div>
           <h1>{title}</h1>

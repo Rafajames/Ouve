@@ -163,6 +163,7 @@ export function SessionScreen() {
 
   return (
     <Page
+      fit
       title={s.title || "Sessão"}
       subtitle={`${live ? "Ao vivo" : "Arquivo importado"} · ${s.sourceLabel}`}
       actions={
