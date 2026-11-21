@@ -1,5 +1,7 @@
-const status = document.querySelector<HTMLElement>("#status");
+const statusElement = document.querySelector<HTMLElement>("#status");
 
-if (status) {
-  status.textContent = "Extensão instalada. A captura será habilitada nas próximas etapas.";
+if (statusElement) {
+  statusElement.textContent = "Extensão instalada. A captura será habilitada nas próximas etapas.";
 }
+
+export {};
