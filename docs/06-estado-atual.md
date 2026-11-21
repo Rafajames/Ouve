@@ -5,7 +5,7 @@
 **Branch:** main
 
 ## Estado geral
-A implementação foi iniciada no GitHub. O repositório agora contém o primeiro scaffold do monorepo, núcleo compartilhado, aplicativo Electron/React, base da extensão e CI. Ainda não há prova de execução local nem validação real da captura.
+A implementação foi iniciada no GitHub. O primeiro scaffold do monorepo, núcleo compartilhado, aplicativo Electron/React, base da extensão e CI já estão no repositório. O workflow CI do commit cbe8a15 passou integralmente: instalação de dependências, typecheck, testes, build desktop e build da extensão.
 
 ## Decisões consolidadas
 - Aplicativo desktop Windows primeiro e extensões Chrome/Firefox.
@@ -28,8 +28,18 @@ A implementação foi iniciada no GitHub. O repositório agora contém o primeir
 - Fronteira selectAudioTracks, que mantém somente trilhas de áudio e interrompe trilhas não áudio, com testes unitários.
 - Scaffold Electron + React, com tela inicial informativa e captura desabilitada.
 - Scaffold WebExtension com manifestos base Chrome e Firefox e popup informativo.
-- Workflow inicial de CI para instalação, typecheck, testes e builds.
+- Workflow CI para instalação, typecheck, testes e builds desktop/extensão.
 - README, AGENTS, decisões, backlog e plano de execução atualizados.
+
+## Verificação automatizada
+<badge>CI aprovado</badge>
+- Commit verificado: cbe8a15ef2ec4926aa997e6fdb25f4bf0cb43504.
+- Typecheck: aprovado.
+- Testes automatizados: aprovados.
+- Build Electron/desktop: aprovado.
+- Build WebExtension: aprovado.
+
+A aprovação do CI comprova compilação e testes automatizados do scaffold, não comprova captura real de áudio nem compatibilidade em máquinas/navegadores.
 
 ## Ainda não implementado ou comprovado
 - Captura real de tela/janela/aba e extração de áudio.
@@ -39,15 +49,15 @@ A implementação foi iniciada no GitHub. O repositório agora contém o primeir
 - Importação/extração de áudio de arquivos.
 - Diarização, análise, editor e exportação PDF/DOCX.
 - Instalador Windows e pacotes de distribuição das extensões.
-- Execução local dos comandos e resultado do CI.
+- Execução local pelo usuário.
 
 ## Próximas etapas
-1. Confirmar instalação, typecheck, testes e builds pelo CI.
-2. Corrigir problemas do scaffold.
-3. Expandir os modelos e casos de uso do núcleo.
-4. Implementar captura de áudio desktop atrás de um adaptador.
-5. Implementar configuração BYOK e adaptadores de provedores.
-6. Implementar pipeline de arquivos, transcrição, análise e exportação.
+1. Expandir modelos e casos de uso do núcleo.
+2. Implementar captura de áudio desktop atrás de um adaptador.
+3. Implementar configuração BYOK e contratos/adaptadores de provedores.
+4. Implementar pipeline de arquivos e áudio.
+5. Implementar transcrição, análise, editor e exportação.
+6. Integrar e empacotar as experiências desktop e extensão.
 
 ## Validações adiadas
 O usuário autorizou prosseguir sem testes manuais imediatos. Captura por fonte/SO/navegador, compatibilidade com VLC/Meet/Zoom/Teams, diarização, limites, custos e qualidade dos provedores permanecem não validados. Não anunciar essas capacidades como comprovadas.
