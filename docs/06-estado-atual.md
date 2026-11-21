@@ -5,7 +5,7 @@
 **Branch:** main
 
 ## Estado geral
-A implementação foi iniciada no GitHub. O primeiro scaffold do monorepo, núcleo compartilhado, aplicativo Electron/React, base da extensão e CI já estão no repositório. O workflow CI do commit cbe8a15 passou integralmente: instalação de dependências, typecheck, testes, build desktop e build da extensão.
+A implementação foi iniciada no GitHub. O scaffold do monorepo, núcleo compartilhado, aplicativo Electron/React, base da extensão e CI estão no repositório. O workflow CI do commit cbe8a15 passou integralmente: instalação, typecheck, testes, build desktop e build da extensão. Uma nova rodada de CI é disparada pelas alterações recentes no núcleo.
 
 ## Decisões consolidadas
 - Aplicativo desktop Windows primeiro e extensões Chrome/Firefox.
@@ -22,24 +22,27 @@ A implementação foi iniciada no GitHub. O primeiro scaffold do monorepo, núcl
 - Sem conta, backend próprio, analytics de conteúdo, sync ou histórico permanente no MVP.
 
 ## Implementado no repositório
-- Configuração raiz do workspace pnpm e TypeScript.
-- Pacote @ouve/core com tipos de sessão, estados e contratos iniciais de áudio/IA.
-- Máquina de estados de sessão com teste unitário.
-- Fronteira selectAudioTracks, que mantém somente trilhas de áudio e interrompe trilhas não áudio, com testes unitários.
-- Scaffold Electron + React, com tela inicial informativa e captura desabilitada.
-- Scaffold WebExtension com manifestos base Chrome e Firefox e popup informativo.
-- Workflow CI para instalação, typecheck, testes e builds desktop/extensão.
-- README, AGENTS, decisões, backlog e plano de execução atualizados.
+- Workspace pnpm e configuração TypeScript estrita.
+- Pacote @ouve/core.
+- Máquina de estados inicial da sessão com testes.
+- Contratos iniciais de captura, áudio, transcrição, diarização e análise.
+- Utilitário selectAudioTracks, que mantém somente áudio e interrompe trilhas não áudio, com testes.
+- Tipos iniciais de relatório, participantes e artefatos de sessão.
+- Registro extensível de provedores com testes.
+- Configuração de provedor separa referência da credencial do segredo; apiKey não faz parte do ProviderConfig persistível.
+- Scaffold Electron + React, com tela inicial e captura desabilitada.
+- Scaffold WebExtension com manifestos base Chrome/Firefox e popup informativo.
+- Workflow CI para instalação, typecheck, testes e builds.
+- Documentação de decisões, estado, backlog e execução atualizada.
 
 ## Verificação automatizada
-<badge>CI aprovado</badge>
-- Commit verificado: cbe8a15ef2ec4926aa997e6fdb25f4bf0cb43504.
+O CI do commit cbe8a15ef2ec4926aa997e6fdb25f4bf0cb43504 foi aprovado:
 - Typecheck: aprovado.
 - Testes automatizados: aprovados.
 - Build Electron/desktop: aprovado.
 - Build WebExtension: aprovado.
 
-A aprovação do CI comprova compilação e testes automatizados do scaffold, não comprova captura real de áudio nem compatibilidade em máquinas/navegadores.
+A aprovação comprova compilação e testes automatizados do scaffold, não captura real de áudio nem compatibilidade de plataformas. As alterações subsequentes no núcleo aguardam a nova rodada de CI.
 
 ## Ainda não implementado ou comprovado
 - Captura real de tela/janela/aba e extração de áudio.
@@ -47,17 +50,18 @@ A aprovação do CI comprova compilação e testes automatizados do scaffold, n�
 - Comunicação entre desktop e extensão.
 - Adaptadores de provedores de transcrição/análise e armazenamento seguro de chaves.
 - Importação/extração de áudio de arquivos.
-- Diarização, análise, editor e exportação PDF/DOCX.
+- Diarização real, análise, editor e exportação PDF/DOCX.
 - Instalador Windows e pacotes de distribuição das extensões.
 - Execução local pelo usuário.
 
 ## Próximas etapas
-1. Expandir modelos e casos de uso do núcleo.
-2. Implementar captura de áudio desktop atrás de um adaptador.
-3. Implementar configuração BYOK e contratos/adaptadores de provedores.
-4. Implementar pipeline de arquivos e áudio.
-5. Implementar transcrição, análise, editor e exportação.
-6. Integrar e empacotar as experiências desktop e extensão.
+1. Confirmar CI das alterações mais recentes.
+2. Expandir modelos e casos de uso do núcleo.
+3. Implementar armazenamento seguro local para credenciais BYOK.
+4. Implementar captura de áudio desktop atrás de adaptador.
+5. Implementar pipeline de arquivos e adaptadores de provedores.
+6. Implementar transcrição, análise, editor e exportação.
+7. Integrar e empacotar desktop e extensão.
 
 ## Validações adiadas
 O usuário autorizou prosseguir sem testes manuais imediatos. Captura por fonte/SO/navegador, compatibilidade com VLC/Meet/Zoom/Teams, diarização, limites, custos e qualidade dos provedores permanecem não validados. Não anunciar essas capacidades como comprovadas.
