@@ -75,3 +75,39 @@ Este registro preserva as decisões anteriores e registra suas atualizações. E
 
 ## Regras de atualização
 Toda nova decisão deve registrar contexto, opções, decisão, justificativa, impactos, data e estado. Não apagar decisões substituídas; marcar seu estado e apontar a sucessora.
+
+
+## Novas decisões — 21/11/2026 (implementação do MVP)
+| ID | Decisão | Contexto / justificativa | Estado |
+|---|---|---|---|
+| D-046 | Pacotes do monorepo: `shared`, `core`, `capture`, `providers`, `transcription`, `analysis`, `reports`. | Segue a estrutura conceitual do prompt mestre; `shared` concentra erros, retry/timeout, logger com redação e sanitização, sem dependência de domínio. | Aceita |
+| D-047 | Chamadas de IA no desktop são feitas pelo processo principal do Electron; o renderer nunca recebe chaves. | Reduz exposição de segredos (CSP do renderer bloqueia rede externa). | Aceita |
+| D-048 | Chaves no desktop cifradas com Electron `safeStorage` (DPAPI no Windows). Sem criptografia disponível, ficam apenas em memória. | Atende D-038 sem gravar texto puro em disco. | Aceita |
+| D-049 | Na extensão, chaves ficam em `chrome.storage.local` (perfil do navegador, sem criptografia do SO), com aviso explícito na interface. | Não há cofre do SO acessível a WebExtensions. | Aceita, com limitação |
+| D-050 | Captura no desktop: seletor próprio do Ouve lista telas/janelas **sem miniaturas**; `setDisplayMediaRequestHandler` entrega a fonte com `audio: "loopback"` no Windows; a trilha de vídeo exigida pela API é interrompida imediatamente (`selectAudioTracks`). | Cumpre D-029. Limitação: o loopback do Electron é o áudio do **sistema inteiro**, não isolado por janela. | Aceita; validação real pendente (P-020) |
+| D-051 | Captura de aba no Chrome via `chrome.tabCapture.getMediaStreamId` + `getUserMedia` somente áudio (sem trilha de vídeo), com reprodução local para não silenciar a aba. | API documentada do Chrome ≥116. | Aceita; validação real pendente (P-021) |
+| D-052 | Firefox: sem captura de áudio de aba/tela (sem API equivalente); oferece microfone e importação. | Limitação da plataforma, exibida na interface. | Aceita |
+| D-053 | Áudio processado como WAV PCM 16 kHz mono em blocos (ao vivo: 20 s, configurável; importação: 120 s). Blocos silenciosos não são enviados. | Formato aceito por todos os provedores de transcrição implementados; reduz custo. | Aceita |
+| D-054 | Importação no desktop usa ffmpeg (`-vn`, somente faixa de áudio) gerando segmentos temporários apagados ao fim; nada é carregado inteiro na memória. Na extensão, decodificação local limitada a 300 MB / 2 h. | Atende §7 do prompt mestre. | Aceita |
+| D-055 | Transcrição idempotente por índice de bloco; falhas ficam retidas em memória para nova tentativa sem duplicar segmentos. | Requisito de recuperação de falhas. | Aceita |
+| D-056 | Diarização usa rótulos neutros "Falante N"; nomes só por edição do usuário. Rótulos do provedor são locais a cada bloco — o mapeamento entre blocos é aproximado. | D-034; limitação documentada. | Aceita |
+| D-057 | Análise valida a saída do modelo contra a transcrição: evidências inexistentes são descartadas, item "explícito" sem evidência vira "inferência", responsável/prazo que não aparece nos trechos citados é removido com aviso. | Requisito de não inventar responsáveis, decisões ou prazos (D-042). | Aceita |
+| D-058 | Exportação local com `pdf-lib` (PDF, fontes padrão WinAnsi — caracteres fora do conjunto viram "?") e `docx` (DOCX); Markdown como extra. Ambas MIT. | Sem serviço externo; licenças permissivas. | Aceita |
+| D-059 | Modelos sugeridos no catálogo são apenas sugestões editáveis (referência jun/2026); o teste de conexão lista os modelos disponíveis para a chave do usuário. | Modelos mudam com frequência. | Aceita |
+| D-060 | Testes E2E usam um servidor local que imita a API compatível com OpenAI; nenhum teste usa chave real. | Requisito de não usar chaves fictícias como reais. | Aceita |
+
+## Novas pendências — 21/11/2026
+| ID | Questão | Tratamento |
+|---|---|---|
+| P-029 | O binário do pacote `ffmpeg-static` é distribuído sob GPL. Distribuir o instalador com ele exige conformidade com a GPL ou substituição por build LGPL/ffmpeg do sistema. | **Revisão de licenciamento obrigatória antes de distribuição pública.** O app já aceita `OUVE_FFMPEG_PATH`. |
+| P-030 | Áudio isolado por janela/processo no Windows (WASAPI process loopback) exige módulo nativo. | Hoje o áudio é do sistema inteiro; avaliar addon nativo. |
+| P-031 | `ScriptProcessorNode` é obsoleto; migrar para `AudioWorklet` respeitando a CSP da extensão. | Backlog técnico. |
+| P-032 | Fontes do PDF não cobrem caracteres fora do WinAnsi (ex.: emojis, alguns símbolos). | Avaliar fonte TTF embutida com licença compatível. |
+| P-033 | Instalador NSIS e assinatura de código não foram gerados nem testados (exigem Windows). | Validar em Windows; avaliar certificado. |
+| P-034 | ID do Firefox (`@example.invalid`) é provisório. | Definir antes de publicar na AMO. |
+| P-035 | Fichas de política de dados por provedor (docs/09 §6) ainda não verificadas em fonte oficial atual. | Preencher `docs/providers/` com data de verificação. |
+
+## Divergências registradas — 21/11/2026
+- docs/08 ainda descrevia pipeline visual (VideoFramePort, VisualObservation, AnalyzeVisualContext, amostragem de quadros). Essas partes estão **substituídas por D-029**; o documento recebeu uma nota no topo, sem apagar o texto histórico.
+- O scaffold carregava o preload como `index.js`, mas o build gerava `index.mjs`; e preload com `sandbox: true` precisa ser CommonJS. Corrigido (preload gerado como `index.cjs`).
+- Pacotes do workspace eram externalizados no build do processo principal (seriam carregados como TypeScript cru em tempo de execução). Corrigido no `electron.vite.config.ts`.

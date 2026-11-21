@@ -50,3 +50,19 @@ Em pull requests: instalar dependências de forma reproduzível, typecheck, lint
 
 ## 7. Instalação e distribuição
 Desenvolvimento local pode usar builds não assinados, com avisos. Distribuição pública Windows deverá avaliar assinatura de código, reputação do instalador, atualização segura, política de privacidade e canais oficiais. Não prometer ausência de alertas do Windows sem assinatura/reputação adequada.
+
+
+## 8. Comandos implementados (21/11/2026)
+```bash
+pnpm install
+pnpm dev:desktop            # Electron em modo desenvolvimento
+pnpm lint && pnpm format:check
+pnpm typecheck
+pnpm test                   # testes unitários de todos os pacotes
+pnpm build:desktop          # out/ (main, preload CJS, renderer)
+pnpm build:extension        # apps/extension/dist/chrome e dist/firefox
+xvfb-run -a pnpm test:e2e   # Linux sem tela; no Windows/macOS: pnpm test:e2e
+pnpm --filter @ouve/desktop package   # instalador NSIS (executar no Windows; não validado)
+```
+Variáveis: `OUVE_FFMPEG_PATH` (ffmpeg alternativo), `OUVE_CHROME_PATH` (Chrome para o E2E da extensão). Variáveis `OUVE_E2E*` existem apenas para testes automatizados.
+Carregar a extensão: Chrome → `chrome://extensions` → modo desenvolvedor → “Carregar sem compactação” → `apps/extension/dist/chrome`. Firefox → `about:debugging` → “Carregar extensão temporária” → `apps/extension/dist/firefox/manifest.json`.

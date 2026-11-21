@@ -23,22 +23,31 @@ Ouve é um aplicativo desktop e extensão de navegador para capturar áudio de u
 - Resultados de IA devem preservar evidências e incertezas.
 
 ## Estado
-**Desenvolvimento iniciado.** O repositório contém o primeiro scaffold e o núcleo compartilhado. Captura real, compatibilidade entre plataformas e integrações de provedores ainda não foram validadas. Consulte [Estado atual](docs/06-estado-atual.md).
+**MVP implementado em código, ainda não validado em uso real** (21/11/2026). Desktop Electron com captura de áudio por adaptadores, importação de arquivos, transcrição e análise com provedores BYOK, relatório editável e exportação PDF/DOCX; extensões Chrome e Firefox. 76 testes unitários e 7 E2E passam. Captura em hardware real, chaves reais de provedores e instalador Windows ainda precisam de validação. Consulte [Estado atual](docs/06-estado-atual.md).
 
 ## Começar
 Requisitos: Node.js 20+ e pnpm 9+.
 
 ```bash
 pnpm install
-pnpm dev:desktop
-pnpm typecheck
-pnpm test
+pnpm dev:desktop          # abre o aplicativo
+pnpm lint && pnpm typecheck && pnpm test
+pnpm build:extension      # gera apps/extension/dist/chrome e dist/firefox
+pnpm test:e2e             # E2E (no Linux sem tela: xvfb-run -a pnpm test:e2e)
 ```
 
+Uso: em **Provedores de IA**, cadastre um provedor com sua chave e escolha quem faz a transcrição e a análise. Depois use **Nova sessão** (tela, janela ou microfone) ou **Importar arquivo**. Detalhes em [Ambiente](docs/11-ambiente-e-configuracao.md).
+
 ## Estrutura
-- `apps/desktop`: aplicativo Electron + React.
-- `apps/extension`: base da extensão Chrome/Firefox.
-- `packages/core`: domínio e contratos compartilhados.
+- `apps/desktop`: aplicativo Electron + React (main com IPC seguro, cofre de chaves, ffmpeg; renderer com as telas).
+- `apps/extension`: extensão Chrome/Firefox (popup de captura de aba e página do Ouve).
+- `packages/core`: domínio, contratos e transcrição da sessão.
+- `packages/shared`: erros, cancelamento/retry, logger com redação, sanitização.
+- `packages/capture`: captura somente de áudio, mixagem, blocos WAV, capacidades por plataforma.
+- `packages/providers`: adaptadores BYOK (OpenAI, Gemini, Claude, Grok, compatíveis, personalizados).
+- `packages/transcription`: fila de transcrição idempotente.
+- `packages/analysis`: análise validada por evidência.
+- `packages/reports`: exportação PDF, DOCX e Markdown.
 - `docs/`: especificações, arquitetura, decisões e backlog.
 
 ## Documentação

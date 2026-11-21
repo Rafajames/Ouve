@@ -70,3 +70,7 @@ Cada fase deve ter critérios de aceite, testes, limitações documentadas e dec
 - [ ] Validar sincronização A/V, troca de fonte e descarte de buffers.
 
 O MVP passa a manter desktop e extensão em escopo, com incrementos verificáveis. Importação de arquivo continua disponível; captura externa será modalidade separada, sem exigir reprodução dentro do Ouve.
+
+
+## Atualização — 21/11/2026
+Implementado em código (ver docs/06 para evidências e o que falta validar): fundação do monorepo com lint/format/typecheck/testes/CI; importação com extração de áudio; BYOK com cofre local; adaptadores OpenAI, Gemini, Claude, Grok, compatíveis e personalizados; transcrição com timestamps e falantes quando o provedor oferece; análise validada; relatório editável; exportação PDF/DOCX; captura desktop e extensão Chrome por adaptadores. Os itens das fases acima permanecem desmarcados até a validação com plataformas e provedores reais.

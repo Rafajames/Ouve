@@ -37,3 +37,18 @@ Falha de rede, cota ou autenticação deve gerar mensagem clara. Não trocar sil
 
 ## 8. Serviços que não fazem parte do MVP
 Backend próprio, login, sincronização, armazenamento em nuvem, analytics, telemetria de conteúdo e colaboração. Exigem decisão e documentação de impacto antes de qualquer implementação.
+
+
+## 9. Adaptadores implementados (21/11/2026)
+Não houve validação com chaves reais. Diferenças entre APIs tratadas pelos adaptadores:
+
+| Provedor | Transcrição | Análise | Autenticação | Observações |
+|---|---|---|---|---|
+| OpenAI | `POST /audio/transcriptions` (multipart). `whisper-1` → `verbose_json` com segmentos e confiança; `gpt-4o-transcribe`/`mini` → `json` (texto por bloco); `*-diarize` → `diarized_json` com falantes | `POST /chat/completions` com `response_format: json_object` | `Authorization: Bearer` | Limite de 25 MB por arquivo |
+| Compatível com OpenAI / personalizado | Mesmo formato, se o servidor implementar | Idem; se recusar `response_format` (HTTP 400), repete sem ele | Bearer (opcional em localhost) + cabeçalhos extras não secretos | HTTP só para localhost |
+| xAI Grok | Não habilitada | `chat/completions` compatível | Bearer | Base `https://api.x.ai/v1` |
+| Google Gemini | `generateContent` com áudio inline (base64) e instrução para JSON de segmentos — timestamps e falantes **estimados pelo modelo** | `generateContent` com `responseMimeType: application/json` | Cabeçalho `x-goog-api-key` (nunca na URL) | Bloqueio de conteúdo vira erro explícito |
+| Anthropic Claude | Não oferece | `POST /messages` (`anthropic-version: 2023-06-01`) | `x-api-key` | JSON solicitado por instrução; resposta validada |
+
+Tratamento comum: timeout por requisição (padrão 120 s), até 2 novas tentativas com backoff para rede/429/5xx/timeout, cancelamento por `AbortSignal`, mensagens em pt-BR sem ecoar corpo de resposta, limitador de taxa disponível (`RateLimiter`).
+Nunca há troca silenciosa de provedor: o usuário escolhe um provedor para transcrição e outro (ou o mesmo) para análise.

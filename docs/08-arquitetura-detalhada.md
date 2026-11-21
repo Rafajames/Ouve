@@ -1,5 +1,7 @@
 # 08 — Arquitetura detalhada e contratos
 
+> **Nota (21/11/2026):** as referências a vídeo/quadros neste documento (VideoFramePort, VisualObservation, AnalyzeVisualContext, amostragem de quadros e sincronização A/V) foram **substituídas pela decisão D-029** — o Ouve processa exclusivamente áudio. O texto é mantido como histórico. A arquitetura implementada está descrita na seção 10 ao final.
+
 ## 1. Princípios
 1. Domínio sem dependência de Electron, React, Chrome, Firefox ou fornecedor de IA.
 2. Portas definem contratos; adaptadores implementam integrações.
@@ -57,3 +59,16 @@ Sem conta, backend próprio ou histórico permanente no MVP. Buffers em memória
 
 ## 9. Tratamento de falhas
 Estados tipados: idle, requesting-permission, capturing, paused, processing, finalizing, completed, failed, cancelled. Toda operação longa aceita cancelamento. Falha de provedor não deve apagar o material temporário ainda em sessão; oferecer retry ou descarte, sem persistir por padrão.
+
+## 10. Arquitetura implementada (21/11/2026)
+- `packages/shared`: `OuveError`, `retry`/`withTimeout`/`sleep` com cancelamento, logger com redação de segredos e campos de conteúdo, sanitização e validação de endpoints.
+- `packages/core`: contratos (`TranscriptionProvider`, `CompletionProvider`, `MeetingAnalysis` com `basis` explícito/inferido), `TranscriptStore` (idempotente por bloco, falantes neutros, edição), máquina de estados da sessão, limites e formatos de mídia, `selectAudioTracks`.
+- `packages/capture`: aquisição separada da seleção (`acquireDisplayAudio`, `acquireMicrophone`, `acquireTabAudio`), `AudioCaptureSession` (mixagem, 16 kHz, pausa/retomada/encerramento), `PcmChunker`, `AudioActivityMonitor`, matriz de capacidades por plataforma.
+- `packages/providers`: HTTP com timeout/retry/cancelamento, catálogo com capacidades, adaptadores OpenAI/compatível/xAI/custom, Gemini, Anthropic, teste de conexão, porta `SecretStore`.
+- `packages/transcription`: `TranscriptionPipeline` (fila concorrente, ordem, idempotência, nova tentativa, descarte).
+- `packages/analysis`: prompt com transcrição delimitada como dado não confiável, validação por evidência, divisão de transcrições longas e consolidação do resumo.
+- `packages/reports`: modelo linear único → PDF, DOCX e Markdown.
+- `apps/desktop`: main (IPC allowlist + validação, CSP, permissões, safeStorage, ffmpeg, chamadas de IA), preload CJS mínimo, renderer React com `SessionController`.
+- `apps/extension`: popup (tabCapture), página React com `ExtensionController`, armazenamento local, builds Chrome/Firefox.
+
+Fluxo ao vivo: fonte (seletor) → somente trilhas de áudio → Web Audio (mixagem) → blocos WAV → fila de transcrição → `TranscriptStore` → análise sob demanda → relatório editável → exportação local.

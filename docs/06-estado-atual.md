@@ -1,67 +1,51 @@
 # 06 — Estado atual do projeto
 
-**Atualizado em:** 20/11/2026  
-**Repositório:** https://github.com/Rafajames/Ouve  
-**Branch:** main
+**Atualizado em:** 21/11/2026
+**Repositório:** https://github.com/Rafajames/Ouve
+**Branch de desenvolvimento:** `desenvolvimento/mvp` (main preservada até revisão)
 
 ## Estado geral
-A implementação foi iniciada no GitHub. O scaffold do monorepo, núcleo compartilhado, aplicativo Electron/React, base da extensão e CI estão no repositório. O workflow CI do commit a4b628c passou integralmente após as alterações recentes no núcleo: instalação, typecheck, testes, build desktop e build da extensão.
+O Ouve passou de scaffold para um MVP funcional em código: aplicativo desktop Electron com captura de áudio por adaptadores, importação de arquivos, transcrição por provedores BYOK, análise validada, relatório editável e exportação PDF/DOCX; extensões Chrome/Firefox com captura de aba (Chrome), microfone e importação. **Nada que dependa de hardware, gesto real do usuário ou chave real de provedor foi validado** — ver “Depende de validação real”.
 
-## Decisões consolidadas
-- Aplicativo desktop Windows primeiro e extensões Chrome/Firefox.
-- Usuário seleciona tela inteira, janela ou aba, em experiência semelhante ao compartilhamento do Meet.
-- Processamento exclusivamente de áudio: sem gravação de tela, OCR, visão computacional ou persistência de quadros.
-- Se uma API exigir trilha visual para iniciar a seleção, os quadros devem ser descartados imediatamente.
-- Áudio da fonte selecionada e microfone opcional.
-- Arquivos de áudio e vídeo; em vídeo, extrair somente a faixa de áudio.
-- Transcrição ao vivo e posterior, diarização quando disponível.
-- Análise com resumo, tópicos, perguntas/respostas, decisões, tarefas, responsáveis e prazos quando sustentados pelo conteúdo.
-- Relatórios editáveis e exportação local PDF/DOCX.
-- BYOK: OpenAI, Gemini, Claude, Grok, outros provedores e endpoints personalizados.
-- TypeScript, React, Electron, pnpm workspaces e núcleo compartilhado.
-- Sem conta, backend próprio, analytics de conteúdo, sync ou histórico permanente no MVP.
+## Implementado e testado automaticamente
+| Área | O que existe | Evidência |
+|---|---|---|
+| Fundação | Monorepo pnpm com 7 pacotes + 2 apps, TypeScript strict, ESLint, Prettier, CI com E2E | `pnpm lint`, `format:check`, `typecheck`, `test`, builds |
+| Domínio | Contratos de serviços separados, `TranscriptStore` idempotente, falantes neutros e editáveis, limites de mídia | testes `core` |
+| Captura | Seleção ≠ obtenção de áudio; trilhas de vídeo interrompidas; mixagem fonte+microfone; 16 kHz; pausa/retomada/encerramento; detecção de silêncio e de fonte encerrada | testes `capture` (dublês de Web Audio) |
+| Provedores | OpenAI, compatível, Gemini, Claude, Grok, personalizado; timeout, retry, cancelamento, teste de conexão | testes `providers` (fetch simulado) + E2E com servidor local |
+| Transcrição | Fila concorrente idempotente, retry, retomada de falhas, contexto anterior, pula silêncio | testes `transcription` + E2E |
+| Análise | Prompt com transcrição como dado não confiável; validação por evidência; explícito × inferido | testes `analysis` + E2E (responsável inventado removido) |
+| Relatórios | PDF, DOCX, Markdown locais; nome de arquivo seguro | testes `reports` + inspeção visual do PDF + E2E |
+| Desktop | IPC validado, CSP, permissões só de mídia, safeStorage, ffmpeg, 7 telas principais | 8 testes do main (ffmpeg real) + 5 E2E Electron |
+| Extensão | Popup tabCapture com consentimento, página React, permissões mínimas, builds Chrome/Firefox | 5 testes unitários + 2 E2E no Chromium |
 
-## Implementado no repositório
-- Workspace pnpm e configuração TypeScript estrita.
-- Pacote @ouve/core.
-- Máquina de estados inicial da sessão com testes.
-- Contratos iniciais de captura, áudio, transcrição, diarização e análise.
-- Utilitário selectAudioTracks, que mantém somente áudio e interrompe trilhas não áudio, com testes.
-- Tipos iniciais de relatório, participantes e artefatos de sessão.
-- Registro extensível de provedores com testes.
-- Configuração de provedor separa referência da credencial do segredo; apiKey não faz parte do ProviderConfig persistível.
-- Scaffold Electron + React, com tela inicial e captura desabilitada.
-- Scaffold WebExtension com manifestos base Chrome/Firefox e popup informativo.
-- Workflow CI para instalação, typecheck, testes e builds.
-- Documentação de decisões, estado, backlog e execução atualizada.
+Total: 76 testes unitários e 7 testes E2E passando localmente em 21/11/2026.
 
-## Verificação automatizada
-O CI do commit cbe8a15ef2ec4926aa997e6fdb25f4bf0cb43504 foi aprovado:
-- Typecheck: aprovado.
-- Testes automatizados: aprovados.
-- Build Electron/desktop: aprovado.
-- Build WebExtension: aprovado.
+## Depende de validação real (não comprovado)
+- Captura de tela/janela no Windows com áudio por loopback (e o fato de ser áudio do sistema inteiro).
+- Captura de aba no Chrome (`tabCapture`), microfone em Chrome/Firefox e no desktop.
+- Qualquer provedor com chave real: formatos de resposta, qualidade em pt-BR, diarização, custos, limites.
+- Arquivos reais de 2 GB / 4 h, M4A/MOV/MKV variados, consumo de memória em sessões longas.
+- Instalador Windows (NSIS), assinatura e publicação nas lojas de extensões.
 
-A aprovação comprova compilação e testes automatizados do scaffold, não captura real de áudio nem compatibilidade de plataformas. As alterações subsequentes no núcleo aguardam a nova rodada de CI.
-
-## Ainda não implementado ou comprovado
-- Captura real de tela/janela/aba e extração de áudio.
-- Captura de áudio de sistema/loopback e microfone.
-- Comunicação entre desktop e extensão.
-- Adaptadores de provedores de transcrição/análise e armazenamento seguro de chaves.
-- Importação/extração de áudio de arquivos.
-- Diarização real, análise, editor e exportação PDF/DOCX.
-- Instalador Windows e pacotes de distribuição das extensões.
-- Execução local pelo usuário.
+## Limitações conhecidas
+- Áudio de janela específica no Windows não é isolado (P-030).
+- Firefox não captura áudio de aba/tela (D-052).
+- Chaves na extensão ficam no perfil do navegador (D-049).
+- Gemini estima timestamps/falantes; OpenAI `gpt-4o-transcribe` não retorna timestamps internos ao bloco.
+- Transcrição ao vivo por blocos (latência ≈ duração do bloco + resposta do provedor), não streaming.
+- PDF substitui caracteres fora do WinAnsi por “?” (P-032).
+- ffmpeg-static (GPL) exige revisão de licença antes de distribuir (P-029).
+- Não há revisão jurídica/LGPD; os mecanismos de consentimento não equivalem a conformidade (P-028).
 
 ## Próximas etapas
-1. Confirmar CI das alterações mais recentes.
-2. Expandir modelos e casos de uso do núcleo.
-3. Implementar armazenamento seguro local para credenciais BYOK.
-4. Implementar captura de áudio desktop atrás de adaptador.
-5. Implementar pipeline de arquivos e adaptadores de provedores.
-6. Implementar transcrição, análise, editor e exportação.
-7. Integrar e empacotar desktop e extensão.
+1. Rodar o app no Windows e validar captura (tela, janela, microfone) e importação com arquivos reais.
+2. Validar provedores com chaves reais e amostras autorizadas; ajustar adaptadores.
+3. Validar extensão Chrome (aba) e Firefox (microfone/importação).
+4. Resolver P-029 (ffmpeg) e gerar instalador.
+5. Itens do backlog técnico (AudioWorklet, fonte TTF, streaming, bundle).
 
-## Validações adiadas
-O usuário autorizou prosseguir sem testes manuais imediatos. Captura por fonte/SO/navegador, compatibilidade com VLC/Meet/Zoom/Teams, diarização, limites, custos e qualidade dos provedores permanecem não validados. Não anunciar essas capacidades como comprovadas.
+## Histórico
+- **20/11/2026:** scaffold do monorepo, núcleo inicial (máquina de estados, contratos, `selectAudioTracks`, registro de provedores), Electron/React com captura desabilitada, base da extensão e CI aprovada (commits a4b628c, cbe8a15).
+- **21/11/2026:** implementação das etapas 1–9 do prompt mestre na branch `desenvolvimento/mvp` (detalhes acima e em docs/05).
