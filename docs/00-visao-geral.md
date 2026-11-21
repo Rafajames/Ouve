@@ -50,3 +50,11 @@ Cenários prioritários incluem reuniões profissionais, reuniões administrativ
 
 ## 8. Critério de sucesso do MVP
 Uma pessoa consegue importar uma gravação suportada, acompanhar o processamento, revisar a transcrição e o relatório, exportar o resultado e encerrar a sessão sem que o Ouve mantenha histórico permanente.
+
+
+## 9. Atualização de escopo — aplicativo desktop e captura externa
+Ouve será planejado para duas interfaces: aplicativo desktop instalável, inicialmente Windows, e extensão para Chrome e Firefox. As experiências devem compartilhar o máximo possível do núcleo de domínio e aplicação, mantendo adaptadores próprios.
+
+O usuário poderá deixar a audiência ou gravação aberta em outro monitor, em tela dividida ou em um aplicativo externo de reprodução, e selecionar no Ouve a tela inteira ou uma janela específica para análise. Em navegadores compatíveis, também poderá selecionar uma aba ou usar a extensão diretamente na aba da audiência. Não será necessário importar o vídeo nem reproduzi-lo dentro do Ouve nesse modo.
+
+A captura serve exclusivamente para o Ouve observar e analisar o conteúdo autorizado pelo usuário. Não é compartilhamento com outras pessoas nem videoconferência. Captura visual não implica automaticamente captura de áudio do sistema; disponibilidade depende das APIs, permissões e restrições de cada navegador e sistema operacional.
