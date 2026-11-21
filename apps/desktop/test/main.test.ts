@@ -39,7 +39,11 @@ describe("validação IPC", () => {
     expect(c).toMatchObject({ displayName: "A", enabledTasks: ["analysis"], extraHeaders: { "X-Ok": "1" } });
   });
   it("normaliza configurações fora da faixa", () => {
-    expect(parseSettings({ liveChunkSeconds: 1, language: "pt-BR; drop" })).toMatchObject({ liveChunkSeconds: 20, language: "pt-BR", theme: "system" });
+    expect(parseSettings({ liveChunkSeconds: 1, language: "pt-BR; drop" })).toMatchObject({
+      liveChunkSeconds: 20,
+      language: "pt-BR",
+      theme: "system"
+    });
     expect(parseSettings({ theme: "light" }).theme).toBe("light");
     expect(parseSettings({ theme: "neon" }).theme).toBe("system");
   });
