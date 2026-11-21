@@ -28,11 +28,7 @@ export interface AudioCaptureHandle {
 
 export interface AudioCaptureAdapter {
   getCapabilities(): Promise<AudioCaptureCapabilities>;
-  start(
-    options: AudioCaptureOptions,
-    onChunk: (chunk: AudioChunk) => void,
-    onError: (error: Error) => void
-  ): Promise<AudioCaptureHandle>;
+  start(options: AudioCaptureOptions, onChunk: (chunk: AudioChunk) => void, onError: (error: Error) => void): Promise<AudioCaptureHandle>;
 }
 
 /**

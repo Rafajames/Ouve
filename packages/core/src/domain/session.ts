@@ -1,12 +1,4 @@
-export type SessionStatus =
-  | "idle"
-  | "preparing"
-  | "capturing"
-  | "paused"
-  | "processing"
-  | "completed"
-  | "failed"
-  | "cancelled";
+export type SessionStatus = "idle" | "preparing" | "capturing" | "paused" | "processing" | "completed" | "failed" | "cancelled";
 
 export type CaptureSourceKind = "screen" | "window" | "browser-tab" | "audio-file" | "video-file";
 

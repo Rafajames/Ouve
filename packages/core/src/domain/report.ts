@@ -16,6 +16,10 @@ export interface ReportDocument {
   transcript: TranscriptSegment[];
   speakers: Speaker[];
   analysis: MeetingAnalysis;
+  /** Notas livres editadas pelo usuário. */
+  notes?: string;
+  /** Provedores usados, exibidos no relatório para transparência. */
+  providers?: { transcription?: string; analysis?: string };
 }
 
 export interface SessionArtifact {
@@ -24,4 +28,18 @@ export interface SessionArtifact {
   kind: "audio-temp" | "transcript" | "report";
   createdAt: number;
   expiresAt?: number;
+}
+
+export function emptyAnalysis(): MeetingAnalysis {
+  return {
+    summary: "",
+    topics: [],
+    questionsAndAnswers: [],
+    decisions: [],
+    pendingItems: [],
+    actionItems: [],
+    attentionPoints: [],
+    nextSteps: [],
+    warnings: []
+  };
 }
