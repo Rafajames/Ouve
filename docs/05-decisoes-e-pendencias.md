@@ -66,3 +66,28 @@ Toda nova decisão deve registrar: contexto, opções consideradas, decisão, ju
 | P-017 | Sincronização entre áudio e quadros de vídeo | Protótipo com timestamps e métricas |
 | P-018 | Captura de janelas minimizadas/protegidas | Identificar limites e comunicar ao usuário |
 | P-019 | Frequência/resolução de quadros e retenção | Definir estratégia sem gravar tela continuamente |
+
+
+## Decisões e diretrizes de pré-desenvolvimento — 20/11/2026
+| ID | Decisão/diretriz | Estado |
+|---|---|---|
+| D-021 | O produto terá modos distintos para arquivo, captura externa e aba do navegador | Aceita |
+| D-022 | Captura de tela é entrada privada para análise pelo Ouve, sem transmissão a terceiros | Aceita |
+| D-023 | O aplicativo não exigirá que vídeo externo seja importado ou reproduzido internamente no modo de captura | Aceita |
+| D-024 | MCP é ferramenta opcional de desenvolvimento, não dependência de execução do produto | Aceita |
+| D-025 | O MVP não terá servidor MCP público para expor transcrições/relatórios | Aceita |
+| D-026 | Núcleo compartilhado entre desktop e extensão, com adaptadores de plataforma | Aceita |
+| D-027 | TypeScript/React são diretrizes; monorepo e framework desktop dependem do bootstrap/spikes | Provisória |
+| D-028 | Electron é candidato recomendado para primeiro spike desktop; comparar com Tauri antes de decisão final | Provisória |
+
+## Pendências para iniciar implementação
+| ID | Questão | Próxima ação |
+|---|---|---|
+| P-020 | Tecnologia desktop definitiva | Spike Electron/Tauri com captura real no Windows |
+| P-021 | Workspace/monorepo | Validar build desktop e extensão no mesmo workspace |
+| P-022 | Primeiro provedor de transcrição e análise | Matriz de qualidade, custo, privacidade e streaming |
+| P-023 | Formatos/limites de mídia | Spike de codecs, tamanho e duração |
+| P-024 | Estratégia de captura de áudio por fonte | Testar aba, loopback, microfone e janela externa |
+| P-025 | Estratégia de análise visual | Definir amostragem, custo e minimização de dados |
+| P-026 | Política e termos do produto | Revisão jurídica antes da distribuição pública |
+
