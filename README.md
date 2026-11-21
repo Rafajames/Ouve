@@ -48,3 +48,10 @@ A stack de referência é TypeScript, React e WebExtensions, com Manifest V3 no 
 
 ## Licença
 Ainda não definida. Não assumir licença permissiva até decisão explícita do mantenedor.
+
+
+## Atualização de escopo — 20/11/2026
+O produto será planejado desde o início para duas experiências: aplicativo desktop instalável (Windows como primeira plataforma-alvo) e extensão para Chrome e Firefox.
+
+### Acompanhamento por compartilhamento privado de tela/janela
+O usuário poderá manter a audiência, reunião ou gravação em outro monitor, em tela dividida ou em outro aplicativo (por exemplo, um reprodutor de vídeo), e selecionar essa tela/janela no próprio Ouve. Também poderá usar a extensão diretamente na aba da audiência, quando compatível. Não será obrigatório importar nem reproduzir o vídeo dentro do Ouve nesse modo. O compartilhamento é uma fonte privada de captura/análise para o Ouve, não uma transmissão a terceiros. Captura visual e captura de áudio são capacidades distintas; áudio do sistema/aba depende de permissões e APIs específicas de cada ambiente e precisa ser validado.
