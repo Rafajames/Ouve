@@ -1,6 +1,6 @@
 {
   "name": "@ouve/desktop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,19 +8,30 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --dir test",
+    "test:e2e": "electron-vite build && playwright test",
+    "package": "electron-vite build && electron-builder --win --publish never"
   },
   "dependencies": {
+    "@ouve/analysis": "workspace:^",
+    "@ouve/capture": "workspace:^",
     "@ouve/core": "workspace:*",
+    "@ouve/providers": "workspace:^",
+    "@ouve/reports": "workspace:^",
+    "@ouve/shared": "workspace:^",
+    "@ouve/transcription": "workspace:^",
+    "ffmpeg-static": "^5.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^33.2.1",
+    "electron-builder": "^25",
     "electron-vite": "^3.0.0",
     "vite": "^6.0.7",
     "vitest": "^2.1.8"

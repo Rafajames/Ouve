@@ -1,0 +1,18 @@
+# Empacotamento Windows (NSIS). NÃO validado: requer execução em Windows e assinatura de código.
+appId: br.ouve.desktop
+productName: Ouve
+directories:
+  output: release
+files:
+  - out/**
+  - package.json
+asarUnpack:
+  - node_modules/ffmpeg-static/**
+win:
+  target: [nsis]
+  artifactName: Ouve-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  language: "1046"
