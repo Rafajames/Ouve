@@ -1,13 +1,28 @@
 export type AiTask = "transcription" | "diarization" | "analysis";
+export type ProviderProtocol = "openai-compatible" | "gemini" | "anthropic" | "xai" | "custom";
 
 export interface ProviderConfig {
   id: string;
   displayName: string;
   baseUrl?: string;
-  apiKey: string;
   model: string;
-  protocol: "openai-compatible" | "gemini" | "anthropic" | "xai" | "custom";
+  protocol: ProviderProtocol;
   enabledTasks: AiTask[];
+  /** Opaque reference to a secret in the platform's secure local store. */
+  credentialRef?: string;
+}
+
+export interface ProviderCredentials {
+  /** Secret is supplied to an adapter at runtime and must never be persisted in ProviderConfig. */
+  apiKey: string;
+}
+
+export interface ProviderCapabilities {
+  tasks: AiTask[];
+  streaming: boolean;
+  diarization: boolean;
+  supportedMimeTypes?: string[];
+  maxAudioBytes?: number;
 }
 
 export interface TranscriptSegment {
@@ -32,6 +47,7 @@ export interface TranscriptionResult {
 
 export interface TranscriptionProvider {
   readonly id: string;
+  readonly capabilities: ProviderCapabilities;
   transcribe(request: TranscriptionRequest, signal?: AbortSignal): Promise<TranscriptionResult>;
 }
 
