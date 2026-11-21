@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Ouve — Assistente de áudio",
-  "version": "0.1.0",
-  "description": "Transcreva e organize o áudio de reuniões e audiências.",
-  "action": { "default_popup": "popup.html" },
+  "version": "0.2.0",
+  "description": "Transcreva e organize o áudio de reuniões e audiências. Somente áudio, sem gravação de tela.",
+  "action": { "default_popup": "popup.html", "default_title": "Ouve" },
   "background": { "scripts": ["background.js"] },
   "permissions": ["storage", "activeTab"],
+  "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
   "browser_specific_settings": {
     "gecko": { "id": "ouve-audio-assistant@example.invalid", "strict_min_version": "128.0" }
   }

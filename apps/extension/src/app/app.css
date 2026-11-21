@@ -1,0 +1,132 @@
+:root {
+  color-scheme: dark;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: #0f1115;
+  color: #e8eaf0;
+  font-size: 14px;
+}
+body {
+  margin: 0;
+}
+.app {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+h1 {
+  margin: 0;
+}
+h2 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+h3 {
+  font-size: 14px;
+  margin: 10px 0 4px;
+}
+.muted {
+  color: #9aa3b2;
+  margin: 4px 0;
+}
+.warn {
+  color: #f2b84b;
+  margin: 4px 0;
+}
+.panel {
+  background: #171a21;
+  border: 1px solid #2a2f3a;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+}
+.grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #9aa3b2;
+}
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+button,
+.button {
+  font: inherit;
+  color: inherit;
+  background: #1e222b;
+  border: 1px solid #2a2f3a;
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+.button.disabled,
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+button.primary {
+  background: #5b8cff;
+  border-color: #5b8cff;
+  color: #fff;
+  font-weight: 600;
+}
+button.danger {
+  color: #ef5d5d;
+}
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  background: #0f1115;
+  border: 1px solid #2a2f3a;
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+.check input {
+  width: auto;
+}
+.banner {
+  position: sticky;
+  top: 0;
+  background: #3a1214;
+  color: #ffd9d9;
+  padding: 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+.banner.paused {
+  background: #3a2c10;
+  color: #ffe6b3;
+}
+.transcript {
+  padding-left: 18px;
+  line-height: 1.5;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.list {
+  padding-left: 18px;
+}
+:focus-visible {
+  outline: 2px solid #5b8cff;
+  outline-offset: 2px;
+}

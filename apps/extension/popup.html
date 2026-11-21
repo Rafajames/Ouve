@@ -1,11 +1,72 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Ouve</title></head>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ouve</title>
+    <style>
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        width: 320px;
+        margin: 0;
+        padding: 14px;
+        background: #0f1115;
+        color: #e8eaf0;
+        font-size: 13px;
+      }
+      h1 {
+        font-size: 16px;
+        margin: 0 0 6px;
+      }
+      p {
+        color: #9aa3b2;
+        margin: 6px 0;
+      }
+      label {
+        display: flex;
+        gap: 6px;
+        align-items: flex-start;
+        margin: 8px 0;
+      }
+      button {
+        width: 100%;
+        margin-top: 6px;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #2a2f3a;
+        background: #1e222b;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      button.primary {
+        background: #5b8cff;
+        border-color: #5b8cff;
+        color: #fff;
+        font-weight: 600;
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      #status {
+        color: #f2b84b;
+      }
+    </style>
+  </head>
   <body>
     <main>
       <h1>Ouve</h1>
-      <p>Captura e análise de áudio de reuniões.</p>
-      <p id="status">A captura de áudio ainda está em implementação.</p>
+      <p>Transcreva o áudio desta aba. Somente o som é capturado; a aba continua tocando normalmente.</p>
+      <div id="tab-section">
+        <label
+          ><input type="checkbox" id="consent" />
+          <span>Tenho autorização para captar este áudio e sei que ele será enviado ao provedor de IA configurado.</span></label
+        >
+        <label><input type="checkbox" id="mic" /> <span>Incluir meu microfone</span></label>
+        <button class="primary" id="capture" disabled>Capturar áudio desta aba</button>
+      </div>
+      <button id="open">Abrir o Ouve</button>
+      <p id="status" role="status"></p>
       <script type="module" src="/src/popup.ts"></script>
     </main>
   </body>
