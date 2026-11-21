@@ -1,93 +1,77 @@
 # 05 — Decisões e pendências
 
-Este registro distingue decisões já estabelecidas de recomendações e questões que exigem validação.
+Este registro preserva as decisões anteriores e registra suas atualizações. Estados: aceita, provisória, pendente, substituída ou cancelada.
 
-## Decisões estabelecidas
+## Decisões estabelecidas anteriormente
 | ID | Decisão | Estado |
 |---|---|---|
 | D-001 | Nome do produto: Ouve | Aceita |
-| D-002 | Produto será uma extensão de navegador | Aceita |
-| D-003 | Compatibilidade-alvo: Google Chrome e Mozilla Firefox | Aceita |
-| D-004 | Sem conta obrigatória no início | Aceita |
+| D-002 | Produto inclui extensão de navegador | Aceita |
+| D-003 | Compatibilidade-alvo da extensão: Chrome e Firefox | Aceita |
+| D-004 | Sem conta obrigatória no MVP | Aceita |
 | D-005 | Sem histórico ou armazenamento permanente no MVP | Aceita |
-| D-006 | Processamento temporário; usuário exporta e salva localmente se desejar | Aceita |
-| D-007 | MVP prioriza análise de arquivos gravados | Aceita |
-| D-008 | Português brasileiro como prioridade inicial | Aceita |
-| D-009 | MVP inclui transcrição, falantes quando suportados, tópicos, resumo e relatório completo | Aceita |
-| D-010 | Exportação inicial em PDF e DOCX | Aceita |
-| D-011 | Acompanhamento ao vivo fica para etapa posterior | Aceita |
-| D-012 | Arquitetura prevê BYOK e provedores intercambiáveis | Aceita |
-| D-013 | Referência técnica: TypeScript, React e WebExtensions, com Manifest V3/adaptações | Diretriz aceita; validar no scaffold |
+| D-006 | Processamento temporário; usuário controla exportação local | Aceita |
+| D-007 | Análise de arquivos gravados | Aceita |
+| D-008 | Português brasileiro como prioridade | Aceita |
+| D-009 | Transcrição, falantes quando suportados, tópicos, resumo e relatório | Aceita |
+| D-010 | Exportação PDF e DOCX | Aceita |
+| D-011 | Acompanhamento ao vivo | Aceita |
+| D-012 | BYOK e provedores intercambiáveis | Aceita |
+| D-013 | TypeScript, React e WebExtensions como diretrizes | Aceita |
+| D-014 | Aplicativo desktop e extensão Chrome/Firefox | Aceita |
+| D-015 | Windows como primeira plataforma desktop | Aceita |
+| D-016 | Usuário seleciona tela, janela ou aba como fonte | Aceita, com escopo atualizado por D-029 |
+| D-017 | Fonte pode estar em outro monitor ou aplicativo | Aceita, condicionada à disponibilidade de áudio |
+| D-018 | Compartilhamento é privado com o Ouve | Aceita |
+| D-019 | Extensão pode operar na aba da audiência | Aceita, conforme compatibilidade |
+| D-020 | Núcleo compartilhado entre desktop e extensão | Aceita |
+| D-021 | Modos de arquivo, captura externa e aba | Aceita |
+| D-022 | Captura privada, sem transmissão a terceiros | Aceita |
+| D-023 | Não exigir reprodução interna do conteúdo externo | Aceita |
+| D-024 | MCP é ferramenta opcional de desenvolvimento | Aceita |
+| D-025 | Sem servidor MCP público no MVP | Aceita |
+| D-026 | Núcleo compartilhado e adaptadores de plataforma | Aceita |
+| D-027 | TypeScript/React; workspace a definir no bootstrap | Substituída por D-031 |
+| D-028 | Electron candidato recomendado | Substituída por D-030 |
 
-## Recomendações técnicas ainda sujeitas a validação
-- Usar camadas de domínio/aplicação/adaptadores para desacoplar navegador e fornecedores.
-- Fazer primeiro uma prova de conceito de importação, extração de áudio e transcrição antes de escolher bibliotecas definitivas.
-- Escolher provedor comparando qualidade em português, timestamps, diarização, tamanho máximo, custo e política de dados.
-- Manter a exportação local sempre que viável.
-
-## Pendências prioritárias
-| ID | Questão | Próxima ação |
-|---|---|---|
-| P-001 | Qual provedor de transcrição usar primeiro? | Comparar opções e custos reais |
-| P-002 | Quais formatos e limites de arquivo aceitar? | Spike com formatos comuns e arquivos longos |
-| P-003 | Como extrair áudio de cada formato no navegador? | Prova de conceito e análise de dependências/licenças |
-| P-004 | Qual provedor/modelo fará análise textual? | Comparar qualidade, preço e privacidade |
-| P-005 | Como armazenar e proteger a chave BYOK? | Avaliar armazenamento da extensão e ameaças |
-| P-006 | Quais permissões mínimas serão necessárias? | Definir após fluxos e APIs escolhidos |
-| P-007 | Como gerar PDF e DOCX no navegador? | Testar bibliotecas e qualidade do resultado |
-| P-008 | Como lidar com arquivos maiores que limites de API/contexto? | Definir segmentação e consolidação |
-| P-009 | Como será a captura ao vivo em Chrome e Firefox? | Provas de conceito independentes |
-| P-010 | Quais modelos de relatório serão necessários por contexto? | Validar após MVP básico |
-| P-011 | Qual licença será aplicada ao repositório? | Decisão do mantenedor |
-
-## Regras de atualização
-Toda nova decisão deve registrar: contexto, opções consideradas, decisão, justificativa, impactos, data e estado (proposta/aceita/substituída). Não apagar decisões substituídas; marcar como substituídas e apontar a decisão sucessora.
-
-
-## Decisões adicionais — 20/11/2026
+## Novas decisões — 20/11/2026
 | ID | Decisão | Estado |
 |---|---|---|
-| D-014 | O produto terá aplicativo desktop instalável e extensão Chrome/Firefox | Aceita |
-| D-015 | Windows será a primeira plataforma desktop-alvo | Aceita |
-| D-016 | O usuário poderá selecionar tela inteira, janela de aplicativo ou aba compatível como fonte de análise | Aceita |
-| D-017 | O usuário poderá acompanhar vídeo reproduzido em outro aplicativo/monitor, sem importar nem reproduzir o vídeo dentro do Ouve | Aceita |
-| D-018 | O compartilhamento de tela/janela será privado com o próprio Ouve, sem transmissão a terceiros | Aceita |
-| D-019 | A extensão poderá ser usada diretamente na aba da audiência quando compatível | Aceita |
-| D-020 | Núcleo de domínio/aplicação compartilhado entre desktop e extensão | Diretriz aceita; validar arquitetura |
+| D-029 | O Ouve processará exclusivamente áudio. Não haverá análise visual, OCR, gravação de tela ou armazenamento de quadros. A seleção de tela/janela/aba será usada para escolher a fonte de captura de áudio; se a API exigir uma trilha visual para iniciar o compartilhamento, os quadros serão descartados imediatamente e nunca processados ou persistidos. | Aceita |
+| D-030 | Electron será o framework desktop inicial, com Windows como alvo prioritário. A escolha permite iniciar o scaffold; riscos e compatibilidade de captura permanecem sujeitos a validação técnica. | Aceita para implementação inicial |
+| D-031 | Monorepo com pnpm workspaces, TypeScript estrito e núcleo compartilhado. | Aceita |
+| D-032 | A captura ao vivo terá áudio da fonte selecionada e microfone opcional, com controles independentes quando a plataforma permitir. | Aceita |
+| D-033 | Transcrição ao vivo e pós-processamento/revisão serão experiências complementares. | Aceita |
+| D-034 | Diarização automática será usada quando disponível; nomes serão editáveis e nunca inferidos sem evidência. | Aceita |
+| D-035 | Arquitetura de IA aceitará provedores oficiais, endpoints compatíveis com API OpenAI e provedores personalizados com URL/base URL, modelo e autenticação configuráveis. | Aceita |
+| D-036 | Adaptadores separados para transcrição, diarização e análise textual; o usuário poderá combinar fornecedores diferentes. | Aceita |
+| D-037 | Provedores de referência para integração: OpenAI, Google Gemini, Anthropic Claude e xAI Grok, além de outros serviços conhecidos e endpoints personalizados. Disponibilidade de cada capacidade depende da API contratada. | Aceita |
+| D-038 | Chaves BYOK serão armazenadas localmente com proteção do sistema operacional quando disponível; nunca em código, logs ou repositório. | Aceita |
+| D-039 | Sem backend próprio, login, analytics de conteúdo, sincronização ou histórico permanente no MVP. | Aceita |
+| D-040 | Arquivos de áudio e vídeo serão aceitos; em vídeo, somente a faixa de áudio será extraída. Formatos e limites finais dependem da implementação e validação. | Aceita |
+| D-041 | Transcrição em português brasileiro é prioridade; outros idiomas e detecção automática serão suportados conforme provedor. | Aceita |
+| D-042 | Relatórios editáveis incluirão resumo, tópicos, perguntas/respostas, decisões, tarefas, responsáveis e prazos quando explicitamente presentes no conteúdo. | Aceita |
+| D-043 | PDF e DOCX são formatos iniciais de exportação local. | Aceita |
+| D-044 | Limites iniciais de referência: arquivo até 2 GB e sessão até 4 horas, sujeitos a limites técnicos e do provedor; não anunciar como garantidos antes de validar. | Provisória |
+| D-045 | O desenvolvimento seguirá mesmo sem testes manuais imediatos; funcionalidades dependentes de plataforma serão implementadas por adaptadores e marcadas como não validadas até haver evidência. | Aceita |
 
-## Pendências técnicas novas
-| ID | Questão | Próxima ação |
+## Pendências técnicas — não bloqueiam scaffold
+| ID | Questão | Tratamento |
 |---|---|---|
-| P-012 | Electron ou Tauri? | Comparar por prova de conceito em Windows |
-| P-013 | Captura de áudio de sistema em Windows | Validar loopback e APIs do framework |
-| P-014 | Captura de áudio/vídeo de aba no Chrome | Spike com seleção explícita de fonte |
-| P-015 | Captura equivalente no Firefox | Spike e documentação de diferenças |
-| P-016 | Captura de áudio de janela externa/reprodutor | Testar VLC e outras fontes no Windows |
-| P-017 | Sincronização entre áudio e quadros de vídeo | Protótipo com timestamps e métricas |
-| P-018 | Captura de janelas minimizadas/protegidas | Identificar limites e comunicar ao usuário |
-| P-019 | Frequência/resolução de quadros e retenção | Definir estratégia sem gravar tela continuamente |
+| P-020 | Captura de áudio de tela/janela/aba em Windows | Implementar interface/adaptador e validar posteriormente |
+| P-021 | Diferenças de captura entre Chrome e Firefox | Adaptadores e testes quando ambiente disponível |
+| P-022 | Áudio de aplicativos externos, incluindo VLC | Validar posteriormente; não prometer compatibilidade universal |
+| P-023 | APIs de seleção podem exigir trilha visual | Descartar quadros imediatamente; comprovar comportamento em teste |
+| P-024 | Escolha dos primeiros provedores e modelos | Implementar catálogo extensível; selecionar integrações por capacidade e evidência |
+| P-025 | Formatos, codecs, duração e tamanho efetivos | Implementar validação configurável; fechar limites após testes |
+| P-026 | Proteção de chaves em cada plataforma | Implementar abstração de armazenamento seguro |
+| P-027 | Qualidade de diarização e português brasileiro | Comparação posterior com conjunto de amostras autorizado |
+| P-028 | Política de privacidade, termos e revisão jurídica | Necessária antes de distribuição pública |
 
+## Decisões substituídas/canceladas
+- D-027 foi substituída por D-031.
+- D-028 foi substituída por D-030.
+- P-025 antigo sobre análise visual e P-017/P-019 relativos a sincronização/amostragem visual deixam de fazer parte do escopo; não haverá pipeline visual. O número P-025 atual refere-se a formatos e limites.
 
-## Decisões e diretrizes de pré-desenvolvimento — 20/11/2026
-| ID | Decisão/diretriz | Estado |
-|---|---|---|
-| D-021 | O produto terá modos distintos para arquivo, captura externa e aba do navegador | Aceita |
-| D-022 | Captura de tela é entrada privada para análise pelo Ouve, sem transmissão a terceiros | Aceita |
-| D-023 | O aplicativo não exigirá que vídeo externo seja importado ou reproduzido internamente no modo de captura | Aceita |
-| D-024 | MCP é ferramenta opcional de desenvolvimento, não dependência de execução do produto | Aceita |
-| D-025 | O MVP não terá servidor MCP público para expor transcrições/relatórios | Aceita |
-| D-026 | Núcleo compartilhado entre desktop e extensão, com adaptadores de plataforma | Aceita |
-| D-027 | TypeScript/React são diretrizes; monorepo e framework desktop dependem do bootstrap/spikes | Provisória |
-| D-028 | Electron é candidato recomendado para primeiro spike desktop; comparar com Tauri antes de decisão final | Provisória |
-
-## Pendências para iniciar implementação
-| ID | Questão | Próxima ação |
-|---|---|---|
-| P-020 | Tecnologia desktop definitiva | Spike Electron/Tauri com captura real no Windows |
-| P-021 | Workspace/monorepo | Validar build desktop e extensão no mesmo workspace |
-| P-022 | Primeiro provedor de transcrição e análise | Matriz de qualidade, custo, privacidade e streaming |
-| P-023 | Formatos/limites de mídia | Spike de codecs, tamanho e duração |
-| P-024 | Estratégia de captura de áudio por fonte | Testar aba, loopback, microfone e janela externa |
-| P-025 | Estratégia de análise visual | Definir amostragem, custo e minimização de dados |
-| P-026 | Política e termos do produto | Revisão jurídica antes da distribuição pública |
-
+## Regras de atualização
+Toda nova decisão deve registrar contexto, opções, decisão, justificativa, impactos, data e estado. Não apagar decisões substituídas; marcar seu estado e apontar a sucessora.
