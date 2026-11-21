@@ -17,6 +17,7 @@
     "@ouve/reports": "workspace:^",
     "@ouve/shared": "workspace:^",
     "@ouve/transcription": "workspace:^",
+    "@ouve/ui": "workspace:^",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

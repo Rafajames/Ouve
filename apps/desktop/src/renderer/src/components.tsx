@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { Icon } from "@ouve/ui";
 import { formatTimestamp } from "@ouve/shared";
 import { useApp, useSession } from "./hooks";
 
@@ -62,7 +63,16 @@ export function TranscriptView({ editable = true }: { editable?: boolean }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
 
-  if (segments.length === 0) return <p className="empty">A transcrição aparecerá aqui conforme o áudio for processado.</p>;
+  if (segments.length === 0)
+    return (
+      <div className="empty-state">
+        <span className="empty-icon">
+          <Icon name="wave" size={28} />
+        </span>
+        <strong>Aguardando a transcrição</strong>
+        <span>Os trechos aparecem aqui conforme cada bloco de áudio é processado pelo provedor.</span>
+      </div>
+    );
 
   return (
     <ol className="transcript" aria-label="Transcrição">

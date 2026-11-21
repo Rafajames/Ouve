@@ -1,3 +1,4 @@
+import "./popup.css";
 /**
  * Popup: inicia a captura de áudio da aba ativa via chrome.tabCapture (somente áudio).
  * O id do stream é gerado aqui (gesto do usuário) para consumo pela página do Ouve.

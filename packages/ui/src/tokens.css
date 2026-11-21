@@ -1,0 +1,100 @@
+/* Tokens de design do Ouve, compartilhados por desktop e extensão. */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f1115;
+  --surface: #171a21;
+  --surface-2: #1e222b;
+  --surface-3: #252a35;
+  --border: #2a2f3a;
+  --text: #e8eaf0;
+  --muted: #9aa3b2;
+  --accent: #5b8cff;
+  --accent-2: #7aa2ff;
+  --accent-soft: rgba(91, 140, 255, 0.12);
+  --accent-line: rgba(91, 140, 255, 0.38);
+  --danger: #ef5d5d;
+  --danger-soft: rgba(239, 93, 93, 0.12);
+  --warn: #f2b84b;
+  --warn-soft: rgba(242, 184, 75, 0.12);
+  --ok: #4cc38a;
+  --ok-soft: rgba(76, 195, 138, 0.12);
+  --rec-bg: #3a1214;
+  --rec-fg: #ffd9d9;
+  --rec-line: #5a1f1f;
+  --pause-bg: #3a2c10;
+  --pause-fg: #ffe6b3;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  --radius: 12px;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #f0f2f7;
+  --surface-3: #e6e9f0;
+  --border: #dde1ea;
+  --text: #171a21;
+  --muted: #5d6676;
+  --accent: #3d6fe8;
+  --accent-2: #2f5bc9;
+  --accent-soft: rgba(61, 111, 232, 0.09);
+  --accent-line: rgba(61, 111, 232, 0.35);
+  --danger: #c93434;
+  --danger-soft: rgba(201, 52, 52, 0.08);
+  --warn: #a8700a;
+  --warn-soft: rgba(214, 150, 20, 0.12);
+  --ok: #1f8f5b;
+  --ok-soft: rgba(31, 143, 91, 0.1);
+  --rec-bg: #fde7e7;
+  --rec-fg: #8f1d1d;
+  --rec-line: #f3c2c2;
+  --pause-bg: #fdf1d8;
+  --pause-fg: #7a5208;
+  --shadow: 0 10px 30px rgba(20, 30, 60, 0.12);
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme="system"] {
+    color-scheme: light;
+    --bg: #f4f6fa;
+    --surface: #ffffff;
+    --surface-2: #f0f2f7;
+    --surface-3: #e6e9f0;
+    --border: #dde1ea;
+    --text: #171a21;
+    --muted: #5d6676;
+    --accent: #3d6fe8;
+    --accent-2: #2f5bc9;
+    --accent-soft: rgba(61, 111, 232, 0.09);
+    --accent-line: rgba(61, 111, 232, 0.35);
+    --danger: #c93434;
+    --danger-soft: rgba(201, 52, 52, 0.08);
+    --warn: #a8700a;
+    --warn-soft: rgba(214, 150, 20, 0.12);
+    --ok: #1f8f5b;
+    --ok-soft: rgba(31, 143, 91, 0.1);
+    --rec-bg: #fde7e7;
+    --rec-fg: #8f1d1d;
+    --rec-line: #f3c2c2;
+    --pause-bg: #fdf1d8;
+    --pause-fg: #7a5208;
+    --shadow: 0 10px 30px rgba(20, 30, 60, 0.12);
+  }
+}
+
+:root {
+  font-family:
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    Roboto,
+    sans-serif;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+}
+svg {
+  flex-shrink: 0;
+}

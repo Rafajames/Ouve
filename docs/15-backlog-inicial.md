@@ -95,3 +95,5 @@ O backlog foi reorganizado para iniciar implementação sem exigir validação m
 - [ ] Carregamento sob demanda dos exportadores para reduzir o bundle do renderer (~1,5 MB).
 - [ ] Transcrição em streaming (WebSocket/Realtime) para menor latência que blocos de 20 s.
 - [ ] Fichas de política de dados por provedor (P-035).
+- [x] Ícones, tema claro/escuro e layout da sessão com painel lateral (21/11/2026).
+- [ ] Revisar contraste WCAG AA dos dois temas com ferramenta dedicada.

@@ -62,7 +62,8 @@ export function parseSettings(raw: unknown): AppSettings {
     importSegmentSeconds: num("importSegmentSeconds", 30, 600),
     maxFileGb: num("maxFileGb", 0.1, 8),
     maxHours: num("maxHours", 0.25, 12),
-    includeTranscriptInExport: typeof r.includeTranscriptInExport === "boolean" ? r.includeTranscriptInExport : true
+    includeTranscriptInExport: typeof r.includeTranscriptInExport === "boolean" ? r.includeTranscriptInExport : true,
+    theme: r.theme === "light" || r.theme === "dark" ? r.theme : "system"
   };
   if (typeof r.transcriptionProviderId === "string" && r.transcriptionProviderId)
     settings.transcriptionProviderId = r.transcriptionProviderId.slice(0, 80);

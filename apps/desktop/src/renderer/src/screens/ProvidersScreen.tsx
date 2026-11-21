@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { AiTask, ConnectionTestResult, ProviderConfig, ProviderProtocol } from "@ouve/core";
 import { PROVIDER_PRESETS, validateProviderConfig } from "@ouve/providers";
 import { createId } from "@ouve/shared";
+import { Icon } from "@ouve/ui";
 import type { ProviderSummary } from "../../../shared/ipc";
 import { bridge, unwrap } from "../bridge";
 import { Page } from "../components";
@@ -223,7 +224,7 @@ export function ProvidersScreen({ data }: { data: AppData }) {
       actions={
         !editing && (
           <button className="primary" onClick={() => setEditing({ config: emptyConfig("openai"), hasKey: false, isNew: true })}>
-            Adicionar provedor
+            <Icon name="plus" /> Adicionar provedor
           </button>
         )
       }

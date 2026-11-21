@@ -20,7 +20,7 @@ O Ouve passou de scaffold para um MVP funcional em código: aplicativo desktop E
 | Desktop | IPC validado, CSP, permissões só de mídia, safeStorage, ffmpeg, 7 telas principais | 8 testes do main (ffmpeg real) + 5 E2E Electron |
 | Extensão | Popup tabCapture com consentimento, página React, permissões mínimas, builds Chrome/Firefox | 5 testes unitários + 2 E2E no Chromium |
 
-Total: 76 testes unitários e 7 testes E2E passando localmente em 21/11/2026.
+Total: 76 testes unitários e 9 testes E2E (7 desktop + 2 extensão) passando localmente em 21/11/2026.
 
 ## Depende de validação real (não comprovado)
 - Captura de tela/janela no Windows com áudio por loopback (e o fato de ser áudio do sistema inteiro).
@@ -48,4 +48,5 @@ Total: 76 testes unitários e 7 testes E2E passando localmente em 21/11/2026.
 
 ## Histórico
 - **20/11/2026:** scaffold do monorepo, núcleo inicial (máquina de estados, contratos, `selectAudioTracks`, registro de provedores), Electron/React com captura desabilitada, base da extensão e CI aprovada (commits a4b628c, cbe8a15).
+- **21/11/2026 (tarde):** melhorias de interface — ícones SVG, tema claro/escuro/sistema, tela de sessão em duas colunas com resumo e próximos passos, estados vazios, extensão com o mesmo sistema visual (pacote `@ouve/ui`). 8 testes E2E desktop passando, incluindo alternância de tema.
 - **21/11/2026:** implementação das etapas 1–9 do prompt mestre na branch `desenvolvimento/mvp` (detalhes acima e em docs/05).

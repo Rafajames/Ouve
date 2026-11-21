@@ -1,4 +1,5 @@
 import { Page } from "../components";
+import { Icon } from "@ouve/ui";
 import { useApp, useSession, type AppData } from "../hooks";
 
 export function HomeScreen({ data }: { data: AppData }) {
@@ -25,15 +26,15 @@ export function HomeScreen({ data }: { data: AppData }) {
 
       <div className="cards">
         <button className="card action" onClick={() => navigate("new")}>
-          <span className="card-icon" aria-hidden>
-            ●
+          <span className="card-icon">
+            <Icon name="record" size={22} />
           </span>
           <strong>Nova sessão ao vivo</strong>
           <span className="muted">Escolha uma tela ou janela como fonte de áudio, com microfone opcional.</span>
         </button>
         <button className="card action" onClick={() => navigate("import")}>
-          <span className="card-icon" aria-hidden>
-            ⇪
+          <span className="card-icon">
+            <Icon name="upload" size={22} />
           </span>
           <strong>Importar gravação</strong>
           <span className="muted">MP3, WAV, M4A, AAC, OGG, FLAC, MP4, MOV, MKV ou WebM (somente o áudio é usado).</span>
@@ -55,7 +56,9 @@ export function HomeScreen({ data }: { data: AppData }) {
 
       <div className="grid-2">
         <div className="panel">
-          <h2>Provedores</h2>
+          <h2>
+            <Icon name="providers" /> Provedores
+          </h2>
           <dl className="kv">
             <dt>Transcrição</dt>
             <dd>{transcription ?? "não configurado"}</dd>
@@ -72,7 +75,9 @@ export function HomeScreen({ data }: { data: AppData }) {
           </dl>
         </div>
         <div className="panel">
-          <h2>Privacidade</h2>
+          <h2>
+            <Icon name="shield" /> Privacidade
+          </h2>
           <ul className="plain">
             <li>Sem conta, sem servidor do Ouve e sem histórico permanente.</li>
             <li>O áudio é enviado somente ao provedor de IA que você configurou.</li>

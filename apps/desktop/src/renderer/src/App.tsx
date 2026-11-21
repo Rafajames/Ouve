@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatTimestamp } from "@ouve/shared";
+import { BrandMark, Icon, applyTheme, type IconName, type ThemePreference } from "@ouve/ui";
 import { hasBridge } from "./bridge";
 import { AppContext, useAppData, useSession, type Screen } from "./hooks";
 import { SessionController } from "./session-controller";
@@ -11,15 +12,28 @@ import { ImportScreen } from "./screens/ImportScreen";
 import { ProvidersScreen } from "./screens/ProvidersScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 
-const NAV: Array<{ screen: Screen; label: string; icon: string }> = [
-  { screen: "home", label: "Início", icon: "⌂" },
-  { screen: "new", label: "Nova sessão", icon: "●" },
-  { screen: "import", label: "Importar arquivo", icon: "⇪" },
-  { screen: "session", label: "Sessão atual", icon: "≡" },
-  { screen: "report", label: "Análise e relatório", icon: "▤" },
-  { screen: "providers", label: "Provedores de IA", icon: "◇" },
-  { screen: "settings", label: "Configurações", icon: "⚙" }
+const NAV: Array<{ screen: Screen; label: string; icon: IconName }> = [
+  { screen: "home", label: "Início", icon: "home" },
+  { screen: "new", label: "Nova sessão", icon: "record" },
+  { screen: "import", label: "Importar arquivo", icon: "upload" },
+  { screen: "session", label: "Sessão atual", icon: "transcript" },
+  { screen: "report", label: "Análise e relatório", icon: "report" },
+  { screen: "providers", label: "Provedores de IA", icon: "providers" },
+  { screen: "settings", label: "Configurações", icon: "settings" }
 ];
+
+const THEMES: Array<{ value: ThemePreference; icon: IconName; label: string }> = [
+  { value: "light", icon: "sun", label: "Tema claro" },
+  { value: "dark", icon: "moon", label: "Tema escuro" },
+  { value: "system", icon: "monitor", label: "Seguir o sistema" }
+];
+
+function NavCaptureDot() {
+  const s = useSession();
+  return s.mode === "live" && (s.status === "capturing" || s.status === "paused") ? (
+    <span className="nav-badge" title="Captura em andamento" />
+  ) : null;
+}
 
 function CaptureBanner({ onOpen }: { onOpen: () => void }) {
   const s = useSession();
@@ -47,6 +61,8 @@ export default function App() {
   }, [toast]);
 
   const context = useMemo(() => ({ controller, navigate: setScreen, notify }), [controller, notify]);
+  const theme = data.settings?.theme ?? "system";
+  useEffect(() => applyTheme(theme), [theme]);
 
   if (!hasBridge()) {
     return (
@@ -62,9 +78,7 @@ export default function App() {
       <div className="layout">
         <aside className="sidebar">
           <div className="brand">
-            <div className="brand-mark" aria-hidden>
-              O
-            </div>
+            <BrandMark />
             <div>
               <strong>Ouve</strong>
               <span>Reuniões e audiências</span>
@@ -78,14 +92,28 @@ export default function App() {
                 onClick={() => setScreen(item.screen)}
                 aria-current={screen === item.screen ? "page" : undefined}
               >
-                <span className="nav-icon" aria-hidden>
-                  {item.icon}
-                </span>
+                <Icon name={item.icon} />
                 {item.label}
+                {item.screen === "session" && <NavCaptureDot />}
               </button>
             ))}
           </nav>
-          <p className="sidebar-foot">Somente áudio · sem conta · sem histórico</p>
+          <div className="sidebar-foot">
+            <div className="theme-switch" role="group" aria-label="Tema">
+              {THEMES.map((t) => (
+                <button
+                  key={t.value}
+                  aria-pressed={theme === t.value}
+                  title={t.label}
+                  aria-label={t.label}
+                  onClick={() => data.settings && void data.saveSettings({ ...data.settings, theme: t.value })}
+                >
+                  <Icon name={t.icon} size={16} />
+                </button>
+              ))}
+            </div>
+            <span>Somente áudio · sem conta · sem histórico</span>
+          </div>
         </aside>
         <div className="content">
           <CaptureBanner onOpen={() => setScreen("session")} />
@@ -100,9 +128,10 @@ export default function App() {
       </div>
       {toast && (
         <div className={`toast ${toast.kind}`} role={toast.kind === "error" ? "alert" : "status"}>
+          <Icon name={toast.kind === "error" ? "alert" : "check"} />
           {toast.text}
           <button aria-label="Fechar aviso" onClick={() => setToast(null)}>
-            ×
+            <Icon name="x" size={14} />
           </button>
         </div>
       )}

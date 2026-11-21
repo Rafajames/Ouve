@@ -45,6 +45,15 @@ test("tela inicial explica o produto sem prometer captura de vídeo", async () =
   await expect(page.getByText("Primeiro passo:")).toBeVisible();
 });
 
+test("alterna o tema e mantém a preferência", async () => {
+  await page.getByRole("button", { name: "Tema claro" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.getByRole("button", { name: "Tema escuro" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.getByRole("button", { name: "Seguir o sistema" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "system");
+});
+
 test("configura provedor compatível local e testa a conexão", async () => {
   await page.getByRole("button", { name: "Provedores de IA", exact: true }).click();
   await page.getByRole("button", { name: "Adicionar provedor" }).click();

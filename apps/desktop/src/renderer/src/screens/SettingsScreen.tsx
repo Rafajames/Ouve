@@ -53,6 +53,17 @@ export function SettingsScreen({ data }: { data: AppData }) {
       }
     >
       <div className="panel">
+        <h2>Aparência</h2>
+        <label className="field">
+          <span>Tema</span>
+          <select aria-label="Tema" value={draft.theme} onChange={(e) => update({ theme: e.target.value as AppSettings["theme"] })}>
+            <option value="system">Seguir o sistema</option>
+            <option value="light">Claro</option>
+            <option value="dark">Escuro</option>
+          </select>
+        </label>
+      </div>
+      <div className="panel">
         <h2>Transcrição</h2>
         <div className="grid-2">
           <label className="field">

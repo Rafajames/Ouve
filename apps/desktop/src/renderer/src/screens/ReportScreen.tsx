@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "@ouve/ui";
 import type { ActionItem, AnalysisItem, QuestionAnswer, ReportDocument } from "@ouve/core";
 import { REPORT_SECTIONS, type SectionKey } from "@ouve/reports";
 import { createId, formatTimestamp } from "@ouve/shared";
@@ -126,10 +127,10 @@ export function ReportScreen({ data }: { data: AppData }) {
         report && (
           <>
             <button disabled={exporting} onClick={() => void exportAs("pdf")}>
-              Exportar PDF
+              <Icon name="download" /> Exportar PDF
             </button>
             <button disabled={exporting} onClick={() => void exportAs("docx")}>
-              Exportar DOCX
+              <Icon name="download" /> Exportar DOCX
             </button>
             <button disabled={exporting} onClick={() => void exportAs("md")}>
               Markdown
@@ -159,7 +160,7 @@ export function ReportScreen({ data }: { data: AppData }) {
       {hasTranscript && s.analysisStatus !== "running" && (
         <div className="row">
           <button className="primary" disabled={!analysisProvider} onClick={run}>
-            {report ? "Refazer análise" : "Analisar com IA"}
+            <Icon name="sparkles" /> {report ? "Refazer análise" : "Analisar com IA"}
           </button>
           {!report && <button onClick={() => controller.createManualReport()}>Criar relatório manualmente</button>}
           {s.analysisStatus === "error" && <span className="warn-text">A análise falhou. Verifique o provedor e tente novamente.</span>}
@@ -212,7 +213,7 @@ export function ReportScreen({ data }: { data: AppData }) {
                       ])
                     }
                   >
-                    Adicionar
+                    <Icon name="plus" size={14} /> Adicionar
                   </button>
                 </div>
                 {items.length === 0 ? (

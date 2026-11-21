@@ -21,6 +21,7 @@ export interface AppSettings {
   maxFileGb: number;
   maxHours: number;
   includeTranscriptInExport: boolean;
+  theme: "system" | "light" | "dark";
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -29,7 +30,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   importSegmentSeconds: 120,
   maxFileGb: 2,
   maxHours: 4,
-  includeTranscriptInExport: true
+  includeTranscriptInExport: true,
+  theme: "system"
 };
 
 export interface ProviderSummary {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Icon, type IconName } from "@ouve/ui";
 import {
   acquireDisplayAudio,
   acquireMicrophone,
@@ -17,11 +18,11 @@ import { errorMessage, useApp, useSession, type AppData } from "../hooks";
 
 type SourceKind = "screen" | "window" | "tab" | "microphone";
 
-const KINDS: Array<{ kind: SourceKind; label: string; hint: string }> = [
-  { kind: "screen", label: "Tela inteira", hint: "Escolha um monitor" },
-  { kind: "window", label: "Janela", hint: "Escolha um aplicativo" },
-  { kind: "tab", label: "Aba do navegador", hint: "Pela extensão do Ouve" },
-  { kind: "microphone", label: "Somente microfone", hint: "Sem fonte compartilhada" }
+const KINDS: Array<{ kind: SourceKind; label: string; hint: string; icon: IconName }> = [
+  { kind: "screen", label: "Tela inteira", hint: "Escolha um monitor", icon: "monitor" },
+  { kind: "window", label: "Janela", hint: "Escolha um aplicativo", icon: "window" },
+  { kind: "tab", label: "Aba do navegador", hint: "Pela extensão do Ouve", icon: "tab" },
+  { kind: "microphone", label: "Somente microfone", hint: "Sem fonte compartilhada", icon: "mic" }
 ];
 
 const makeStream = (tracks: MediaStreamTrackLike[]) =>
@@ -184,6 +185,9 @@ export function NewSessionScreen({ data }: { data: AppData }) {
                 setSelected(null);
               }}
             >
+              <span className="choice-icon">
+                <Icon name={k.icon} size={20} />
+              </span>
               <strong>{k.label}</strong>
               <small>{k.hint}</small>
             </button>
@@ -195,7 +199,7 @@ export function NewSessionScreen({ data }: { data: AppData }) {
             <div className="row between">
               <p className="muted">{caps["source-audio"].note}</p>
               <button className="small" onClick={() => void refresh()}>
-                Atualizar lista
+                <Icon name="refresh" size={14} /> Atualizar lista
               </button>
             </div>
             {visible.length === 0 ? (
@@ -210,7 +214,7 @@ export function NewSessionScreen({ data }: { data: AppData }) {
                       className={selected?.id === s.id ? "source selected" : "source"}
                       onClick={() => setSelected(s)}
                     >
-                      <span aria-hidden>{s.kind === "screen" ? "▣" : "▢"}</span> {s.name}
+                      <Icon name={s.kind === "screen" ? "monitor" : "window"} size={16} /> {s.name}
                     </button>
                   </li>
                 ))}
@@ -248,7 +252,7 @@ export function NewSessionScreen({ data }: { data: AppData }) {
         {kind !== "tab" && (
           <div className="test-row">
             <button disabled={test.running || (needsSource && !selected)} onClick={testSource}>
-              {test.running ? "Testando…" : "Testar áudio (5 s)"}
+              <Icon name="wave" /> {test.running ? "Testando…" : "Testar áudio (5 s)"}
             </button>
             {test.running && <LevelMeter level={test.level} />}
             {test.result && <span className="muted">{test.result}</span>}
@@ -271,7 +275,7 @@ export function NewSessionScreen({ data }: { data: AppData }) {
           </span>
         </label>
         <button className="primary large" disabled={!canStart} onClick={() => void start()}>
-          {starting ? "Iniciando…" : "Iniciar captura de áudio"}
+          <Icon name="record" /> {starting ? "Iniciando…" : "Iniciar captura de áudio"}
         </button>
       </div>
     </Page>

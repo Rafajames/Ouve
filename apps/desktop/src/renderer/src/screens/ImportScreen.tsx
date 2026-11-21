@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "@ouve/ui";
 import { AUDIO_EXTENSIONS, VIDEO_EXTENSIONS } from "@ouve/core";
 import { Page } from "../components";
 import { errorMessage, useApp, useSession, type AppData } from "../hooks";
@@ -69,7 +70,7 @@ export function ImportScreen({ data }: { data: AppData }) {
           </span>
         </label>
         <button className="primary large" disabled={!consent || !providerName || busy || capturing} onClick={() => void choose()}>
-          {busy ? "Abrindo…" : "Escolher arquivo"}
+          <Icon name="upload" /> {busy ? "Abrindo…" : "Escolher arquivo"}
         </button>
         {capturing && <p className="muted">Encerre a captura ao vivo antes de importar.</p>}
       </div>

@@ -4,6 +4,7 @@ import type { AiTask, ProviderConfig, ProviderProtocol } from "@ouve/core";
 import { PROVIDER_PRESETS, credentialRefFor, validateProviderConfig } from "@ouve/providers";
 import { REPORT_SECTIONS } from "@ouve/reports";
 import { createId, formatTimestamp } from "@ouve/shared";
+import { BrandMark, Icon } from "@ouve/ui";
 import { ExtensionController } from "./controller";
 import { ExtensionStorage, originPatternFor, type ExtSettings } from "./storage";
 
@@ -63,10 +64,12 @@ function ProvidersPanel({ settings, onSettings }: { settings: ExtSettings; onSet
 
   return (
     <section className="panel">
-      <h2>Provedores de IA (BYOK)</h2>
-      <p className="muted">
-        As chaves ficam no armazenamento local do navegador, sem criptografia do sistema operacional. Para maior proteção, use o aplicativo
-        desktop.
+      <h2>
+        <Icon name="providers" /> Provedores de IA (BYOK)
+      </h2>
+      <p className="callout warn">
+        <Icon name="alert" size={16} /> As chaves ficam no armazenamento local do navegador, sem criptografia do sistema operacional. Para
+        maior proteção, use o aplicativo desktop.
       </p>
       <div className="grid">
         <label>
@@ -116,7 +119,11 @@ function ProvidersPanel({ settings, onSettings }: { settings: ExtSettings; onSet
           </li>
         ))}
       </ul>
-      {!form && <button onClick={() => setForm(fresh("openai"))}>Adicionar provedor</button>}
+      {!form && (
+        <button onClick={() => setForm(fresh("openai"))}>
+          <Icon name="plus" /> Adicionar provedor
+        </button>
+      )}
       {form && (
         <div className="form">
           <div className="grid">
@@ -194,6 +201,17 @@ function ProvidersPanel({ settings, onSettings }: { settings: ExtSettings; onSet
   );
 }
 
+const STATUS: Record<string, string> = {
+  idle: "Aguardando",
+  preparing: "Preparando",
+  capturing: "Capturando",
+  paused: "Pausado",
+  processing: "Processando",
+  completed: "Concluído",
+  failed: "Erro",
+  cancelled: "Cancelado"
+};
+
 export function App({ pending }: { pending?: PendingTab }) {
   const controller = useMemo(() => new ExtensionController(storage), []);
   const s = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
@@ -223,31 +241,38 @@ export function App({ pending }: { pending?: PendingTab }) {
 
   const active = s.status === "capturing" || s.status === "paused";
   const segments = controller.store.segments();
+  const blocked = !consent || active;
+  const start = (run: () => Promise<void>) => void run().catch((e) => controller.message("error", err(e)));
 
   return (
     <main className="app">
       {active && (
         <div className={`banner ${s.status}`} role="status">
-          ● {s.status === "capturing" ? "Capturando áudio" : "Captura pausada"} · {formatTimestamp(s.capturedMs)} · {s.sourceLabel}
+          {s.status === "capturing" && <span className="rec-dot" aria-hidden />}
+          {s.status === "capturing" ? "Capturando áudio" : "Captura pausada"} · {formatTimestamp(s.capturedMs)} · {s.sourceLabel}
         </div>
       )}
-      <header>
-        <h1>Ouve</h1>
-        <p className="muted">Somente áudio. Nenhuma imagem é capturada. Sem conta, sem servidor do Ouve, sem histórico.</p>
+      <header className="app-head">
+        <BrandMark size={40} />
+        <div>
+          <h1>Ouve</h1>
+          <p className="muted">Somente áudio. Nenhuma imagem é capturada. Sem conta, sem servidor do Ouve, sem histórico.</p>
+        </div>
       </header>
 
-      {settings && <ProvidersPanel settings={settings} onSettings={(n) => void saveSettings(n)} />}
-
       <section className="panel">
-        <h2>Iniciar</h2>
+        <h2>
+          <Icon name="record" /> Iniciar
+        </h2>
         {platform === "firefox-extension" ? (
-          <p className="muted">
-            No Firefox não há API para capturar o áudio de abas ou telas; use o microfone ou importe um arquivo. Para áudio de abas, use o
-            Chrome.
+          <p className="callout">
+            <Icon name="info" size={16} /> No Firefox não há API para capturar o áudio de abas ou telas; use o microfone ou importe um
+            arquivo. Para áudio de abas, use o Chrome.
           </p>
         ) : (
-          <p className="muted">
-            Para capturar uma aba, abra a aba desejada e use o botão do Ouve na barra do navegador. {caps["source-audio"].note}
+          <p className="callout">
+            <Icon name="info" size={16} /> Para capturar uma aba, abra-a e clique no ícone do Ouve na barra do navegador.{" "}
+            {caps["source-audio"].note}
           </p>
         )}
         <label className="check">
@@ -255,33 +280,37 @@ export function App({ pending }: { pending?: PendingTab }) {
           Confirmo que tenho autorização para captar e transcrever este áudio e que ele será enviado ao provedor de IA configurado.
         </label>
         <label className="check">
-          <input type="checkbox" checked={mic} onChange={(e) => setMic(e.target.checked)} /> Incluir microfone
+          <input type="checkbox" checked={mic} onChange={(e) => setMic(e.target.checked)} /> Incluir meu microfone na captura
         </label>
-        <div className="row">
+        <div className="sources">
           {caps["screen-selection"].supported && caps["source-audio"].supported && (
-            <button
-              disabled={!consent || active}
-              onClick={() => void controller.startLive({ kind: "display" }, mic).catch((e) => controller.message("error", err(e)))}
-            >
-              Escolher aba, janela ou tela
+            <button className="source-card" disabled={blocked} onClick={() => start(() => controller.startLive({ kind: "display" }, mic))}>
+              <Icon name="monitor" size={20} />
+              <strong>Escolher aba, janela ou tela</strong>
+              <small>Seletor do navegador</small>
             </button>
           )}
           <button
-            disabled={!consent || active}
-            onClick={() => void controller.startLive({ kind: "microphone" }, true).catch((e) => controller.message("error", err(e)))}
+            className="source-card"
+            disabled={blocked}
+            onClick={() => start(() => controller.startLive({ kind: "microphone" }, true))}
           >
-            Somente microfone
+            <Icon name="mic" size={20} />
+            <strong>Somente microfone</strong>
+            <small>Sem fonte compartilhada</small>
           </button>
-          <label className={`button ${!consent || active ? "disabled" : ""}`}>
-            Importar arquivo
+          <label className={`button source-card ${blocked ? "disabled" : ""}`}>
+            <Icon name="upload" size={20} />
+            <strong>Importar arquivo</strong>
+            <small>Até 300 MB / 2 h</small>
             <input
               type="file"
               hidden
-              disabled={!consent || active}
+              disabled={blocked}
               accept=".mp3,.wav,.m4a,.aac,.ogg,.flac,.mp4,.mov,.mkv,.webm"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) void controller.importFile(file).catch((x) => controller.message("error", err(x)));
+                if (file) start(() => controller.importFile(file));
                 e.target.value = "";
               }}
             />
@@ -292,31 +321,58 @@ export function App({ pending }: { pending?: PendingTab }) {
       {s.mode !== "none" && (
         <section className="panel">
           <div className="row">
+            <span className={`pill ${s.status}`}>
+              {s.status === "capturing" && <span className="rec-dot" aria-hidden />}
+              {s.status === "completed" && <Icon name="check" size={14} />}
+              {STATUS[s.status]}
+            </span>
             <strong>{s.sourceLabel}</strong>
             <span className="muted">
-              {s.status} · {s.stats.done} transcritos · {s.stats.queued + s.stats.running} na fila
+              {s.stats.done} transcritos · {s.stats.queued + s.stats.running} na fila
               {s.stats.failed ? ` · ${s.stats.failed} com falha` : ""}
             </span>
-            {s.status === "capturing" && <button onClick={() => controller.pause()}>Pausar</button>}
-            {s.status === "paused" && <button onClick={() => controller.resume()}>Retomar</button>}
-            {active && (
-              <button className="danger" onClick={() => void controller.stop()}>
-                Encerrar
+            <span className="spacer" />
+            {s.status === "capturing" && (
+              <button onClick={() => controller.pause()}>
+                <Icon name="pause" /> Pausar
               </button>
             )}
-            {s.stats.failed > 0 && !active && <button onClick={() => controller.retryFailed()}>Tentar novamente</button>}
+            {s.status === "paused" && (
+              <button onClick={() => controller.resume()}>
+                <Icon name="play" /> Retomar
+              </button>
+            )}
+            {active && (
+              <button className="danger" onClick={() => void controller.stop()}>
+                <Icon name="stop" /> Encerrar
+              </button>
+            )}
+            {s.stats.failed > 0 && !active && (
+              <button onClick={() => controller.retryFailed()}>
+                <Icon name="refresh" /> Tentar novamente
+              </button>
+            )}
             <button className="danger" onClick={() => void controller.discard()}>
-              Descartar
+              <Icon name="trash" /> Descartar
             </button>
           </div>
-          {s.activity === "no-audio" && active && <p className="warn">Sem áudio detectado.</p>}
+          {s.activity === "no-audio" && active && (
+            <p className="warn">
+              <Icon name="alert" size={14} /> Sem áudio detectado.
+            </p>
+          )}
           {s.messages.map((m) => (
             <p key={m.id} className={m.kind === "info" ? "muted" : "warn"}>
-              {m.text} <button onClick={() => controller.dismiss(m.id)}>×</button>
+              <Icon name="alert" size={14} /> {m.text}{" "}
+              <button className="small" aria-label="Dispensar" onClick={() => controller.dismiss(m.id)}>
+                <Icon name="x" size={12} />
+              </button>
             </p>
           ))}
-          <h3>Participantes</h3>
-          {controller.store.speakerList().length === 0 && <p className="muted">Sem diarização disponível.</p>}
+          <h3>
+            <Icon name="users" size={14} /> Participantes
+          </h3>
+          {controller.store.speakerList().length === 0 && <p className="muted">O provedor não informou falantes (sem diarização).</p>}
           {controller.store.speakerList().map((sp) => (
             <form
               key={sp.id}
@@ -326,28 +382,39 @@ export function App({ pending }: { pending?: PendingTab }) {
                 controller.store.renameSpeaker(sp.id, String(new FormData(e.currentTarget).get("n") ?? ""));
               }}
             >
-              <input name="n" defaultValue={sp.label} aria-label={`Nome de ${sp.label}`} />
-              <button type="submit">Renomear</button>
+              <input name="n" defaultValue={sp.label} aria-label={`Nome de ${sp.label}`} style={{ flex: 1 }} />
+              <button type="submit" className="small">
+                Renomear
+              </button>
             </form>
           ))}
-          <h3>Transcrição</h3>
-          <ol className="transcript">
-            {segments.map((seg) => (
-              <li key={seg.id}>
-                <span className="muted">
-                  {formatTimestamp(seg.startMs)} {controller.store.speakerLabel(seg.speakerId)}
-                </span>{" "}
-                {seg.text}
-              </li>
-            ))}
-          </ol>
+          <h3>
+            <Icon name="transcript" size={14} /> Transcrição
+          </h3>
+          {segments.length === 0 ? (
+            <div className="empty-state">
+              <Icon name="wave" size={28} />
+              Os trechos aparecem aqui conforme o áudio é processado.
+            </div>
+          ) : (
+            <ol className="transcript">
+              {segments.map((seg) => (
+                <li key={seg.id}>
+                  <span className="meta">
+                    {formatTimestamp(seg.startMs)} · {controller.store.speakerLabel(seg.speakerId)}
+                  </span>
+                  {seg.text}
+                </li>
+              ))}
+            </ol>
+          )}
           <div className="row">
             <button
               className="primary"
               disabled={segments.length === 0 || s.analysisStatus === "running"}
-              onClick={() => void controller.analyze().catch((e) => controller.message("error", err(e)))}
+              onClick={() => start(() => controller.analyze())}
             >
-              {s.analysisStatus === "running" ? "Analisando…" : "Analisar e gerar relatório"}
+              <Icon name="sparkles" /> {s.analysisStatus === "running" ? "Analisando…" : "Analisar e gerar relatório"}
             </button>
           </div>
         </section>
@@ -355,7 +422,21 @@ export function App({ pending }: { pending?: PendingTab }) {
 
       {s.report && (
         <section className="panel">
-          <h2>Relatório</h2>
+          <div className="row">
+            <h2>
+              <Icon name="report" /> Relatório
+            </h2>
+            <span className="spacer" />
+            <button onClick={() => void controller.export("pdf")}>
+              <Icon name="download" /> PDF
+            </button>
+            <button onClick={() => void controller.export("docx")}>
+              <Icon name="download" /> DOCX
+            </button>
+            <button onClick={() => void controller.export("md")}>
+              <Icon name="download" /> Markdown
+            </button>
+          </div>
           <input
             value={s.report.title}
             aria-label="Título"
@@ -371,16 +452,22 @@ export function App({ pending }: { pending?: PendingTab }) {
             const items = s.report!.analysis[sec.key];
             return (
               <div key={sec.key}>
-                <h3>{sec.title}</h3>
+                <h3>
+                  {sec.title} <span className="badge">{items.length}</span>
+                </h3>
                 {items.length === 0 ? (
                   <p className="muted">Nenhum item identificado.</p>
                 ) : (
-                  <ul>
+                  <ul className="items">
                     {items.map((it) => (
-                      <li key={it.id}>
-                        <strong>{it.title}</strong>
-                        {it.basis === "inferred" && <em> (inferência da IA)</em>} {it.description}{" "}
+                      <li key={it.id} className={it.basis}>
+                        <div>
+                          <strong>{it.title}</strong> {it.basis === "inferred" && <span className="badge warn">inferência da IA</span>}
+                          {it.description && <p className="muted">{it.description}</p>}
+                        </div>
                         <button
+                          className="small danger"
+                          aria-label="Remover item"
                           onClick={() =>
                             controller.updateReport((r) => ({
                               ...r,
@@ -388,7 +475,7 @@ export function App({ pending }: { pending?: PendingTab }) {
                             }))
                           }
                         >
-                          Remover
+                          <Icon name="trash" size={14} />
                         </button>
                       </li>
                     ))}
@@ -404,17 +491,16 @@ export function App({ pending }: { pending?: PendingTab }) {
             value={s.report.notes ?? ""}
             onChange={(e) => controller.updateReport((r) => ({ ...r, notes: e.target.value }))}
           />
-          <div className="row">
-            <button onClick={() => void controller.export("pdf")}>Baixar PDF</button>
-            <button onClick={() => void controller.export("docx")}>Baixar DOCX</button>
-            <button onClick={() => void controller.export("md")}>Baixar Markdown</button>
-          </div>
         </section>
       )}
 
+      {settings && <ProvidersPanel settings={settings} onSettings={(n) => void saveSettings(n)} />}
+
       {settings && (
         <section className="panel">
-          <h2>Configurações</h2>
+          <h2>
+            <Icon name="settings" /> Configurações
+          </h2>
           <div className="grid">
             <label>
               Idioma

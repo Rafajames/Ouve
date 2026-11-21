@@ -111,3 +111,9 @@ Toda nova decisão deve registrar contexto, opções, decisão, justificativa, i
 - docs/08 ainda descrevia pipeline visual (VideoFramePort, VisualObservation, AnalyzeVisualContext, amostragem de quadros). Essas partes estão **substituídas por D-029**; o documento recebeu uma nota no topo, sem apagar o texto histórico.
 - O scaffold carregava o preload como `index.js`, mas o build gerava `index.mjs`; e preload com `sandbox: true` precisa ser CommonJS. Corrigido (preload gerado como `index.cjs`).
 - Pacotes do workspace eram externalizados no build do processo principal (seriam carregados como TypeScript cru em tempo de execução). Corrigido no `electron.vite.config.ts`.
+
+## Novas decisões — 21/11/2026 (interface)
+| ID | Decisão | Contexto / justificativa | Estado |
+|---|---|---|---|
+| D-061 | Pacote `@ouve/ui` com ícones SVG próprios e tokens de design (cores, raios, sombras) compartilhados por desktop e extensão. | Visual consistente sem dependência externa de ícones. | Aceita |
+| D-062 | Temas claro, escuro e "seguir o sistema" (padrão). No desktop a preferência fica em `settings.json`; a extensão segue o tema do navegador. | Pedido de melhoria visual; acessibilidade em ambientes claros. | Aceita |
