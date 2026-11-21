@@ -1,0 +1,13 @@
+{
+  "name": "@ouve/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": { "@ouve/core": "workspace:*" },
+  "devDependencies": { "@types/chrome": "^0.0.287", "vite": "^6.0.7" }
+}
