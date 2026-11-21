@@ -58,3 +58,24 @@ Decisões registradas após refinamento do produto:
 5. Atualizar roadmap e critérios de aceite após resultados.
 
 Nenhum aplicativo desktop ou recurso de captura foi implementado/testado ainda.
+
+
+## Pacote de pré-desenvolvimento — 20/11/2026
+Foram adicionados documentos para orientar implementação:
+- docs/07-blueprint-desenvolvimento.md
+- docs/08-arquitetura-detalhada.md
+- docs/09-integracoes-e-provedores.md
+- docs/10-mcp-e-ferramentas-de-desenvolvimento.md
+- docs/11-ambiente-e-configuracao.md
+- docs/12-plano-de-testes-e-aceite.md
+- docs/13-experiencia-e-telas.md
+- docs/14-privacidade-legal-e-dados.md
+- docs/15-backlog-inicial.md
+
+README atualizado como índice central. O pacote descreve os dois produtos (desktop Windows primeiro e extensões Chrome/Firefox), modos de arquivo e captura externa, arquitetura em camadas, contratos de domínio, integração de provedores, MCP para desenvolvimento, ambiente, testes, UX, privacidade e backlog.
+
+**Estado real:** documentação de pré-desenvolvimento consolidada; ainda não existe scaffold, código de produto, captura validada, provedor escolhido, instalador ou extensão funcional.
+
+**Bloqueios técnicos antes de comprometer arquitetura:** prova de captura de áudio de sistema/janela externa no Windows; captura de aba e áudio no Chrome/Firefox; escolha Electron/Tauri; definição do workspace; seleção do primeiro provedor; formatos e limites de mídia.
+
+**Próximo passo:** executar EPIC 0 em docs/15-backlog-inicial.md. Não começar integração de IA nem UI final antes de fechar os spikes e decisões listados.
