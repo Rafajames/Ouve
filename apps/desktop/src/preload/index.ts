@@ -22,7 +22,8 @@ const bridge: OuveBridge = {
     save: (input) => invoke(IPC.saveProvider, input),
     remove: (id) => invoke(IPC.removeProvider, id),
     test: (id) => invoke(IPC.testProvider, id),
-    protection: () => invoke(IPC.secretProtection)
+    protection: () => invoke(IPC.secretProtection),
+    quickSetup: (apiKey) => invoke(IPC.quickSetup, apiKey)
   },
   ai: {
     transcribe: (input) => invoke(IPC.transcribe, input),

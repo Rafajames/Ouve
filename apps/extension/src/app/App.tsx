@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { capabilitiesFor, detectPlatform } from "@ouve/capture";
 import type { AiTask, ProviderConfig, ProviderProtocol } from "@ouve/core";
-import { PROVIDER_PRESETS, credentialRefFor, validateProviderConfig } from "@ouve/providers";
+import {
+  PROVIDER_PRESETS,
+  credentialRefFor,
+  detectProtocolFromKey,
+  runQuickSetup,
+  validateProviderConfig,
+  type QuickSetupResult
+} from "@ouve/providers";
 import { REPORT_SECTIONS } from "@ouve/reports";
 import { createId, formatTimestamp } from "@ouve/shared";
 import { BrandMark, Icon, TERMS_VERSION, TermsGate } from "@ouve/ui";
@@ -58,6 +65,53 @@ function ProvidersPanel({ settings, onSettings }: { settings: ExtSettings; onSet
     await reload();
   };
 
+  const [quickKey, setQuickKey] = useState("");
+  const [quickBusy, setQuickBusy] = useState(false);
+  const [quick, setQuick] = useState<QuickSetupResult | { ok: false; message: string; notes: string[] } | null>(null);
+
+  /** Configuração rápida (D-065): reconhece a IA pela chave e configura tudo. */
+  const quickSetup = async () => {
+    const key = quickKey.trim();
+    const protocol = detectProtocolFromKey(key);
+    if (!protocol) {
+      setQuick({
+        ok: false,
+        message: "Não reconheci essa chave. Use uma chave da OpenAI, Google Gemini, Claude ou Grok, ou a configuração avançada.",
+        notes: []
+      });
+      return;
+    }
+    // Pede permissão só para o endereço daquela IA, no próprio clique.
+    const origin = originPatternFor({ id: "x", displayName: "x", model: "x", protocol, enabledTasks: [] });
+    if (origin && chrome.permissions?.request) {
+      const granted = await chrome.permissions.request({ origins: [origin] }).catch(() => false);
+      if (!granted) return setQuick({ ok: false, message: "Permissão de acesso ao endereço da IA negada.", notes: [] });
+    }
+    setQuickBusy(true);
+    try {
+      const id = `rapido-${Date.now().toString(36)}`;
+      const result = await runQuickSetup(key, (input, init) => fetch(input, init), id);
+      if (result.ok && result.config) {
+        for (const old of await storage.providers())
+          if (old.protocol === protocol && old.id.startsWith("rapido-")) await storage.removeProvider(old.id);
+        await storage.saveProvider(result.config);
+        await storage.secrets().set(credentialRefFor(id), key);
+        onSettings({
+          ...settings,
+          ...(result.canTranscribe ? { transcriptionProviderId: id } : {}),
+          ...(result.canAnalyze ? { analysisProviderId: id } : {})
+        });
+        setQuickKey("");
+        await reload();
+      }
+      setQuick(result);
+    } catch (e) {
+      setQuick({ ok: false, message: err(e), notes: [] });
+    } finally {
+      setQuickBusy(false);
+    }
+  };
+
   const errors = form ? validateProviderConfig(form) : [];
   const transcribers = list.filter((p) => p.enabledTasks.includes("transcription"));
   const analyzers = list.filter((p) => p.enabledTasks.includes("analysis"));
@@ -71,6 +125,40 @@ function ProvidersPanel({ settings, onSettings }: { settings: ExtSettings; onSet
         <Icon name="alert" size={16} /> As chaves ficam no armazenamento local do navegador, sem criptografia do sistema operacional. Para
         maior proteção, use o aplicativo desktop.
       </p>
+      <form
+        className="row"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (quickKey.trim() && !quickBusy) void quickSetup();
+        }}
+      >
+        <input
+          type="password"
+          autoComplete="off"
+          aria-label="Chave de API"
+          placeholder="Cole sua chave de IA (ex.: AIza… do Gemini, que tem plano gratuito)"
+          value={quickKey}
+          onChange={(e) => setQuickKey(e.target.value)}
+          style={{ flex: 1 }}
+        />
+        <button className="primary" type="submit" disabled={!quickKey.trim() || quickBusy}>
+          <Icon name="sparkles" /> {quickBusy ? "Conectando…" : "Conectar"}
+        </button>
+      </form>
+      {quick && (
+        <div className={quick.ok ? "callout" : "callout warn"} role="status">
+          <Icon name={quick.ok ? "check" : "alert"} size={16} />
+          <div>
+            <strong>{quick.message}</strong>
+            {quick.notes.map((n) => (
+              <p key={n} className="muted">
+                {n}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+      <h3>Configuração avançada</h3>
       <div className="grid">
         <label>
           Transcrição
@@ -262,6 +350,8 @@ export function App({ pending }: { pending?: PendingTab }) {
           <p className="muted">Somente áudio. Nenhuma imagem é capturada. Sem conta, sem servidor do Ouve, sem histórico.</p>
         </div>
       </header>
+
+      {settings && !settings.transcriptionProviderId && <ProvidersPanel settings={settings} onSettings={(n) => void saveSettings(n)} />}
 
       <section className="panel">
         <h2>
@@ -493,7 +583,7 @@ export function App({ pending }: { pending?: PendingTab }) {
         </section>
       )}
 
-      {settings && <ProvidersPanel settings={settings} onSettings={(n) => void saveSettings(n)} />}
+      {settings && settings.transcriptionProviderId && <ProvidersPanel settings={settings} onSettings={(n) => void saveSettings(n)} />}
 
       {settings && (
         <section className="panel">

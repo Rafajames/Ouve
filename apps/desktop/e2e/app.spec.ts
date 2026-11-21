@@ -50,7 +50,7 @@ test("pede o termo de uso só no primeiro uso", async () => {
 test("tela inicial explica o produto sem prometer captura de vídeo", async () => {
   await expect(page.getByRole("heading", { name: "Transforme conversas em informação" })).toBeVisible();
   await expect(page.getByText("O Ouve usa somente o áudio — nunca grava a tela.")).toBeVisible();
-  await expect(page.getByText("Primeiro passo:")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Cole sua chave de IA/ })).toBeVisible();
 });
 
 test("alterna o tema e mantém a preferência", async () => {

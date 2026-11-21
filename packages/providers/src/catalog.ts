@@ -63,19 +63,21 @@ export const PROVIDER_PRESETS: Record<ProviderProtocol, ProviderPreset> = {
     displayName: "Google Gemini",
     defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta",
     requiresBaseUrl: false,
-    suggestedModel: "gemini-2.5-flash",
-    suggestedTranscriptionModel: "gemini-2.5-flash",
+    suggestedModel: "gemini-3.5-flash",
+    suggestedTranscriptionModel: "gemini-3.5-transcribe",
     tasks: ["transcription", "diarization", "analysis", "report"],
     transcription: {
       tasks: ["transcription", "diarization"],
       streaming: false,
       diarization: true,
-      segmentTimestamps: false,
+      segmentTimestamps: true,
       confidence: false,
       supportedMimeTypes: ["audio/wav", "audio/mpeg", "audio/aac", "audio/ogg", "audio/flac"],
       maxAudioBytes: 15 * 1024 * 1024,
       notes: [
-        "Transcrição por modelo generativo: timestamps e falantes são estimados pelo modelo e podem ser imprecisos.",
+        "gemini-3.5-transcribe: tempo por palavra e identificação de até 8 falantes (3 ou mais é experimental).",
+        "Se o modelo de transcrição recusar a requisição, o Ouve usa o modelo de análise (tempos e falantes estimados).",
+        "No plano gratuito, o Google pode usar o conteúdo enviado para melhorar seus produtos; evite conteúdo sigiloso ou ative a cobrança.",
         "Envio inline limitado (~20 MB por requisição)."
       ]
     },

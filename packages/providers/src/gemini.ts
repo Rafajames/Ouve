@@ -87,20 +87,124 @@ export function parseGeminiSegments(raw: string, durationMs: number): ProviderSe
     });
 }
 
+interface DedicatedPart {
+  text?: string;
+  audioTranscription?: { speakerLabel?: string; words?: Array<{ word?: string; startOffset?: string; endOffset?: string }> };
+}
+
+/** Converte "1.250s" em milissegundos. */
+export function parseOffsetMs(value: string | undefined): number {
+  const n = Number.parseFloat((value ?? "").replace(/s$/, ""));
+  return Number.isFinite(n) ? Math.round(n * 1000) : 0;
+}
+
+/**
+ * Resposta do gemini-*-transcribe: partes com `audioTranscription` (falante + palavras com tempo).
+ * Agrupa palavras em trechos por troca de falante, pausa maior que 1,2 s ou ~30 palavras.
+ */
+export function parseDedicatedTranscription(body: unknown, durationMs: number): ProviderSegment[] {
+  const parts = ((body as GeminiResponse & { candidates?: Array<{ content?: { parts?: DedicatedPart[] } }> }).candidates?.[0]?.content
+    ?.parts ?? []) as DedicatedPart[];
+  const segments: ProviderSegment[] = [];
+  for (const part of parts) {
+    const words = part.audioTranscription?.words ?? [];
+    const speaker = part.audioTranscription?.speakerLabel;
+    let current: { start: number; end: number; words: string[] } | undefined;
+    const flush = () => {
+      if (current && current.words.length) {
+        const seg: ProviderSegment = {
+          startMs: current.start,
+          endMs: Math.min(durationMs, Math.max(current.end, current.start)),
+          text: current.words.join(" ")
+        };
+        if (speaker) seg.speakerLabel = speaker;
+        segments.push(seg);
+      }
+      current = undefined;
+    };
+    for (const w of words) {
+      const text = (w.word ?? "").trim();
+      if (!text) continue;
+      const start = parseOffsetMs(w.startOffset);
+      const end = parseOffsetMs(w.endOffset);
+      if (current && (start - current.end > 1200 || current.words.length >= 30)) flush();
+      if (!current) current = { start, end, words: [] };
+      current.words.push(text);
+      current.end = end;
+    }
+    flush();
+    if (words.length === 0 && part.text?.trim()) segments.push({ startMs: 0, endMs: durationMs, text: part.text.trim() });
+  }
+  return segments.sort((a, b) => a.startMs - b.startMs);
+}
+
 export class GeminiTranscription implements TranscriptionProvider {
   readonly id: string;
   readonly capabilities: ProviderCapabilities;
+  private dedicatedFailed = false;
 
-  constructor(private readonly options: GeminiOptions) {
+  /** `fallbackModel`: modelo generativo usado se o modelo dedicado de transcrição recusar a requisição. */
+  constructor(
+    private readonly options: GeminiOptions,
+    private readonly fallbackModel?: string
+  ) {
     this.id = options.id;
     this.capabilities = options.capabilities;
   }
 
   async transcribe(request: TranscriptionRequest, signal?: AbortSignal): Promise<TranscriptionResult> {
+    if (this.options.model.includes("transcribe") && !this.dedicatedFailed) {
+      try {
+        return await this.transcribeDedicated(request, signal);
+      } catch (error) {
+        // Envio inline ao modelo dedicado não é documentado: se recusar (4xx), usa o modelo generativo.
+        const status = (error as OuveError).status;
+        if (
+          !this.fallbackModel ||
+          status === undefined ||
+          status < 400 ||
+          status >= 500 ||
+          status === 401 ||
+          status === 403 ||
+          status === 429
+        )
+          throw error;
+        this.dedicatedFailed = true;
+      }
+    }
+    return this.transcribeGenerative(request, signal);
+  }
+
+  private async transcribeDedicated(request: TranscriptionRequest, signal?: AbortSignal): Promise<TranscriptionResult> {
+    const bytes = new Uint8Array(await request.audio.arrayBuffer());
+    const url = joinUrl(this.options.baseUrl, `models/${encodeURIComponent(this.options.model)}:generateContent`);
+    const response = await sendRequest(
+      url,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": this.options.apiKey },
+        body: JSON.stringify({
+          contents: [{ parts: [{ inlineData: { mimeType: request.mimeType, data: toBase64(bytes) } }] }],
+          generationConfig: {
+            audioTranscriptionConfig: {
+              ...(request.language ? { languageCodes: [request.language] } : {}),
+              diarization: true,
+              wordTimestamp: true
+            }
+          }
+        })
+      },
+      http(this.options, signal)
+    );
+    return { segments: parseDedicatedTranscription(await readJson(response, NAME), request.durationMs) };
+  }
+
+  private async transcribeGenerative(request: TranscriptionRequest, signal?: AbortSignal): Promise<TranscriptionResult> {
+    const options = this.dedicatedFailed && this.fallbackModel ? { ...this.options, model: this.fallbackModel } : this.options;
     const bytes = new Uint8Array(await request.audio.arrayBuffer());
     const language = request.language ? `Idioma esperado: ${request.language}.` : "Detecte o idioma.";
     const raw = await generate(
-      this.options,
+      options,
       {
         contents: [
           {

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { GEMINI_FREE_TIER_NOTE } from "@ouve/providers";
 import { Icon } from "@ouve/ui";
 import { AUDIO_EXTENSIONS, VIDEO_EXTENSIONS } from "@ouve/core";
 import { Page } from "../components";
@@ -8,7 +9,8 @@ export function ImportScreen({ data }: { data: AppData }) {
   const { controller, navigate, notify } = useApp();
   const session = useSession();
   const [busy, setBusy] = useState(false);
-  const providerName = data.providers.find((p) => p.config.id === data.settings?.transcriptionProviderId)?.config.displayName;
+  const transcriber = data.providers.find((p) => p.config.id === data.settings?.transcriptionProviderId)?.config;
+  const providerName = transcriber?.displayName;
   const capturing = session.mode === "live" && (session.status === "capturing" || session.status === "paused");
 
   const choose = async () => {
@@ -64,6 +66,11 @@ export function ImportScreen({ data }: { data: AppData }) {
         {providerName && (
           <p className="muted">
             <Icon name="info" size={14} /> O áudio será enviado em blocos para <strong>{providerName}</strong>.
+          </p>
+        )}
+        {transcriber?.protocol === "gemini" && (
+          <p className="muted small-text">
+            <Icon name="shield" size={13} /> {GEMINI_FREE_TIER_NOTE}
           </p>
         )}
         <button className="primary large" disabled={!providerName || busy || capturing} onClick={() => void choose()}>

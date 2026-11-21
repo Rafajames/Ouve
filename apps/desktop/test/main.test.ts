@@ -89,6 +89,31 @@ describe("ProviderService", () => {
   });
 });
 
+describe("configuração rápida", () => {
+  it("salva o Gemini a partir só da chave e seleciona para transcrição e análise", async () => {
+    const settings = new SettingsStore(join(dir, "rapido"));
+    const secrets = new SafeStorageSecretStore(join(dir, "rapido", "c.json"), fakeSafe);
+    const fetch = vi.fn(
+      async () => new Response(JSON.stringify({ models: [{ name: "models/gemini-3.7-flash" }, { name: "models/gemini-3.5-transcribe" }] }))
+    );
+    const service = new ProviderService(settings, secrets, fetch);
+    const outcome = await service.quickSetup("AIzaSyD12345678901234567890123456789");
+    expect(outcome).toMatchObject({ ok: true, providerName: "Google Gemini", canTranscribe: true });
+    const [summary] = await service.list();
+    expect(summary).toMatchObject({
+      hasKey: true,
+      config: { protocol: "gemini", model: "gemini-3.7-flash", transcriptionModel: "gemini-3.5-transcribe" }
+    });
+    const saved = await settings.getSettings();
+    expect(saved.transcriptionProviderId).toBe(summary?.config.id);
+    expect(saved.analysisProviderId).toBe(summary?.config.id);
+    expect(await readFile(join(dir, "rapido", "providers.json"), "utf8")).not.toContain("AIza");
+    // Nova chave do mesmo provedor substitui a anterior.
+    await service.quickSetup("AIzaSyD99999999999999999999999999999");
+    expect(await service.list()).toHaveLength(1);
+  });
+});
+
 describe("MediaService (ffmpeg real)", () => {
   const ffmpeg = locateFfmpeg();
   let available = true;

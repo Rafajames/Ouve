@@ -1,4 +1,5 @@
 import { Page } from "../components";
+import { QuickSetup } from "../QuickSetup";
 import { Icon } from "@ouve/ui";
 import { useApp, useSession, type AppData } from "../hooks";
 
@@ -15,14 +16,7 @@ export function HomeScreen({ data }: { data: AppData }) {
       title="Transforme conversas em informação"
       subtitle="Transcreva e organize reuniões, audiências, entrevistas e aulas. O Ouve usa somente o áudio — nunca grava a tela."
     >
-      {!ready && (
-        <div className="callout">
-          <strong>Primeiro passo:</strong> configure um provedor de IA com sua própria chave de API.
-          <button className="primary small" onClick={() => navigate("providers")}>
-            Configurar provedor
-          </button>
-        </div>
-      )}
+      {!ready && <QuickSetup onDone={data.reload} />}
 
       <div className="cards">
         <button className="card action" onClick={() => navigate("new")}>

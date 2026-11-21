@@ -66,7 +66,10 @@ export async function retry<T>(operation: (attempt: number) => Promise<T>, optio
       const ouveError = toOuveError(error);
       if (!ouveError.retryable || attempt >= options.retries || options.signal?.aborted) throw ouveError;
       options.onRetry?.(attempt + 1, ouveError);
-      const wait = Math.min(options.baseDelayMs * 2 ** attempt, options.maxDelayMs ?? 30_000);
+      // Limite de uso (comum em planos gratuitos): espera mais e respeita o Retry-After do provedor.
+      const base = ouveError.code === "rate-limit" ? Math.max(options.baseDelayMs, 10_000) : options.baseDelayMs;
+      const backoff = Math.min(base * 2 ** attempt, ouveError.code === "rate-limit" ? 60_000 : (options.maxDelayMs ?? 30_000));
+      const wait = Math.max(backoff, Math.min(ouveError.retryAfterMs ?? 0, 120_000));
       await delay(wait, options.signal);
       attempt += 1;
     }

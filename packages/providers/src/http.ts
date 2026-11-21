@@ -22,7 +22,10 @@ export async function sendRequest(url: string, init: RequestInit, options: HttpO
         if (!response.ok) {
           // Corpo de erro não é registrado: pode ecoar conteúdo enviado.
           await response.body?.cancel().catch(() => undefined);
-          throw errorFromHttpStatus(response.status, options.providerName);
+          const error = errorFromHttpStatus(response.status, options.providerName);
+          const retryAfter = Number(response.headers.get("retry-after"));
+          if (Number.isFinite(retryAfter) && retryAfter > 0) error.retryAfterMs = retryAfter * 1000;
+          throw error;
         }
         return response;
       } catch (error) {

@@ -6,6 +6,7 @@ import { Icon } from "@ouve/ui";
 import type { ProviderSummary } from "../../../shared/ipc";
 import { bridge, unwrap } from "../bridge";
 import { Page } from "../components";
+import { QuickSetup } from "../QuickSetup";
 import { errorMessage, useApp, type AppData } from "../hooks";
 
 const TASK_LABEL: Record<AiTask, string> = {
@@ -220,7 +221,7 @@ export function ProvidersScreen({ data }: { data: AppData }) {
   return (
     <Page
       title="Provedores de IA"
-      subtitle="Use suas próprias chaves (BYOK). O Ouve não tem servidor: o conteúdo vai direto do seu computador ao provedor escolhido, e você paga diretamente a ele."
+      subtitle="Cole a sua chave na configuração rápida e pronto. A configuração avançada é opcional, para escolher modelos ou usar servidores próprios."
       actions={
         !editing && (
           <button className="primary" onClick={() => setEditing({ config: emptyConfig("openai"), hasKey: false, isNew: true })}>
@@ -235,6 +236,8 @@ export function ProvidersScreen({ data }: { data: AppData }) {
           novamente ao reabrir o app.
         </div>
       )}
+      {!editing && <QuickSetup compact onDone={data.reload} />}
+      <h2 className="section-title">Configuração avançada</h2>
       {editing && (
         <ProviderForm
           initial={editing.config}

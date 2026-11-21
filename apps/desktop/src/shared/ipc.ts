@@ -47,6 +47,15 @@ export interface SaveProviderInput {
   apiKey?: string;
 }
 
+export interface QuickSetupOutcome {
+  ok: boolean;
+  message: string;
+  notes: string[];
+  providerName?: string;
+  canTranscribe: boolean;
+  canAnalyze: boolean;
+}
+
 export interface SecretProtection {
   protection: "os-encrypted" | "browser-profile" | "memory-only";
 }
@@ -109,6 +118,7 @@ export interface OuveBridge {
     remove(id: string): Promise<IpcResult<void>>;
     test(id: string): Promise<IpcResult<ConnectionTestResult>>;
     protection(): Promise<IpcResult<SecretProtection>>;
+    quickSetup(apiKey: string): Promise<IpcResult<QuickSetupOutcome>>;
   };
   ai: {
     transcribe(input: TranscribeInput): Promise<IpcResult<{ segments: ProviderSegment[]; detectedLanguage?: string }>>;
@@ -138,6 +148,7 @@ export const IPC = {
   removeProvider: "providers:remove",
   testProvider: "providers:test",
   secretProtection: "providers:protection",
+  quickSetup: "providers:quick-setup",
   transcribe: "ai:transcribe",
   complete: "ai:complete",
   cancel: "ai:cancel",

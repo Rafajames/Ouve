@@ -24,6 +24,8 @@ export class OuveError extends Error {
   readonly code: OuveErrorCode;
   readonly retryable: boolean;
   readonly status?: number;
+  /** Espera sugerida pelo provedor (cabeçalho Retry-After), em ms. */
+  retryAfterMs?: number;
 
   constructor(code: OuveErrorCode, message: string, options: { retryable?: boolean; status?: number; cause?: unknown } = {}) {
     super(message, options.cause === undefined ? undefined : { cause: options.cause });

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { GEMINI_FREE_TIER_NOTE } from "@ouve/providers";
 import { Icon, type IconName } from "@ouve/ui";
 import {
   acquireDisplayAudio,
@@ -91,7 +92,8 @@ export function NewSessionScreen({ data }: { data: AppData }) {
 
   const platform = detectPlatform({ isElectron: true, os: bridge().platform });
   const caps = capabilitiesFor(platform);
-  const providerName = data.providers.find((p) => p.config.id === data.settings?.transcriptionProviderId)?.config.displayName;
+  const transcriber = data.providers.find((p) => p.config.id === data.settings?.transcriptionProviderId)?.config;
+  const providerName = transcriber?.displayName;
   const busy = session.mode === "live" && (session.status === "capturing" || session.status === "paused");
 
   const refresh = useCallback(async () => {
@@ -270,6 +272,11 @@ export function NewSessionScreen({ data }: { data: AppData }) {
           <p className="muted">
             <Icon name="info" size={14} /> O áudio será enviado em blocos para <strong>{providerName}</strong>. Lembre-se de informar os
             participantes.
+          </p>
+        )}
+        {transcriber?.protocol === "gemini" && (
+          <p className="muted small-text">
+            <Icon name="shield" size={13} /> {GEMINI_FREE_TIER_NOTE}
           </p>
         )}
         <button className="primary large" disabled={!canStart} onClick={() => void start()}>

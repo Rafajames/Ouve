@@ -91,6 +91,22 @@ describe("assíncrono", () => {
     ).rejects.toMatchObject({ code: "auth" });
   });
 
+  it("espera mais em limite de uso e respeita Retry-After", async () => {
+    const delay = vi.fn(async () => undefined);
+    let calls = 0;
+    await retry(
+      async () => {
+        calls += 1;
+        if (calls === 1) throw new OuveError("rate-limit", "429");
+        if (calls === 2) throw Object.assign(new OuveError("rate-limit", "429"), { retryAfterMs: 45_000 });
+        return "ok";
+      },
+      { retries: 3, baseDelayMs: 1000, delay }
+    );
+    expect(delay).toHaveBeenNthCalledWith(1, 10_000, undefined);
+    expect(delay).toHaveBeenNthCalledWith(2, 45_000, undefined);
+  });
+
   it("cancela sleep e diferencia timeout", async () => {
     const controller = new AbortController();
     const pending = sleep(1000, controller.signal);

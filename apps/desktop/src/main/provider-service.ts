@@ -2,13 +2,15 @@ import type { CompletionRequest, ConnectionTestResult, ProviderConfig, Transcrip
 import {
   createProviderBundle,
   credentialRefFor,
+  presetFor,
+  runQuickSetup,
   validateProviderConfig,
   type FetchLike,
   type ProviderBundle,
   type SecretStore
 } from "@ouve/providers";
 import { OuveError } from "@ouve/shared";
-import type { ProviderSummary, SaveProviderInput } from "../shared/ipc.js";
+import type { ProviderSummary, QuickSetupOutcome, SaveProviderInput } from "../shared/ipc.js";
 import type { SettingsStore } from "./stores.js";
 
 /**
@@ -43,6 +45,35 @@ export class ProviderService {
     list.push(config);
     await this.settings.saveProviders(list);
     return { config, hasKey: !!(await this.secrets.get(ref)) };
+  }
+
+  /**
+   * Configuração rápida: identifica o provedor pela chave, testa, escolhe modelos,
+   * salva e já seleciona o provedor para os serviços que ele oferece (D-065).
+   */
+  async quickSetup(apiKey: string): Promise<QuickSetupOutcome> {
+    const id = `rapido-${Date.now().toString(36)}`;
+    const result = await runQuickSetup(apiKey, this.fetchImpl, id);
+    if (!result.ok || !result.config || !result.protocol) {
+      return { ok: false, message: result.message, notes: result.notes, canTranscribe: false, canAnalyze: false };
+    }
+    // Uma nova chave do mesmo provedor substitui a configuração rápida anterior dele.
+    for (const old of await this.settings.listProviders()) {
+      if (old.protocol === result.protocol && old.id.startsWith("rapido-")) await this.remove(old.id);
+    }
+    await this.save({ config: result.config, apiKey });
+    const settings = await this.settings.getSettings();
+    if (result.canTranscribe) settings.transcriptionProviderId = id;
+    if (result.canAnalyze) settings.analysisProviderId = id;
+    await this.settings.saveSettings(settings);
+    return {
+      ok: true,
+      message: result.message,
+      notes: result.notes,
+      providerName: presetFor(result.protocol).displayName,
+      canTranscribe: result.canTranscribe,
+      canAnalyze: result.canAnalyze
+    };
   }
 
   async remove(id: string): Promise<void> {

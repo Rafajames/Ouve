@@ -73,11 +73,10 @@ export function createProviderBundle(
           safeTest(() => testGeminiConnection({ ...base, model: config.model, capabilities: preset.completion }, signal))
       };
       if (wants("transcription") && preset.transcription) {
-        bundle.transcription = new GeminiTranscription({
-          ...base,
-          model: config.transcriptionModel || config.model,
-          capabilities: preset.transcription
-        });
+        bundle.transcription = new GeminiTranscription(
+          { ...base, model: config.transcriptionModel || config.model, capabilities: preset.transcription },
+          config.model
+        );
       }
       if (wantsText) bundle.completion = new GeminiCompletion({ ...base, model: config.model, capabilities: preset.completion });
       return bundle;

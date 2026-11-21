@@ -160,6 +160,7 @@ function registerIpc(): void {
   handle(IPC.removeProvider, (_e, id) => providers.remove(assertString(id, "id", 80)));
   handle(IPC.testProvider, (_e, id) => providers.test(assertString(id, "id", 80)));
   handle(IPC.secretProtection, () => ({ protection: secretStore.protection }));
+  handle(IPC.quickSetup, (_e, key) => providers.quickSetup(assertString(key, "chave", 500)));
 
   handle(IPC.transcribe, async (_e, raw) => {
     const r = raw as Record<string, unknown>;
