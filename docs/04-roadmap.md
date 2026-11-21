@@ -53,3 +53,20 @@ O roadmap é incremental. As etapas não significam que os recursos estejam impl
 
 ## Critério para avançar de fase
 Cada fase deve ter critérios de aceite, testes, limitações documentadas e decisão registrada. Não avançar com base apenas em demonstração visual.
+
+
+## Atualização de roadmap — desktop e captura externa (20/11/2026)
+
+### Fase 0A — Plataforma desktop
+- [ ] Comparar Electron e Tauri para Windows: captura de janela/monitor, áudio de sistema, empacotamento, consumo, tamanho e manutenção.
+- [ ] Definir arquitetura compartilhada entre desktop e extensão.
+- [ ] Validar estratégia de distribuição/instalador Windows.
+
+### Fase 0B — Provas de conceito de captura
+- [ ] Extensão Chrome: seleção de aba/tela e captura de áudio compatível.
+- [ ] Extensão Firefox: mapear APIs e limitações.
+- [ ] Desktop Windows: selecionar monitor/janela externa e validar captura de áudio do sistema.
+- [ ] Testar vídeo reproduzido em aplicativo externo, múltiplos monitores e tela dividida.
+- [ ] Validar sincronização A/V, troca de fonte e descarte de buffers.
+
+O MVP passa a manter desktop e extensão em escopo, com incrementos verificáveis. Importação de arquivo continua disponível; captura externa será modalidade separada, sem exigir reprodução dentro do Ouve.
