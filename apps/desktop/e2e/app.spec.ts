@@ -39,6 +39,14 @@ test.afterAll(async () => {
   rmSync(work, { recursive: true, force: true });
 });
 
+test("pede o termo de uso só no primeiro uso", async () => {
+  await expect(page.getByRole("heading", { name: "Bem-vindo ao Ouve" })).toBeVisible();
+  await expect(page.getByText(/informar os participantes/)).toBeVisible();
+  await page.getByRole("button", { name: "Aceitar e começar" }).click();
+  await expect(page.getByRole("heading", { name: "Bem-vindo ao Ouve" })).toHaveCount(0);
+  await expect.poll(() => readFileSync(join(work, "userdata", "settings.json"), "utf8")).toContain('"termsAcceptedVersion": 1');
+});
+
 test("tela inicial explica o produto sem prometer captura de vídeo", async () => {
   await expect(page.getByRole("heading", { name: "Transforme conversas em informação" })).toBeVisible();
   await expect(page.getByText("O Ouve usa somente o áudio — nunca grava a tela.")).toBeVisible();
@@ -71,21 +79,18 @@ test("configura provedor compatível local e testa a conexão", async () => {
   expect(mock.requests.some((r) => r.path === "/v1/models")).toBe(true);
 });
 
-test("nova sessão exige consentimento e lista fontes sem miniaturas", async () => {
+test("nova sessão não pede termo de novo e lista fontes sem miniaturas", async () => {
   await page.getByRole("button", { name: "Nova sessão", exact: true }).click();
   const start = page.getByRole("button", { name: "Iniciar captura de áudio" });
-  await expect(start).toBeDisabled();
   await expect(page.getByText(/descarta a imagem e processa somente o som/)).toBeVisible();
   await expect(page.locator("img")).toHaveCount(0);
+  await expect(page.getByRole("checkbox", { name: /autorização/ })).toHaveCount(0);
   await page.getByRole("radio", { name: /Somente microfone/ }).click();
-  await expect(start).toBeDisabled();
-  await page.getByRole("checkbox", { name: /Confirmo que tenho autorização/ }).check();
   await expect(start).toBeEnabled();
 });
 
 test("importa áudio, transcreve, analisa com validação e exporta PDF/DOCX", async () => {
   await page.getByRole("button", { name: "Importar arquivo", exact: true }).click();
-  await page.getByRole("checkbox", { name: /Confirmo que tenho autorização/ }).check();
   await page.getByRole("button", { name: "Escolher arquivo" }).click();
   await expect(page.locator(".status-pill")).toHaveText(/Concluído/, { timeout: 60_000 });
   await expect(page.getByText(/Maria vai enviar o parecer/).first()).toBeVisible();

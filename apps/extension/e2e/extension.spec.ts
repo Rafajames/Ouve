@@ -28,25 +28,24 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => context?.close());
 
-test("página do Ouve renderiza sem erros e informa o escopo somente áudio", async () => {
+test("pede o termo uma vez e depois libera a captura sem nova confirmação", async () => {
   const page = await context.newPage();
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(`chrome-extension://${extensionId}/app.html`);
+  await expect(page.getByRole("heading", { name: "Bem-vindo ao Ouve" })).toBeVisible();
+  await page.getByRole("button", { name: "Aceitar e começar" }).click();
   await expect(page.getByText("Somente áudio. Nenhuma imagem é capturada.")).toBeVisible();
   await expect(page.getByText(/sem criptografia do sistema operacional/)).toBeVisible();
-  const start = page.getByRole("button", { name: "Somente microfone" });
-  await expect(start).toBeDisabled();
-  await page.getByRole("checkbox", { name: /Confirmo que tenho autorização/ }).check();
-  await expect(start).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Somente microfone/ })).toBeEnabled();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Bem-vindo ao Ouve" })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
-test("popup exige consentimento antes de capturar a aba", async () => {
+test("popup libera a captura da aba após o aceite, sem caixa de confirmação", async () => {
   const popup = await context.newPage();
   await popup.goto(`chrome-extension://${extensionId}/popup.html`);
-  const capture = popup.getByRole("button", { name: "Capturar áudio desta aba" });
-  await expect(capture).toBeDisabled();
-  await popup.locator("#consent").check();
-  await expect(capture).toBeEnabled();
+  await expect(popup.locator("#consent")).toHaveCount(0);
+  await expect(popup.getByRole("button", { name: "Capturar áudio desta aba" })).toBeEnabled();
 });

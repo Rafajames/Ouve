@@ -1,9 +1,9 @@
 import "./popup.css";
+import { TERMS_VERSION } from "@ouve/ui/terms-version";
 /**
  * Popup: inicia a captura de áudio da aba ativa via chrome.tabCapture (somente áudio).
  * O id do stream é gerado aqui (gesto do usuário) para consumo pela página do Ouve.
  */
-const consent = document.querySelector<HTMLInputElement>("#consent");
 const mic = document.querySelector<HTMLInputElement>("#mic");
 const capture = document.querySelector<HTMLButtonElement>("#capture");
 const open = document.querySelector<HTMLButtonElement>("#open");
@@ -18,8 +18,13 @@ if (!supportsTabCapture && tabSection) {
     "<p>Este navegador não permite capturar o áudio de abas. Abra o Ouve para usar o microfone ou importar um arquivo.</p>";
 }
 
-consent?.addEventListener("change", () => {
-  if (capture) capture.disabled = !consent.checked;
+// O termo de uso é aceito uma única vez, no primeiro uso da página do Ouve (D-063).
+void chrome.storage.local.get("settings").then(({ settings }) => {
+  const accepted = ((settings as { termsAcceptedVersion?: number } | undefined)?.termsAcceptedVersion ?? 0) >= TERMS_VERSION;
+  if (!accepted && capture) {
+    capture.disabled = true;
+    if (status) status.textContent = "Abra o Ouve uma vez para aceitar os termos de uso antes de capturar.";
+  }
 });
 
 open?.addEventListener("click", () => {
@@ -28,7 +33,6 @@ open?.addEventListener("click", () => {
 });
 
 capture?.addEventListener("click", async () => {
-  if (!consent?.checked) return;
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id || tab.url?.startsWith(appUrl)) throw new Error("Abra a aba que deseja capturar e tente novamente.");

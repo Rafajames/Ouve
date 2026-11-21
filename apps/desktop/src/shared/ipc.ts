@@ -22,6 +22,8 @@ export interface AppSettings {
   maxHours: number;
   includeTranscriptInExport: boolean;
   theme: "system" | "light" | "dark";
+  /** Versão do termo de uso aceita no primeiro uso (D-063). */
+  termsAcceptedVersion?: number;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {

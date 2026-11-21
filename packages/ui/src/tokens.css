@@ -98,3 +98,65 @@
 svg {
   flex-shrink: 0;
 }
+
+/* Termo de primeiro uso */
+.terms-gate {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--bg);
+}
+.terms-card {
+  max-width: 620px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: var(--shadow);
+}
+.terms-head {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.terms-head h1 {
+  margin: 0 0 4px;
+  font-size: 22px;
+}
+.terms-head p,
+.terms-note {
+  margin: 0;
+  color: var(--muted);
+}
+.terms-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.terms-list li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  line-height: 1.5;
+}
+.terms-list svg {
+  color: var(--ok);
+  margin-top: 3px;
+}
+.terms-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 13px;
+}
+.terms-card button {
+  justify-content: center;
+}

@@ -86,7 +86,6 @@ export function NewSessionScreen({ data }: { data: AppData }) {
   const [mics, setMics] = useState<Array<{ deviceId: string; label: string }>>([]);
   const [micId, setMicId] = useState<string>("");
   const [title, setTitle] = useState("");
-  const [consent, setConsent] = useState(false);
   const [starting, setStarting] = useState(false);
   const test = useAudioTest();
 
@@ -112,7 +111,7 @@ export function NewSessionScreen({ data }: { data: AppData }) {
 
   const visible = sources.filter((s) => s.kind === kind);
   const needsSource = kind === "screen" || kind === "window";
-  const canStart = !!providerName && consent && !starting && !busy && (needsSource ? !!selected : kind === "microphone");
+  const canStart = !!providerName && !starting && !busy && (needsSource ? !!selected : kind === "microphone");
 
   const devices = navigator.mediaDevices as unknown as MediaDevicesLike;
   const testSource = () => {
@@ -267,13 +266,12 @@ export function NewSessionScreen({ data }: { data: AppData }) {
             Nenhum provedor de transcrição selecionado. <button onClick={() => navigate("providers")}>Configurar</button>
           </p>
         )}
-        <label className="check consent">
-          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-          <span>
-            Confirmo que tenho autorização para captar e transcrever este áudio e estou ciente de que ele será enviado em blocos para{" "}
-            <strong>{providerName ?? "o provedor configurado"}</strong>, conforme os termos desse provedor.
-          </span>
-        </label>
+        {providerName && (
+          <p className="muted">
+            <Icon name="info" size={14} /> O áudio será enviado em blocos para <strong>{providerName}</strong>. Lembre-se de informar os
+            participantes.
+          </p>
+        )}
         <button className="primary large" disabled={!canStart} onClick={() => void start()}>
           <Icon name="record" /> {starting ? "Iniciando…" : "Iniciar captura de áudio"}
         </button>

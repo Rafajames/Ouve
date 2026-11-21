@@ -12,6 +12,8 @@ export interface ExtSettings {
   transcriptionProviderId?: string;
   analysisProviderId?: string;
   liveChunkSeconds: number;
+  /** Versão do termo aceita no primeiro uso (D-063). */
+  termsAcceptedVersion?: number;
 }
 
 export const DEFAULT_EXT_SETTINGS: ExtSettings = { language: "pt-BR", liveChunkSeconds: 20 };

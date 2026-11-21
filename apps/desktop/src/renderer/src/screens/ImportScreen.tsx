@@ -7,7 +7,6 @@ import { errorMessage, useApp, useSession, type AppData } from "../hooks";
 export function ImportScreen({ data }: { data: AppData }) {
   const { controller, navigate, notify } = useApp();
   const session = useSession();
-  const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const providerName = data.providers.find((p) => p.config.id === data.settings?.transcriptionProviderId)?.config.displayName;
   const capturing = session.mode === "live" && (session.status === "capturing" || session.status === "paused");
@@ -62,14 +61,12 @@ export function ImportScreen({ data }: { data: AppData }) {
             Nenhum provedor de transcrição selecionado. <button onClick={() => navigate("providers")}>Configurar</button>
           </p>
         )}
-        <label className="check consent">
-          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-          <span>
-            Confirmo que tenho autorização para transcrever esta gravação e que o áudio será enviado para{" "}
-            <strong>{providerName ?? "o provedor configurado"}</strong>.
-          </span>
-        </label>
-        <button className="primary large" disabled={!consent || !providerName || busy || capturing} onClick={() => void choose()}>
+        {providerName && (
+          <p className="muted">
+            <Icon name="info" size={14} /> O áudio será enviado em blocos para <strong>{providerName}</strong>.
+          </p>
+        )}
+        <button className="primary large" disabled={!providerName || busy || capturing} onClick={() => void choose()}>
           <Icon name="upload" /> {busy ? "Abrindo…" : "Escolher arquivo"}
         </button>
         {capturing && <p className="muted">Encerre a captura ao vivo antes de importar.</p>}

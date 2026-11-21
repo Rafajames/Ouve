@@ -4,7 +4,7 @@ import type { AiTask, ProviderConfig, ProviderProtocol } from "@ouve/core";
 import { PROVIDER_PRESETS, credentialRefFor, validateProviderConfig } from "@ouve/providers";
 import { REPORT_SECTIONS } from "@ouve/reports";
 import { createId, formatTimestamp } from "@ouve/shared";
-import { BrandMark, Icon } from "@ouve/ui";
+import { BrandMark, Icon, TERMS_VERSION, TermsGate } from "@ouve/ui";
 import { ExtensionController } from "./controller";
 import { ExtensionStorage, originPatternFor, type ExtSettings } from "./storage";
 
@@ -216,14 +216,13 @@ export function App({ pending }: { pending?: PendingTab }) {
   const controller = useMemo(() => new ExtensionController(storage), []);
   const s = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
   const [settings, setSettings] = useState<ExtSettings | null>(null);
-  const [consent, setConsent] = useState(false);
   const [mic, setMic] = useState(false);
   const platform = detectPlatform({ isElectron: false, userAgent: navigator.userAgent });
   const caps = capabilitiesFor(platform);
 
   useEffect(() => void storage.settings().then(setSettings), []);
   useEffect(() => {
-    // A captura da aba foi autorizada no popup (com consentimento); o id expira em segundos.
+    // A captura da aba foi iniciada pelo usuário no popup; o id expira em segundos.
     if (pending)
       void controller
         .startLive({ kind: "tab", streamId: pending.streamId, label: pending.label }, pending.includeMic)
@@ -241,8 +240,12 @@ export function App({ pending }: { pending?: PendingTab }) {
 
   const active = s.status === "capturing" || s.status === "paused";
   const segments = controller.store.segments();
-  const blocked = !consent || active;
+  const blocked = active;
   const start = (run: () => Promise<void>) => void run().catch((e) => controller.message("error", err(e)));
+
+  if (settings && (settings.termsAcceptedVersion ?? 0) < TERMS_VERSION) {
+    return <TermsGate onAccept={() => void saveSettings({ ...settings, termsAcceptedVersion: TERMS_VERSION })} />;
+  }
 
   return (
     <main className="app">
@@ -275,10 +278,6 @@ export function App({ pending }: { pending?: PendingTab }) {
             {caps["source-audio"].note}
           </p>
         )}
-        <label className="check">
-          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-          Confirmo que tenho autorização para captar e transcrever este áudio e que ele será enviado ao provedor de IA configurado.
-        </label>
         <label className="check">
           <input type="checkbox" checked={mic} onChange={(e) => setMic(e.target.checked)} /> Incluir meu microfone na captura
         </label>

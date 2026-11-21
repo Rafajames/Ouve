@@ -65,6 +65,13 @@ export function parseSettings(raw: unknown): AppSettings {
     includeTranscriptInExport: typeof r.includeTranscriptInExport === "boolean" ? r.includeTranscriptInExport : true,
     theme: r.theme === "light" || r.theme === "dark" ? r.theme : "system"
   };
+  if (
+    typeof r.termsAcceptedVersion === "number" &&
+    Number.isInteger(r.termsAcceptedVersion) &&
+    r.termsAcceptedVersion > 0 &&
+    r.termsAcceptedVersion < 1000
+  )
+    settings.termsAcceptedVersion = r.termsAcceptedVersion;
   if (typeof r.transcriptionProviderId === "string" && r.transcriptionProviderId)
     settings.transcriptionProviderId = r.transcriptionProviderId.slice(0, 80);
   if (typeof r.analysisProviderId === "string" && r.analysisProviderId) settings.analysisProviderId = r.analysisProviderId.slice(0, 80);

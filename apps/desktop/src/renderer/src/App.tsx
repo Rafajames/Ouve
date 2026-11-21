@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatTimestamp } from "@ouve/shared";
-import { BrandMark, Icon, applyTheme, type IconName, type ThemePreference } from "@ouve/ui";
+import { BrandMark, Icon, TERMS_VERSION, TermsGate, applyTheme, type IconName, type ThemePreference } from "@ouve/ui";
 import { hasBridge } from "./bridge";
 import { AppContext, useAppData, useSession, type Screen } from "./hooks";
 import { SessionController } from "./session-controller";
@@ -63,6 +63,20 @@ export default function App() {
   const context = useMemo(() => ({ controller, navigate: setScreen, notify }), [controller, notify]);
   const theme = data.settings?.theme ?? "system";
   useEffect(() => applyTheme(theme), [theme]);
+
+  const [accepting, setAccepting] = useState(false);
+  if (hasBridge() && data.settings && (data.settings.termsAcceptedVersion ?? 0) < TERMS_VERSION) {
+    const settings = data.settings;
+    return (
+      <TermsGate
+        busy={accepting}
+        onAccept={() => {
+          setAccepting(true);
+          void data.saveSettings({ ...settings, termsAcceptedVersion: TERMS_VERSION }).finally(() => setAccepting(false));
+        }}
+      />
+    );
+  }
 
   if (!hasBridge()) {
     return (
