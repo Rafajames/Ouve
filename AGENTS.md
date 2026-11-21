@@ -56,3 +56,25 @@ Não introduza backend próprio no MVP. Se uma limitação real exigir serviço 
 O produto contempla aplicativo desktop instalável e extensão Chrome/Firefox. Windows é a primeira plataforma desktop-alvo. Planejar núcleo compartilhado de domínio/aplicação e adaptadores distintos. A tecnologia desktop (Electron/Tauri) depende de prova de conceito.
 
 O compartilhamento de tela/janela é uma entrada privada do próprio Ouve, não uma transmissão para participantes. O usuário pode selecionar monitor, janela de aplicativo ou aba compatível, inclusive vídeo reproduzido fora do Ouve. A extensão também poderá operar na própria aba da audiência. Não exigir importação/reprodução interna nesse modo. Validar separadamente captura visual e áudio por SO/navegador/fonte; não afirmar que capturar uma janela garante áudio do sistema. Exigir autorização explícita, indicador persistente e controles de pausa/parada. Não contornar restrições do sistema.
+
+
+## Documentação ampliada obrigatória
+Antes de planejar ou implementar qualquer funcionalidade, ler também:
+- docs/07-blueprint-desenvolvimento.md
+- docs/08-arquitetura-detalhada.md
+- docs/09-integracoes-e-provedores.md
+- docs/10-mcp-e-ferramentas-de-desenvolvimento.md
+- docs/11-ambiente-e-configuracao.md
+- docs/12-plano-de-testes-e-aceite.md
+- docs/13-experiencia-e-telas.md
+- docs/14-privacidade-legal-e-dados.md
+- docs/15-backlog-inicial.md
+
+## Regras adicionais de arquitetura e captura
+- Desktop e extensão devem compartilhar domínio e casos de uso; adaptadores de plataforma ficam isolados.
+- Não assumir que captura de vídeo também captura áudio. Validar cada fonte separadamente e mostrar capacidades reais ao usuário.
+- Não exigir importação/reprodução interna quando o usuário selecionar captura externa de monitor/janela.
+- Captura de tela é privada com o próprio Ouve, nunca uma transmissão a participantes.
+- MCP é opcional para fluxo de desenvolvimento e não integra o runtime do produto no MVP.
+- Não escolher definitivamente Electron/Tauri, provedor, codec ou API de captura sem registrar evidência de spike técnico.
+- Toda captura deve ter seleção explícita, indicador persistente, pausa/parada e descarte de buffers.
