@@ -105,3 +105,18 @@ describe("TranscriptionPipeline", () => {
     expect(p2.stats().failed).toBe(0);
   });
 });
+
+describe("paralelismo adaptativo", () => {
+  it("reduz pedidos simultâneos quando o provedor sinaliza limite de uso", async () => {
+    let calls = 0;
+    const p = provider(async () => {
+      calls += 1;
+      if (calls === 1) throw new OuveError("rate-limit", "429");
+      return { segments: [{ startMs: 0, endMs: 1, text: "ok" }] };
+    });
+    const pipeline = new TranscriptionPipeline({ provider: p, store: new TranscriptStore(), concurrency: 3, delay: async () => undefined });
+    pipeline.enqueue(job(0));
+    await pipeline.whenIdle();
+    expect(pipeline.currentConcurrency).toBe(2);
+  });
+});

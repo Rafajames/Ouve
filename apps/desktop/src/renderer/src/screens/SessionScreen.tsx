@@ -4,6 +4,13 @@ import { Icon } from "@ouve/ui";
 import { LevelMeter, Messages, Page, SpeakersPanel, TranscriptView } from "../components";
 import { errorMessage, useApp, useSession } from "../hooks";
 
+function formatDuration(ms: number): string {
+  const total = Math.max(1, Math.round(ms / 1000));
+  const m = Math.floor(total / 60);
+  const sec = total % 60;
+  return m > 0 ? `${m} min ${sec} s` : `${sec} s`;
+}
+
 const STATUS_LABEL: Record<string, string> = {
   idle: "Aguardando",
   preparing: "Preparando",
@@ -219,8 +226,13 @@ export function SessionScreen() {
           <p>
             {s.importInfo.phase === "extracting"
               ? `Extraindo o áudio… ${formatTimestamp(s.importInfo.processedMs)}${s.importInfo.durationMs ? ` de ${formatTimestamp(s.importInfo.durationMs)}` : ""}`
-              : `Transcrevendo ${s.importInfo.segments} segmentos…`}
+              : `Transcrevendo ${s.importInfo.segments} pedaços… (${s.stats.done + s.stats.failed} de ${s.importInfo.segments})`}
           </p>
+          {s.importPlanLabel && (
+            <p className="muted small-text">
+              <Icon name="sparkles" size={13} /> Modo rápido: {s.importPlanLabel}.
+            </p>
+          )}
           <progress
             max={1}
             value={
@@ -233,6 +245,16 @@ export function SessionScreen() {
                   : undefined
             }
           />
+        </div>
+      )}
+
+      {!live && s.status === "completed" && s.processingMs !== undefined && (
+        <div className="callout">
+          <Icon name="check" size={16} />
+          <span>
+            Transcrição pronta em <strong>{formatDuration(s.processingMs)}</strong>. A análise é opcional: use “Analisar e gerar relatório”
+            quando quiser.
+          </span>
         </div>
       )}
 

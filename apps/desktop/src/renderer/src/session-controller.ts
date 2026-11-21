@@ -9,6 +9,7 @@ import {
   type MediaStreamTrackLike
 } from "@ouve/capture";
 import { TranscriptStore, emptyAnalysis, type MeetingAnalysis, type ReportDocument, type SessionStatus } from "@ouve/core";
+import { planImport } from "@ouve/providers";
 import { buildReport, exportDocx, exportFileName, exportPdf, reportToMarkdown } from "@ouve/reports";
 import { createId, formatTimestamp, sleep, toOuveError } from "@ouve/shared";
 import { TranscriptionPipeline, type PipelineStats } from "@ouve/transcription";
@@ -34,6 +35,10 @@ export interface SessionSnapshot {
   messages: Array<{ id: string; kind: "info" | "warning" | "error"; text: string }>;
   importInfo?: ImportedMedia & { phase: "extracting" | "transcribing" | "done"; processedMs: number; segments: number };
   analysisStatus: AnalysisStatus;
+  /** Tempo total de extração + transcrição da importação (ms). */
+  processingMs?: number;
+  /** Descrição do modo rápido escolhido para a importação. */
+  importPlanLabel?: string;
   analysisProgress?: { done: number; total: number };
   report?: ReportDocument;
 }
@@ -120,12 +125,12 @@ export class SessionController {
     return this.settings;
   }
 
-  private createPipeline(providerId: string, language: string): TranscriptionPipeline {
+  private createPipeline(providerId: string, language: string, concurrency = 2): TranscriptionPipeline {
     return new TranscriptionPipeline({
       provider: new IpcTranscriptionProvider(providerId),
       store: this.store,
       language,
-      concurrency: 2,
+      concurrency,
       retries: 2,
       onStats: (stats) => this.set({ stats }),
       onJobError: (index, error) => this.message("error", `Bloco ${index + 1}: ${error.message}`)
@@ -258,25 +263,35 @@ export class SessionController {
       if (token === media.token && this.snap.importInfo) this.set({ importInfo: { ...this.snap.importInfo, processedMs: ms } });
     });
     try {
-      const segments = await unwrap(bridge().media.extract(media.token, settings.importSegmentSeconds));
+      const started = Date.now();
+      // Modo rápido: pedaços, formato e paralelismo escolhidos pela IA configurada (D-068).
+      const providers = await unwrap(bridge().providers.list());
+      const plan = settings.importAuto
+        ? planImport(providers.find((p) => p.config.id === providerId)?.config)
+        : { segmentSeconds: settings.importSegmentSeconds, format: "wav" as const, concurrency: 2, reason: "" };
+      this.set({
+        importPlanLabel: `Pedaços de ${Math.round(plan.segmentSeconds / 60)} min em ${plan.format.toUpperCase()}, ${plan.concurrency} ao mesmo tempo`
+      });
+      const segments = await unwrap(bridge().media.extract(media.token, plan.segmentSeconds, plan.format));
       off();
       if (!this.snap.importInfo) return true;
       this.set({ importInfo: { ...this.snap.importInfo, phase: "transcribing", segments: segments.length } });
-      this.pipeline = this.createPipeline(providerId, settings.language);
+      this.pipeline = this.createPipeline(providerId, settings.language, plan.concurrency);
       for (const segment of segments) {
         // Alimenta a fila aos poucos para não manter o arquivo inteiro na memória.
-        while ((this.pipeline.stats().queued ?? 0) + (this.pipeline.stats().running ?? 0) >= 3) await sleep(200, signal);
+        while ((this.pipeline.stats().queued ?? 0) + (this.pipeline.stats().running ?? 0) >= plan.concurrency + 1) await sleep(200, signal);
         const data = new Uint8Array(await unwrap(bridge().media.readSegment(media.token, segment.index)));
         this.pipeline.enqueue({
           index: segment.index,
           offsetMs: segment.offsetMs,
           durationMs: segment.durationMs,
-          mimeType: "audio/wav",
+          mimeType: segment.mimeType,
           data
         });
       }
       await this.pipeline.whenIdle();
-      if (this.snap.importInfo) this.set({ importInfo: { ...this.snap.importInfo, phase: "done" }, status: "completed" });
+      if (this.snap.importInfo)
+        this.set({ importInfo: { ...this.snap.importInfo, phase: "done" }, status: "completed", processingMs: Date.now() - started });
       if (this.pipeline.stats().failed > 0)
         this.message("warning", "Alguns trechos falharam. Use “Tentar novamente” para reenviar apenas esses trechos.");
     } catch (error) {

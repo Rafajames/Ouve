@@ -10,7 +10,7 @@ import {
   type MediaStreamTrackLike
 } from "@ouve/capture";
 import { TranscriptStore, type ReportDocument, type SessionStatus } from "@ouve/core";
-import { createProviderBundle, credentialRefFor, type ProviderBundle } from "@ouve/providers";
+import { createProviderBundle, credentialRefFor, planImport, type ProviderBundle } from "@ouve/providers";
 import { buildReport, exportDocx, exportFileName, exportPdf, reportToMarkdown } from "@ouve/reports";
 import { createId, sleep, toOuveError } from "@ouve/shared";
 import { TranscriptionPipeline, type PipelineStats } from "@ouve/transcription";
@@ -88,7 +88,7 @@ export class ExtensionController {
     return createProviderBundle(config, key ? { apiKey: key } : undefined, (input, init) => fetch(input, init));
   }
 
-  private async newPipeline(): Promise<TranscriptionPipeline> {
+  private async newPipeline(concurrency = 2): Promise<TranscriptionPipeline> {
     this.settings = await this.storage.settings();
     const bundle = await this.bundle(this.settings.transcriptionProviderId, "transcrição");
     if (!bundle.transcription) throw new Error("O provedor escolhido não oferece transcrição.");
@@ -96,6 +96,7 @@ export class ExtensionController {
       provider: bundle.transcription,
       store: this.store,
       language: this.settings.language,
+      concurrency,
       onStats: (stats) => this.set({ stats }),
       onJobError: (i, e) => this.message("error", `Bloco ${i + 1}: ${e.message}`)
     });
@@ -179,12 +180,17 @@ export class ExtensionController {
 
   async importFile(file: File): Promise<void> {
     await this.discard();
-    this.pipeline = await this.newPipeline();
+    // Importação rápida (D-068): no navegador os pedaços vão em WAV, até 5 min para caber no limite por pedido.
+    const settings = await this.storage.settings();
+    const config = (await this.storage.providers()).find((p) => p.id === settings.transcriptionProviderId);
+    const plan = planImport(config);
+    const chunkSeconds = plan.segmentSeconds > 120 ? 300 : 120;
+    this.pipeline = await this.newPipeline(plan.concurrency);
     this.set({ ...EMPTY, mode: "import", status: "processing", sourceLabel: file.name });
     try {
-      const decoded = await decodeFile(file);
+      const decoded = await decodeFile(file, chunkSeconds);
       for (let i = 0; i < decoded.count; i++) {
-        while (this.pipeline.stats().queued + this.pipeline.stats().running >= 3) await sleep(200);
+        while (this.pipeline.stats().queued + this.pipeline.stats().running >= plan.concurrency + 1) await sleep(200);
         const c = decoded.chunk(i);
         this.pipeline.enqueue({ index: c.index, offsetMs: c.offsetMs, durationMs: c.durationMs, mimeType: "audio/wav", data: c.wav });
       }

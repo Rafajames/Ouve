@@ -53,8 +53,9 @@ export function ImportScreen({ data }: { data: AppData }) {
         </p>
         <p className="muted">
           Limites configurados: até {data.settings?.maxFileGb ?? 2} GB e {data.settings?.maxHours ?? 4} h (ajustáveis em Configurações;
-          valores de referência ainda não validados com arquivos reais). O áudio é convertido em segmentos temporários de{" "}
-          {data.settings?.importSegmentSeconds ?? 120} s, apagados ao final.
+          valores de referência ainda não validados com arquivos reais). O arquivo não é reproduzido: o áudio é extraído direto e enviado em
+          pedaços, vários ao mesmo tempo, escolhidos automaticamente para a IA configurada. Os temporários são apagados ao final. Uma
+          gravação de 1 hora costuma ficar pronta em poucos minutos, dependendo da IA.
         </p>
       </div>
       <div className="panel">

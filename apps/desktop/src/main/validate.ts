@@ -60,6 +60,7 @@ export function parseSettings(raw: unknown): AppSettings {
     language: typeof r.language === "string" && /^[A-Za-z-]{2,10}$/.test(r.language) ? r.language : DEFAULT_SETTINGS.language,
     liveChunkSeconds: num("liveChunkSeconds", 5, 120),
     importSegmentSeconds: num("importSegmentSeconds", 30, 600),
+    importAuto: typeof r.importAuto === "boolean" ? r.importAuto : true,
     maxFileGb: num("maxFileGb", 0.1, 8),
     maxHours: num("maxHours", 0.25, 12),
     includeTranscriptInExport: typeof r.includeTranscriptInExport === "boolean" ? r.includeTranscriptInExport : true,

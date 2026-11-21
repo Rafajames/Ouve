@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { DEFAULT_MEDIA_LIMITS } from "@ouve/core";
-import { MediaService, locateFfmpeg, parseDurationMs } from "../src/main/media-service";
+import { MediaService, locateFfmpeg, parseDurationMs, parseSegmentList } from "../src/main/media-service";
 import { ProviderService } from "../src/main/provider-service";
 import { SafeStorageSecretStore, SettingsStore } from "../src/main/stores";
 import { parseProviderConfig, parseSettings } from "../src/main/validate";
@@ -122,6 +122,34 @@ describe("MediaService (ffmpeg real)", () => {
   } catch {
     available = false;
   }
+
+  it("lê a lista de pedaços do ffmpeg com início e fim exatos", () => {
+    expect(parseSegmentList("seg00000.mp3,0.000000,600.000000\nseg00001.mp3,600.000000,742.500000\n", "mp3")).toEqual([
+      { index: 0, offsetMs: 0, durationMs: 600_000, mimeType: "audio/mpeg" },
+      { index: 1, offsetMs: 600_000, durationMs: 142_500, mimeType: "audio/mpeg" }
+    ]);
+  });
+
+  it.skipIf(!available)(
+    "extrai em MP3 compacto para a importação rápida",
+    async () => {
+      const audio = join(dir, "longo.wav");
+      execFileSync(ffmpeg, ["-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=500:duration=25", audio]);
+      const service = new MediaService(ffmpeg);
+      const media = await service.register(audio, DEFAULT_MEDIA_LIMITS);
+      const segments = await service.extract(media.token, 10, undefined, "mp3");
+      expect(segments).toHaveLength(3);
+      expect(segments.every((s) => s.mimeType === "audio/mpeg")).toBe(true);
+      // O MP3 corta em limites de quadro (alguns ms); a lista do ffmpeg traz o início real.
+      expect(Math.abs((segments[1]?.offsetMs ?? 0) - 10_000)).toBeLessThan(50);
+      expect(Math.abs((segments[2]?.offsetMs ?? 0) - 20_000)).toBeLessThan(50);
+      const bytes = await service.readSegment(media.token, 0);
+      // 10 s de MP3 a 32 kbps ≈ 40 KB (o WAV equivalente teria ~320 KB).
+      expect(bytes.byteLength).toBeLessThan(80_000);
+      await service.release(media.token);
+    },
+    30_000
+  );
 
   it("interpreta duração do ffmpeg", () => {
     expect(parseDurationMs("  Duration: 01:02:03.50, start")).toBe(3_723_500);

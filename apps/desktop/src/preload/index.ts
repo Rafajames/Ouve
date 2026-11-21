@@ -32,7 +32,7 @@ const bridge: OuveBridge = {
   },
   media: {
     open: () => invoke(IPC.openMedia),
-    extract: (token, seconds) => invoke(IPC.extractMedia, token, seconds),
+    extract: (token, seconds, format) => invoke(IPC.extractMedia, token, seconds, format),
     readSegment: (token, index) => invoke(IPC.readSegment, token, index),
     release: (token) => invoke(IPC.releaseMedia, token),
     onProgress: (listener) => {

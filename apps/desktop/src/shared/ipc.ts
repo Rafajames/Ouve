@@ -18,6 +18,8 @@ export interface AppSettings {
   liveChunkSeconds: number;
   /** Duração dos segmentos ao importar arquivos (s). */
   importSegmentSeconds: number;
+  /** Importação rápida com ajuste automático pela IA configurada (D-068). */
+  importAuto: boolean;
   maxFileGb: number;
   maxHours: number;
   includeTranscriptInExport: boolean;
@@ -30,6 +32,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   language: "pt-BR",
   liveChunkSeconds: 20,
   importSegmentSeconds: 120,
+  importAuto: true,
   maxFileGb: 2,
   maxHours: 4,
   includeTranscriptInExport: true,
@@ -72,6 +75,7 @@ export interface ExtractedSegment {
   index: number;
   offsetMs: number;
   durationMs: number;
+  mimeType: "audio/wav" | "audio/mpeg";
 }
 
 export interface TranscribeInput {
@@ -127,7 +131,7 @@ export interface OuveBridge {
   };
   media: {
     open(): Promise<IpcResult<ImportedMedia | null>>;
-    extract(token: string, segmentSeconds: number): Promise<IpcResult<ExtractedSegment[]>>;
+    extract(token: string, segmentSeconds: number, format: "wav" | "mp3"): Promise<IpcResult<ExtractedSegment[]>>;
     readSegment(token: string, index: number): Promise<IpcResult<ArrayBuffer>>;
     release(token: string): Promise<IpcResult<void>>;
     onProgress(listener: (token: string, processedMs: number) => void): () => void;

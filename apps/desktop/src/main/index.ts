@@ -209,9 +209,12 @@ function registerIpc(): void {
     }
     return path ? media.register(path, limits) : null;
   });
-  handle(IPC.extractMedia, (event, token, seconds) =>
-    media.extract(assertString(token, "token", 100), assertNumber(seconds, "segmento", 10, 900), (ms) =>
-      event.sender.send(IPC.mediaProgress, token, ms)
+  handle(IPC.extractMedia, (event, token, seconds, format) =>
+    media.extract(
+      assertString(token, "token", 100),
+      assertNumber(seconds, "segmento", 10, 1800),
+      (ms) => event.sender.send(IPC.mediaProgress, token, ms),
+      format === "mp3" ? "mp3" : "wav"
     )
   );
   handle(IPC.readSegment, async (_e, token, index) => {

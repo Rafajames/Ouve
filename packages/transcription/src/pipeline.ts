@@ -48,7 +48,7 @@ export class TranscriptionPipeline {
   private running = 0;
   private controller = new AbortController();
   private idleWaiters: Array<() => void> = [];
-  private readonly concurrency: number;
+  private concurrency: number;
 
   constructor(private readonly options: PipelineOptions) {
     this.concurrency = Math.max(1, options.concurrency ?? 2);
@@ -84,6 +84,11 @@ export class TranscriptionPipeline {
     this.publish();
     this.pump();
     return count;
+  }
+
+  /** Paralelismo atual (diminui sozinho quando o provedor sinaliza limite de uso). */
+  get currentConcurrency(): number {
+    return this.concurrency;
   }
 
   stats(): PipelineStats {
@@ -166,7 +171,16 @@ export class TranscriptionPipeline {
             },
             signal
           ),
-        { retries: this.options.retries ?? 2, baseDelayMs: 1500, signal, ...(this.options.delay ? { delay: this.options.delay } : {}) }
+        {
+          retries: this.options.retries ?? 2,
+          baseDelayMs: 1500,
+          signal,
+          ...(this.options.delay ? { delay: this.options.delay } : {}),
+          onRetry: (_attempt, error) => {
+            // Limite de uso: reduz pedidos simultâneos para não insistir no bloqueio.
+            if ((error as OuveError).code === "rate-limit" && this.concurrency > 1) this.concurrency -= 1;
+          }
+        }
       );
       if (signal.aborted) throw new OuveError("cancelled", "Operação cancelada.");
       this.options.store.applyChunk({ chunkIndex: job.index, offsetMs: job.offsetMs, segments: result.segments });

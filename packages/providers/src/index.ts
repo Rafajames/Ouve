@@ -6,3 +6,4 @@ export * from "./anthropic.js";
 export * from "./factory.js";
 export * from "./secret-store.js";
 export * from "./quick-setup.js";
+export * from "./import-plan.js";

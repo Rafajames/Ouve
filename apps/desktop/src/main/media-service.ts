@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
+import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
@@ -85,10 +85,29 @@ export async function probeMedia(ffmpeg: string, path: string): Promise<{ durati
   return durationMs === undefined ? { hasAudio } : { durationMs, hasAudio };
 }
 
+/** Lê a lista CSV do ffmpeg ("seg00000.mp3,0.000000,600.000000") com o início e o fim exatos de cada pedaço. */
+export function parseSegmentList(csv: string, format: "wav" | "mp3"): ExtractedSegment[] {
+  return csv
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line, index) => {
+      const [, start = "0", end = "0"] = line.split(",");
+      const startMs = Math.round(Number(start) * 1000);
+      return {
+        index,
+        offsetMs: startMs,
+        durationMs: Math.max(0, Math.round(Number(end) * 1000) - startMs),
+        mimeType: format === "mp3" ? "audio/mpeg" : "audio/wav"
+      };
+    });
+}
+
 interface MediaEntry {
   path: string;
   name: string;
   dir?: string;
+  format?: "wav" | "mp3";
   segments: ExtractedSegment[];
 }
 
@@ -126,13 +145,21 @@ export class MediaService {
     };
   }
 
-  async extract(token: string, segmentSeconds: number, onProgress?: (processedMs: number) => void): Promise<ExtractedSegment[]> {
+  async extract(
+    token: string,
+    segmentSeconds: number,
+    onProgress?: (processedMs: number) => void,
+    format: "wav" | "mp3" = "wav"
+  ): Promise<ExtractedSegment[]> {
     const entry = this.entry(token);
     if (entry.dir) return entry.segments;
     const dir = await mkdtemp(join(tmpdir(), "ouve-"));
     entry.dir = dir;
+    entry.format = format;
     const controller = new AbortController();
     this.controllers.set(token, controller);
+    // MP3 32 kbps mono: ~2,4 MB a cada 10 min, abaixo dos limites por pedido dos provedores.
+    const codec = format === "mp3" ? ["-c:a", "libmp3lame", "-b:a", "32k"] : ["-c:a", "pcm_s16le"];
     const args = [
       "-hide_banner",
       "-nostdin",
@@ -151,15 +178,18 @@ export class MediaService {
       "1",
       "-ar",
       "16000",
-      "-c:a",
-      "pcm_s16le",
+      ...codec,
       "-f",
       "segment",
       "-segment_time",
       String(segmentSeconds),
+      "-segment_list",
+      join(dir, "lista.csv"),
+      "-segment_list_type",
+      "csv",
       "-reset_timestamps",
       "1",
-      join(dir, "seg%05d.wav")
+      join(dir, `seg%05d.${format}`)
     ];
     const result = await run(this.ffmpeg, args, {
       signal: controller.signal,
@@ -174,22 +204,14 @@ export class MediaService {
         retryable: false
       });
     }
-    const files = (await readdir(dir)).filter((f) => f.endsWith(".wav")).sort();
-    let offset = 0;
-    entry.segments = [];
-    for (const [index, file] of files.entries()) {
-      const size = (await stat(join(dir, file))).size;
-      const durationMs = Math.max(0, ((size - 44) / 32_000) * 1000);
-      entry.segments.push({ index, offsetMs: Math.round(offset), durationMs: Math.round(durationMs) });
-      offset += durationMs;
-    }
+    entry.segments = parseSegmentList(await readFile(join(dir, "lista.csv"), "utf8"), format);
     return entry.segments;
   }
 
   async readSegment(token: string, index: number): Promise<Uint8Array> {
     const entry = this.entry(token);
     if (!entry.dir || !entry.segments[index]) throw new OuveError("invalid-input", "Segmento inexistente.", { retryable: false });
-    return new Uint8Array(await readFile(join(entry.dir, `seg${String(index).padStart(5, "0")}.wav`)));
+    return new Uint8Array(await readFile(join(entry.dir, `seg${String(index).padStart(5, "0")}.${entry.format ?? "wav"}`)));
   }
 
   /** Cancela extração e apaga arquivos temporários. */

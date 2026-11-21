@@ -131,3 +131,22 @@ describe("Gemini transcribe dedicado", () => {
     expect(String(fetch.mock.calls[1]?.[0])).toContain("gemini-3.7-flash:generateContent");
   });
 });
+
+import { planImport } from "../src/index.js";
+describe("plano de importação rápida", () => {
+  const cfg = (protocol: "gemini" | "openai" | "openai-compatible", transcriptionModel: string) => ({
+    id: "x",
+    displayName: "x",
+    model: "m",
+    protocol,
+    enabledTasks: [],
+    transcriptionModel
+  });
+  it("usa pedaços longos quando a IA preserva o tempo", () => {
+    expect(planImport(cfg("gemini", "gemini-3.5-transcribe"))).toMatchObject({ segmentSeconds: 600, format: "mp3", concurrency: 3 });
+    expect(planImport(cfg("openai", "gpt-4o-transcribe-diarize"))).toMatchObject({ segmentSeconds: 600, concurrency: 4 });
+    expect(planImport(cfg("openai", "gpt-4o-transcribe"))).toMatchObject({ segmentSeconds: 120, format: "mp3" });
+    expect(planImport(cfg("openai-compatible", "x"))).toMatchObject({ segmentSeconds: 120, format: "wav", concurrency: 2 });
+    expect(planImport(undefined).format).toBe("wav");
+  });
+});

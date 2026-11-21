@@ -86,12 +86,17 @@ export function SettingsScreen({ data }: { data: AppData }) {
               onChange={(e) => update({ liveChunkSeconds: Number(e.target.value) })}
             />
           </label>
+          <label className="check">
+            <input type="checkbox" checked={draft.importAuto} onChange={(e) => update({ importAuto: e.target.checked })} /> Importação
+            rápida automática (recomendado)
+          </label>
           <label className="field">
-            <span>Segmentos de arquivos importados (segundos)</span>
+            <span>Segmentos de arquivos importados (segundos){draft.importAuto ? " — usado só sem o modo automático" : ""}</span>
             <input
               type="number"
               min={30}
               max={600}
+              disabled={draft.importAuto}
               value={draft.importSegmentSeconds}
               onChange={(e) => update({ importSegmentSeconds: Number(e.target.value) })}
             />
