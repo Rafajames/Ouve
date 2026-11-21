@@ -1,57 +1,55 @@
 # Ouve
 ### Assistente inteligente de audiências e reuniões
 
-Ouve é uma extensão de navegador para acompanhar, transcrever, organizar e analisar reuniões, audiências e gravações de áudio/vídeo. O objetivo é transformar conversas longas em informação estruturada e relatórios úteis, mantendo o usuário no controle dos dados.
+Ouve é um assistente privado para acompanhar, transcrever, organizar e analisar reuniões, audiências e gravações. O objetivo é transformar conversas longas em informação estruturada e relatórios úteis, mantendo o usuário no controle dos dados.
 
-> **Estado do projeto:** documentação inicial consolidada; implementação ainda não iniciada.
-> **Escopo inicial:** extensão para Google Chrome e Mozilla Firefox.
+> **Estado:** pacote de pré-desenvolvimento documentado. Nenhuma funcionalidade de produto está implementada ainda.
 
-## Princípios do produto
-- **Privacidade primeiro:** sem conta obrigatória, sem backend próprio e sem histórico permanente no MVP.
-- **Processamento temporário:** o conteúdo é processado durante a sessão; o usuário decide se deseja exportar e salvar o resultado localmente.
-- **Controle explícito:** captura e análise só começam por ação do usuário, com indicação visível de gravação/captura.
-- **Português em primeiro lugar:** priorizar transcrição e análise em português brasileiro.
-- **Arquitetura extensível:** provedores de IA/transcrição intercambiáveis, sem acoplar o produto a um fornecedor.
-- **Compatibilidade multiplataforma:** Chrome e Firefox por meio de WebExtensions e adaptações específicas por navegador.
+## Produto planejado
+- Aplicativo desktop instalável, Windows como primeira plataforma.
+- Extensão para Google Chrome e Mozilla Firefox.
+- Análise de arquivos de áudio/vídeo.
+- Captura privada de tela, janela ou aba compatível, inclusive quando a audiência/vídeo está em outro monitor ou aplicativo.
+- Transcrição, tópicos, decisões, perguntas/respostas, tarefas, responsáveis e prazos mencionados.
+- Relatório editável e exportação local em PDF/DOCX.
 
-## Funcionalidades previstas
-### MVP — análise de gravações
-1. Importar arquivo de áudio ou vídeo.
-2. Extrair/processar áudio e gerar transcrição em português.
-3. Organizar a conversa por falantes quando tecnicamente possível.
-4. Identificar tópicos, assuntos, decisões, encaminhamentos e pontos relevantes.
-5. Gerar relatório completo e resumo executivo.
-6. Exportar o resultado em PDF e DOCX.
-7. Permitir descarte da sessão sem manter histórico no produto.
+A captura de tela é uma entrada privada do próprio Ouve, não uma transmissão a terceiros. Não é obrigatório importar ou reproduzir o vídeo dentro do Ouve para usar o modo de captura externa. A disponibilidade de áudio depende das APIs e permissões de cada ambiente e será validada por provas técnicas.
 
-### Evolução posterior
-- Acompanhamento e transcrição de reuniões/audiências ao vivo.
-- Organização de tópicos em tempo real.
-- Geração progressiva de notas e relatório durante a sessão.
-- Melhorias de diarização, busca e análise configurável.
+## Princípios
+- Sem conta obrigatória, backend próprio ou histórico permanente no MVP.
+- Processamento temporário; usuário escolhe se exporta e onde salva.
+- Captura iniciada explicitamente, com indicador visível e controles de pausa/parada.
+- Português brasileiro como prioridade.
+- Provedores intercambiáveis e BYOK.
+- Nenhum conteúdo confidencial em logs, analytics ou telemetria.
+- Resultados de IA com evidências e indicação de incerteza.
 
 ## Documentação
-- [Visão geral e escopo](docs/00-visao-geral.md)
+### Produto e requisitos
+- [Visão geral](docs/00-visao-geral.md)
 - [Especificação funcional](docs/01-especificacao-funcional.md)
-- [Arquitetura técnica](docs/02-arquitetura-tecnica.md)
+- [Blueprint de desenvolvimento](docs/07-blueprint-desenvolvimento.md)
+- [Experiência e telas](docs/13-experiencia-e-telas.md)
+
+### Engenharia
+- [Arquitetura técnica inicial](docs/02-arquitetura-tecnica.md)
+- [Arquitetura detalhada e contratos](docs/08-arquitetura-detalhada.md)
+- [Integrações e provedores](docs/09-integracoes-e-provedores.md)
+- [MCP e ferramentas de desenvolvimento](docs/10-mcp-e-ferramentas-de-desenvolvimento.md)
+- [Ambiente e configuração](docs/11-ambiente-e-configuracao.md)
+- [Plano de testes e aceite](docs/12-plano-de-testes-e-aceite.md)
+- [Backlog inicial](docs/15-backlog-inicial.md)
+
+### Governança
 - [Privacidade e segurança](docs/03-privacidade-e-seguranca.md)
+- [Privacidade, consentimento e dados](docs/14-privacidade-legal-e-dados.md)
 - [Roadmap](docs/04-roadmap.md)
 - [Decisões e pendências](docs/05-decisoes-e-pendencias.md)
 - [Estado atual](docs/06-estado-atual.md)
-- [Orientações para agentes de desenvolvimento](AGENTS.md)
+- [Instruções para agentes](AGENTS.md)
 
-## Diretriz importante
-A documentação descreve o comportamento desejado, não funcionalidades já implementadas. Toda limitação técnica, custo de API, permissão de navegador e compatibilidade deve ser validada antes de ser apresentada como garantida.
+## Próxima etapa
+Executar o EPIC 0 do backlog: validar tecnologia desktop e captura, confirmar monorepo e ferramentas, selecionar primeiro provedor e criar scaffold/CI. Só depois iniciar funcionalidades do produto.
 
-## Desenvolvimento
-A stack de referência é TypeScript, React e WebExtensions, com Manifest V3 no Chrome e adaptação compatível no Firefox. Consulte a arquitetura antes de criar a estrutura de código.
-
-## Licença
-Ainda não definida. Não assumir licença permissiva até decisão explícita do mantenedor.
-
-
-## Atualização de escopo — 20/11/2026
-O produto será planejado desde o início para duas experiências: aplicativo desktop instalável (Windows como primeira plataforma-alvo) e extensão para Chrome e Firefox.
-
-### Acompanhamento por compartilhamento privado de tela/janela
-O usuário poderá manter a audiência, reunião ou gravação em outro monitor, em tela dividida ou em outro aplicativo (por exemplo, um reprodutor de vídeo), e selecionar essa tela/janela no próprio Ouve. Também poderá usar a extensão diretamente na aba da audiência, quando compatível. Não será obrigatório importar nem reproduzir o vídeo dentro do Ouve nesse modo. O compartilhamento é uma fonte privada de captura/análise para o Ouve, não uma transmissão a terceiros. Captura visual e captura de áudio são capacidades distintas; áudio do sistema/aba depende de permissões e APIs específicas de cada ambiente e precisa ser validado.
+## Regra de precisão
+A documentação descreve requisitos e planos, não capacidades implementadas. Compatibilidade, captura de áudio, limites de arquivo, custos e políticas de fornecedores só podem ser anunciados após testes e verificação.
