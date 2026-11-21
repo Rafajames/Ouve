@@ -5,7 +5,7 @@
 **Branch:** main
 
 ## Estado geral
-A implementação foi iniciada no GitHub. O scaffold do monorepo, núcleo compartilhado, aplicativo Electron/React, base da extensão e CI estão no repositório. O workflow CI do commit cbe8a15 passou integralmente: instalação, typecheck, testes, build desktop e build da extensão. Uma nova rodada de CI é disparada pelas alterações recentes no núcleo.
+A implementação foi iniciada no GitHub. O scaffold do monorepo, núcleo compartilhado, aplicativo Electron/React, base da extensão e CI estão no repositório. O workflow CI do commit a4b628c passou integralmente após as alterações recentes no núcleo: instalação, typecheck, testes, build desktop e build da extensão.
 
 ## Decisões consolidadas
 - Aplicativo desktop Windows primeiro e extensões Chrome/Firefox.
