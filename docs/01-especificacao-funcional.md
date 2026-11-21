@@ -98,3 +98,24 @@ A viabilidade de captura de áudio de abas e microfone deve ser validada separad
 - Permite cancelar e descartar sessão.
 - Não cria conta, backend próprio ou histórico permanente.
 - Testes automatizados cobrem validações, transformação de dados e exportação.
+
+
+## 6. Requisitos adicionais — desktop e captura de tela/janela
+
+### RF-13 — Duas experiências
+Disponibilizar aplicativo desktop instalável e extensão Chrome/Firefox. Windows será a primeira plataforma desktop-alvo. Compartilhar domínio e casos de uso sempre que possível. Tecnologia desktop permanece pendente de prova de conceito.
+
+### RF-14 — Seleção de fonte visual
+Permitir que o usuário escolha explicitamente tela inteira/monitor, janela específica de aplicativo ou aba do navegador quando suportada. A extensão também poderá ser usada diretamente na aba da audiência, quando compatível.
+
+### RF-15 — Análise de conteúdo reproduzido externamente
+Permitir acompanhar audiência ou gravação reproduzida fora do Ouve, inclusive em outro monitor, tela dividida ou reprodutor local. Não exigir upload/importação nem reprodução interna para esse modo. Capturar áudio associado quando disponível e autorizado; informar quando só imagem ou só áudio puder ser obtido.
+
+### RF-16 — Captura privada
+A fonte compartilhada é entregue apenas ao próprio Ouve para análise. Não é chamada, transmissão ou compartilhamento com outros participantes.
+
+### RF-17 — Controles
+Exigir seleção e autorização explícitas; mostrar indicador persistente; permitir pausar, retomar, trocar fonte e encerrar; explicar permissões e limitações; nunca capturar ocultamente nem contornar avisos do navegador/SO.
+
+### Critérios técnicos de aceite
+Validar separadamente captura de vídeo e áudio do sistema/aba/microfone em Chrome, Firefox e desktop Windows. Testar monitor único, múltiplos monitores, tela dividida e janela externa (incluindo VLC). Verificar sincronização A/V, consumo de CPU/memória, conteúdo protegido e janelas minimizadas. Não prometer captura universal.
