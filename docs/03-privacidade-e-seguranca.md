@@ -57,3 +57,7 @@ Antes de disponibilizar captura ao vivo, elaborar orientação clara para que o 
 - [ ] Cancelamento e descarte testados.
 - [ ] Dependências e licenças revisadas.
 - [ ] Avisos de captura e consentimento validados.
+
+
+## 9. Requisitos adicionais para desktop e compartilhamento privado
+O usuário deve selecionar explicitamente monitor, janela ou aba antes da captura. A captura deve permanecer visivelmente ativa no Ouve, com controles claros de pausar e encerrar. A tela/janela é compartilhada apenas com o próprio processo do Ouve para análise; não é transmitida a participantes nem publicada. Não capturar ocultamente, não contornar bloqueios do SO/navegador e respeitar conteúdo protegido. Informar se o áudio vem da aba, do sistema/loopback ou do microfone; não confundir essas fontes. Buffers de áudio e quadros temporários devem ser descartados conforme a política da sessão. No desktop, avaliar permissões do sistema, isolamento de processos, atualizações e assinatura do instalador.
