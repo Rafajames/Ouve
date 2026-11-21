@@ -50,3 +50,9 @@ Não introduza backend próprio no MVP. Se uma limitação real exigir serviço 
 - Estados claros: aguardando, processando, concluído, erro e cancelado.
 - Testes unitários para lógica de domínio e testes de integração para adaptadores.
 - Acessibilidade básica e interface em português brasileiro.
+
+
+## Atualização obrigatória de escopo — desktop e captura de tela
+O produto contempla aplicativo desktop instalável e extensão Chrome/Firefox. Windows é a primeira plataforma desktop-alvo. Planejar núcleo compartilhado de domínio/aplicação e adaptadores distintos. A tecnologia desktop (Electron/Tauri) depende de prova de conceito.
+
+O compartilhamento de tela/janela é uma entrada privada do próprio Ouve, não uma transmissão para participantes. O usuário pode selecionar monitor, janela de aplicativo ou aba compatível, inclusive vídeo reproduzido fora do Ouve. A extensão também poderá operar na própria aba da audiência. Não exigir importação/reprodução interna nesse modo. Validar separadamente captura visual e áudio por SO/navegador/fonte; não afirmar que capturar uma janela garante áudio do sistema. Exigir autorização explícita, indicador persistente e controles de pausa/parada. Não contornar restrições do sistema.
