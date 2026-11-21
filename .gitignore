@@ -15,3 +15,6 @@ Thumbs.db
 # Playwright
 test-results/
 playwright-report/
+
+# Instaladores
+apps/desktop/release/

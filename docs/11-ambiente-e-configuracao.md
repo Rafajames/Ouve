@@ -66,3 +66,6 @@ pnpm --filter @ouve/desktop package   # instalador NSIS (executar no Windows; n�
 ```
 Variáveis: `OUVE_FFMPEG_PATH` (ffmpeg alternativo), `OUVE_CHROME_PATH` (Chrome para o E2E da extensão). Variáveis `OUVE_E2E*` existem apenas para testes automatizados.
 Carregar a extensão: Chrome → `chrome://extensions` → modo desenvolvedor → “Carregar sem compactação” → `apps/extension/dist/chrome`. Firefox → `about:debugging` → “Carregar extensão temporária” → `apps/extension/dist/firefox/manifest.json`.
+
+## 9. Instalador Windows (21/11/2026)
+A cada push em `desenvolvimento/**`, o workflow "Instalador Windows" gera `Ouve-Setup-<versão>.exe` e o publica na pré-release **teste-windows** (Releases do GitHub). O instalador não é assinado: o SmartScreen pode avisar; use "Mais informações → Executar assim mesmo". Geração local: `pnpm --filter @ouve/desktop package` no Windows, com `FFMPEG_BIN=ffmpeg.exe`.

@@ -19,6 +19,12 @@ const log = createLogger("media");
 export function locateFfmpeg(): string {
   const fromEnv = process.env.OUVE_FFMPEG_PATH;
   if (fromEnv && existsSync(fromEnv)) return fromEnv;
+  // Aplicativo instalado: o binário vai em resources/ (extraResources do electron-builder).
+  const resources = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
+  if (resources) {
+    const bundled = join(resources, process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg");
+    if (existsSync(bundled)) return bundled;
+  }
   try {
     const require = createRequire(import.meta.url);
     const staticPath = (require("ffmpeg-static") as string | null)?.replace("app.asar", "app.asar.unpacked");

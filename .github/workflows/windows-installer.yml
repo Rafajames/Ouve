@@ -1,0 +1,43 @@
+name: Instalador Windows
+
+on:
+  push:
+    branches: ["desenvolvimento/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Gerar instalador (NSIS, sem assinatura)
+        run: pnpm --filter @ouve/desktop package
+        env:
+          FFMPEG_BIN: ffmpeg.exe
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ouve-Setup-Windows
+          path: apps/desktop/release/*.exe
+      - name: Publicar versão de teste
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="teste-windows"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --prerelease --target "$GITHUB_SHA" \
+            --title "Ouve — versão de teste para Windows" \
+            --notes "Instalador gerado automaticamente a partir da branch de desenvolvimento. Não assinado: o Windows pode mostrar o aviso do SmartScreen (Mais informações → Executar assim mesmo). Não validado em uso real."
+          gh release upload "$TAG" apps/desktop/release/*.exe --clobber
+          gh release edit "$TAG" --target "$GITHUB_SHA" --notes "Instalador gerado automaticamente a partir do commit ${GITHUB_SHA::7} da branch ${GITHUB_REF_NAME}. Não assinado: o Windows pode mostrar o aviso do SmartScreen (Mais informações → Executar assim mesmo). Não validado em uso real."

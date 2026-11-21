@@ -1,18 +1,29 @@
-# Empacotamento Windows (NSIS). NÃO validado: requer execução em Windows e assinatura de código.
+# Instalador Windows (NSIS), gerado no GitHub Actions (windows-latest). Sem assinatura de código (P-033).
 appId: br.ouve.desktop
 productName: Ouve
+copyright: Ouve
 directories:
   output: release
+  buildResources: build
 files:
   - out/**
   - package.json
-asarUnpack:
-  - node_modules/ffmpeg-static/**
+  # Todo o código já vem empacotado pelo electron-vite; o ffmpeg vai como recurso externo.
+  - "!node_modules/**"
+extraResources:
+  - from: node_modules/ffmpeg-static/${env.FFMPEG_BIN}
+    to: ${env.FFMPEG_BIN}
+npmRebuild: false
 win:
   target: [nsis]
   artifactName: Ouve-Setup-${version}.${ext}
+linux:
+  target: [dir]
 nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: Ouve
   language: "1046"

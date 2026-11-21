@@ -48,6 +48,7 @@ Total: 76 testes unitários e 9 testes E2E (7 desktop + 2 extensão) passando lo
 
 ## Histórico
 - **20/11/2026:** scaffold do monorepo, núcleo inicial (máquina de estados, contratos, `selectAudioTracks`, registro de provedores), Electron/React com captura desabilitada, base da extensão e CI aprovada (commits a4b628c, cbe8a15).
+- **21/11/2026 (tarde, 3):** instalador Windows gerado pelo GitHub Actions e publicado em Releases (`teste-windows`); empacotamento validado em Linux com ffmpeg embutido.
 - **21/11/2026 (tarde, 2):** termo de uso pedido só no primeiro uso (D-063), removida a confirmação a cada captura/importação no desktop, na extensão e no popup. E2E atualizados (7 desktop + 2 extensão).
 - **21/11/2026 (tarde):** melhorias de interface — ícones SVG, tema claro/escuro/sistema, tela de sessão em duas colunas com resumo e próximos passos, estados vazios, extensão com o mesmo sistema visual (pacote `@ouve/ui`). 8 testes E2E desktop passando, incluindo alternância de tema.
 - **21/11/2026:** implementação das etapas 1–9 do prompt mestre na branch `desenvolvimento/mvp` (detalhes acima e em docs/05).
