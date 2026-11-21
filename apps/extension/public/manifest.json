@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "Ouve — Assistente de áudio",
+  "version": "0.1.0",
+  "description": "Transcreva e organize o áudio de reuniões e audiências.",
+  "action": { "default_popup": "popup.html" },
+  "background": { "service_worker": "background.js", "type": "module" },
+  "permissions": ["storage", "activeTab"]
+}
