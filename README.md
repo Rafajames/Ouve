@@ -23,7 +23,7 @@ Ouve é um aplicativo desktop e extensão de navegador para capturar áudio de u
 - Resultados de IA devem preservar evidências e incertezas.
 
 ## Estado
-**Desenvolvimento iniciado.** O repositório está recebendo o scaffold e o núcleo compartilhado. Captura real, compatibilidade entre plataformas e integrações de provedores ainda não foram validadas. Consulte [Estado atual](docs/06-estado-atual.md).
+**Desenvolvimento iniciado.** O repositório contém o primeiro scaffold e o núcleo compartilhado. Captura real, compatibilidade entre plataformas e integrações de provedores ainda não foram validadas. Consulte [Estado atual](docs/06-estado-atual.md).
 
 ## Começar
 Requisitos: Node.js 20+ e pnpm 9+.
@@ -34,8 +34,6 @@ pnpm dev:desktop
 pnpm typecheck
 pnpm test
 ```
-
-Os scripts serão ampliados conforme os pacotes forem implementados.
 
 ## Estrutura
 - `apps/desktop`: aplicativo Electron + React.
@@ -55,6 +53,7 @@ Os scripts serão ampliados conforme os pacotes forem implementados.
 - [UX e telas](docs/13-experiencia-e-telas.md)
 - [Privacidade](docs/14-privacidade-legal-e-dados.md)
 - [Backlog](docs/15-backlog-inicial.md)
+- [Plano de execução](docs/16-plano-de-execucao.md)
 - [Decisões](docs/05-decisoes-e-pendencias.md)
 - [Estado atual](docs/06-estado-atual.md)
 - [Instruções para agentes](AGENTS.md)
