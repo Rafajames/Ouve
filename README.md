@@ -1,55 +1,63 @@
 # Ouve
 ### Assistente inteligente de audiências e reuniões
 
-Ouve é um assistente privado para acompanhar, transcrever, organizar e analisar reuniões, audiências e gravações. O objetivo é transformar conversas longas em informação estruturada e relatórios úteis, mantendo o usuário no controle dos dados.
+Ouve é um aplicativo desktop e extensão de navegador para capturar áudio de uma fonte escolhida, transcrever, organizar e analisar reuniões, audiências e gravações.
 
-> **Estado:** pacote de pré-desenvolvimento documentado. Nenhuma funcionalidade de produto está implementada ainda.
-
-## Produto planejado
-- Aplicativo desktop instalável, Windows como primeira plataforma.
-- Extensão para Google Chrome e Mozilla Firefox.
-- Análise de arquivos de áudio/vídeo.
-- Captura privada de tela, janela ou aba compatível, inclusive quando a audiência/vídeo está em outro monitor ou aplicativo.
-- Transcrição, tópicos, decisões, perguntas/respostas, tarefas, responsáveis e prazos mencionados.
-- Relatório editável e exportação local em PDF/DOCX.
-
-A captura de tela é uma entrada privada do próprio Ouve, não uma transmissão a terceiros. Não é obrigatório importar ou reproduzir o vídeo dentro do Ouve para usar o modo de captura externa. A disponibilidade de áudio depende das APIs e permissões de cada ambiente e será validada por provas técnicas.
+## Escopo confirmado
+- Aplicativo desktop para Windows como primeira plataforma.
+- Extensões para Google Chrome e Mozilla Firefox.
+- O usuário seleciona tela, janela ou aba, em uma experiência semelhante ao compartilhamento do Google Meet.
+- **O processamento do Ouve é exclusivamente de áudio.** Não grava tela, não analisa imagens, não executa OCR e não armazena quadros. Se uma API exigir uma trilha visual para iniciar o seletor, os quadros devem ser descartados imediatamente.
+- Áudio da fonte selecionada e microfone opcional.
+- Importação de arquivos de áudio e vídeo; em vídeo, somente a faixa de áudio será extraída.
+- Transcrição ao vivo e posterior, diarização quando disponível, resumo, tópicos, perguntas/respostas, decisões e tarefas.
+- Relatórios editáveis e exportação local PDF/DOCX.
+- BYOK: OpenAI, Gemini, Claude, Grok, outros provedores e endpoints personalizados compatíveis/adaptáveis.
 
 ## Princípios
-- Sem conta obrigatória, backend próprio ou histórico permanente no MVP.
-- Processamento temporário; usuário escolhe se exporta e onde salva.
-- Captura iniciada explicitamente, com indicador visível e controles de pausa/parada.
+- Sem conta obrigatória, backend próprio, sincronização ou histórico permanente no MVP.
+- Processamento temporário; usuário controla exportação e destino.
+- Captura explícita, indicador persistente e controles de pausa/parada.
 - Português brasileiro como prioridade.
-- Provedores intercambiáveis e BYOK.
-- Nenhum conteúdo confidencial em logs, analytics ou telemetria.
-- Resultados de IA com evidências e indicação de incerteza.
+- Chaves protegidas localmente; nunca incluir segredos em código, commits ou logs.
+- Resultados de IA devem preservar evidências e incertezas.
+
+## Estado
+**Desenvolvimento iniciado.** O repositório está recebendo o scaffold e o núcleo compartilhado. Captura real, compatibilidade entre plataformas e integrações de provedores ainda não foram validadas. Consulte [Estado atual](docs/06-estado-atual.md).
+
+## Começar
+Requisitos: Node.js 20+ e pnpm 9+.
+
+```bash
+pnpm install
+pnpm dev:desktop
+pnpm typecheck
+pnpm test
+```
+
+Os scripts serão ampliados conforme os pacotes forem implementados.
+
+## Estrutura
+- `apps/desktop`: aplicativo Electron + React.
+- `apps/extension`: base da extensão Chrome/Firefox.
+- `packages/core`: domínio e contratos compartilhados.
+- `docs/`: especificações, arquitetura, decisões e backlog.
 
 ## Documentação
-### Produto e requisitos
 - [Visão geral](docs/00-visao-geral.md)
 - [Especificação funcional](docs/01-especificacao-funcional.md)
-- [Blueprint de desenvolvimento](docs/07-blueprint-desenvolvimento.md)
-- [Experiência e telas](docs/13-experiencia-e-telas.md)
-
-### Engenharia
-- [Arquitetura técnica inicial](docs/02-arquitetura-tecnica.md)
-- [Arquitetura detalhada e contratos](docs/08-arquitetura-detalhada.md)
+- [Blueprint](docs/07-blueprint-desenvolvimento.md)
+- [Arquitetura detalhada](docs/08-arquitetura-detalhada.md)
 - [Integrações e provedores](docs/09-integracoes-e-provedores.md)
-- [MCP e ferramentas de desenvolvimento](docs/10-mcp-e-ferramentas-de-desenvolvimento.md)
-- [Ambiente e configuração](docs/11-ambiente-e-configuracao.md)
-- [Plano de testes e aceite](docs/12-plano-de-testes-e-aceite.md)
-- [Backlog inicial](docs/15-backlog-inicial.md)
-
-### Governança
-- [Privacidade e segurança](docs/03-privacidade-e-seguranca.md)
-- [Privacidade, consentimento e dados](docs/14-privacidade-legal-e-dados.md)
-- [Roadmap](docs/04-roadmap.md)
-- [Decisões e pendências](docs/05-decisoes-e-pendencias.md)
+- [MCP e ferramentas](docs/10-mcp-e-ferramentas-de-desenvolvimento.md)
+- [Ambiente](docs/11-ambiente-e-configuracao.md)
+- [Testes e aceite](docs/12-plano-de-testes-e-aceite.md)
+- [UX e telas](docs/13-experiencia-e-telas.md)
+- [Privacidade](docs/14-privacidade-legal-e-dados.md)
+- [Backlog](docs/15-backlog-inicial.md)
+- [Decisões](docs/05-decisoes-e-pendencias.md)
 - [Estado atual](docs/06-estado-atual.md)
 - [Instruções para agentes](AGENTS.md)
 
-## Próxima etapa
-Executar o EPIC 0 do backlog: validar tecnologia desktop e captura, confirmar monorepo e ferramentas, selecionar primeiro provedor e criar scaffold/CI. Só depois iniciar funcionalidades do produto.
-
-## Regra de precisão
-A documentação descreve requisitos e planos, não capacidades implementadas. Compatibilidade, captura de áudio, limites de arquivo, custos e políticas de fornecedores só podem ser anunciados após testes e verificação.
+## Precisão
+Documentação e interfaces iniciais não equivalem a compatibilidade comprovada. Não anunciar captura de áudio, suporte a um aplicativo, duração máxima ou qualidade de provedor como garantidos antes de testes documentados.
