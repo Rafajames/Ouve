@@ -102,3 +102,22 @@ BYOK não significa que qualquer chave possa ser armazenada sem risco. Preferir 
 - Fixtures sintéticas ou autorizadas; não versionar gravações reais confidenciais.
 - Testes manuais em Chrome e Firefox.
 - Medir memória, duração e limites com arquivos de teste.
+
+
+## 10. Arquitetura multiplataforma: desktop + extensão
+O produto terá aplicativo desktop instalável (Windows primeiro) e extensão Chrome/Firefox. A tecnologia desktop (Electron, Tauri ou alternativa) será escolhida após spike comparativo. Compartilhar modelos de domínio, casos de uso, pipeline de transcrição/análise e geração de relatórios; manter adaptadores específicos para captura, permissões, ciclo de vida e armazenamento temporário.
+
+## 11. Captura de tela/janela e mídia externa
+Definir uma porta de captura capaz de selecionar fontes suportadas e fornecer fluxos de vídeo e áudio separados, com timestamps. Na extensão, usar APIs de captura oferecidas pelo navegador. No desktop, usar APIs do framework/SO para selecionar monitor ou janela e obter áudio de sistema quando permitido.
+
+O usuário poderá selecionar a janela de um reprodutor externo ou o monitor em que a audiência está aberta. Não será necessário importar o arquivo nem reproduzi-lo no Ouve. A captura é privada e destinada somente à análise no Ouve, sem transmissão a terceiros. Exigir autorização explícita, indicador visível persistente e controles de pausa/parada.
+
+Captura de vídeo não garante captura de áudio do sistema. Validar por combinação de SO, navegador, framework e fonte: loopback, permissões, seleção de dispositivo, sincronização A/V, múltiplos monitores, janelas minimizadas, aceleração de hardware e DRM/conteúdo protegido.
+
+## 12. Spikes técnicos obrigatórios
+1. Captura de aba no Chrome com vídeo e áudio.
+2. Mapear captura equivalente e diferenças no Firefox.
+3. Capturar monitor/janela externa no Windows e validar áudio de sistema/loopback.
+4. Testar VLC, dois monitores e tela dividida.
+5. Comparar Electron e Tauri em captura, áudio, empacotamento, tamanho, consumo e manutenção.
+6. Medir sincronização A/V e estratégia de amostragem de quadros sem retenção permanente de vídeo.
