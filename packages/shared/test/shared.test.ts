@@ -19,6 +19,7 @@ describe("redação de logs", () => {
     const out = redactString("falha com sk-ant-abc123456789 e AIzaSyD1234567890123456789012 Bearer abc.def");
     expect(out).not.toMatch(/sk-ant-abc/);
     expect(out).not.toMatch(/AIza/);
+    expect(redactString("chave AQ.Ab8RN6JexemploExemplo123456 vazou")).toBe("chave [REDIGIDO] vazou");
     expect(out).not.toMatch(/abc\.def/);
   });
 

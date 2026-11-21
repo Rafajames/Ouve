@@ -49,7 +49,7 @@ export function QuickSetup({ onDone, compact = false }: { onDone: () => void | P
           type="password"
           autoComplete="off"
           aria-label="Chave de API"
-          placeholder="Cole aqui a chave (ex.: AIza… do Gemini)"
+          placeholder="Cole aqui a chave (ex.: AQ.… ou AIza… do Gemini)"
           value={key}
           onChange={(e) => setKey(e.target.value)}
           style={{ flex: 1 }}

@@ -136,7 +136,7 @@ function ProvidersPanel({ settings, onSettings }: { settings: ExtSettings; onSet
           type="password"
           autoComplete="off"
           aria-label="Chave de API"
-          placeholder="Cole sua chave de IA (ex.: AIza… do Gemini, que tem plano gratuito)"
+          placeholder="Cole sua chave de IA (ex.: AQ.… do Gemini, que tem plano gratuito)"
           value={quickKey}
           onChange={(e) => setQuickKey(e.target.value)}
           style={{ flex: 1 }}

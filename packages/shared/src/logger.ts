@@ -17,7 +17,8 @@ const SENSITIVE_FIELD = /(key|token|secret|password|authorization|credential|aud
 const SECRET_PATTERNS: RegExp[] = [
   /sk-[A-Za-z0-9_-]{8,}/g, // OpenAI / Anthropic (sk-ant-...)
   /xai-[A-Za-z0-9_-]{8,}/g,
-  /AIza[0-9A-Za-z_-]{20,}/g, // Google
+  /AIza[0-9A-Za-z_-]{20,}/g, // Google (formato antigo)
+  /AQ\.[0-9A-Za-z._-]{20,}/g, // Google (chave de autenticação)
   /Bearer\s+[A-Za-z0-9._~+/=-]+/gi,
   /([?&](?:key|api_key|token)=)[^&\s]+/gi
 ];

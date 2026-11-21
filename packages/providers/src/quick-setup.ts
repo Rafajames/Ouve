@@ -15,7 +15,8 @@ export function detectProtocolFromKey(apiKey: string): ProviderProtocol | undefi
   const key = apiKey.trim();
   if (/^sk-ant-/.test(key)) return "anthropic";
   if (/^xai-/.test(key)) return "xai";
-  if (/^AIza[0-9A-Za-z_-]{20,}$/.test(key)) return "gemini";
+  // Google: chaves antigas "AIza…" e chaves de autenticação "AQ.…" (padrão do AI Studio desde 28/05/2026).
+  if (/^AIza[0-9A-Za-z_-]{20,}$/.test(key) || /^AQ\.[0-9A-Za-z._-]{20,}$/.test(key)) return "gemini";
   if (/^sk-[A-Za-z0-9_-]{16,}/.test(key)) return "openai";
   return undefined;
 }
@@ -99,7 +100,7 @@ export async function runQuickSetup(apiKey: string, fetchImpl: FetchLike, id: st
   if (!protocol) {
     throw new OuveError(
       "invalid-input",
-      "Não reconheci essa chave. A configuração rápida aceita chaves da OpenAI (sk-…), Google Gemini (AIza…), Anthropic Claude (sk-ant-…) e xAI Grok (xai-…). Para outros provedores, use a configuração avançada.",
+      "Não reconheci essa chave. A configuração rápida aceita chaves da OpenAI (sk-…), Google Gemini (AIza… ou AQ.…), Anthropic Claude (sk-ant-…) e xAI Grok (xai-…). Para outros provedores, use a configuração avançada.",
       { retryable: false }
     );
   }

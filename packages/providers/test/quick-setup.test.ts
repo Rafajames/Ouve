@@ -16,6 +16,7 @@ describe("detecção do provedor pela chave", () => {
     expect(detectProtocolFromKey("sk-ant-api03-abcdefghijklmnop")).toBe("anthropic");
     expect(detectProtocolFromKey("xai-abcdefghijklmnop")).toBe("xai");
     expect(detectProtocolFromKey("AIzaSyD12345678901234567890123456789")).toBe("gemini");
+    expect(detectProtocolFromKey("AQ.Ab8RN6JexemploExemploExemplo123456")).toBe("gemini");
     expect(detectProtocolFromKey("  sk-proj-abcdefghijklmnopqrstu  ")).toBe("openai");
     expect(detectProtocolFromKey("chave-qualquer")).toBeUndefined();
   });
