@@ -142,5 +142,6 @@ Todo o desenvolvimento registrado abaixo aconteceu nesses dois dias, fora de dia
 | 22/11/2026 05:15 | `61ea085` | Claude | fix: escolha de provedor órfã não gera mais "Provedor não configurado" |
 | 22/11/2026 05:25 | `9db98c6` | Claude | fix(local): Whisper mostra o motivo real ao falhar e tenta versão compatível |
 | 22/11/2026 05:35 | `9f72a34` | Claude | fix(local): registro whisper-server.log e detalhe real quando o Whisper não abre |
+| 22/11/2026 05:45 | `e423630` | Claude | fix(local): "Testar conexão" do Whisper local não pede /models (HTTP 404) |
 
 > Para atualizar esta tabela: `git log --reverse --format='%at|%h|%an|%s'` convertendo os horários para UTC−04:00.
