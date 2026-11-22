@@ -201,18 +201,29 @@ export class LocalAiService {
       }
       if (child.exitCode !== null) {
         this.child = undefined;
+        await this.writeLog(exe, args, `saída ${child.exitCode}`, stderr);
         throw describeExit(child.exitCode, stderr);
       }
       try {
         const res = await this.deps.fetch(`http://127.0.0.1:${LOCAL_WHISPER_PORT}/`, { signal: AbortSignal.timeout(1000) });
-        if (res.status < 500) return;
+        if (res.status < 500) {
+          await this.writeLog(exe, args, "ligado", stderr);
+          return;
+        }
       } catch {
         /* ainda carregando o modelo */
       }
       await new Promise((r) => setTimeout(r, 500));
     }
+    await this.writeLog(exe, args, "tempo esgotado", stderr);
     await this.stopWhisper();
     throw localError("O servidor de transcrição local demorou demais para iniciar. Tente um modelo menor (base).");
+  }
+
+  /** Guarda o que o servidor escreveu ao iniciar (whisper-server.log), para diagnóstico. */
+  private async writeLog(exe: string, args: string[], result: string, stderr: string): Promise<void> {
+    const text = `${new Date().toISOString()} · ${result}\n${exe} ${args.join(" ")}\n\n${stderr}`;
+    await writeFile(join(this.dir, "whisper-server.log"), text).catch(() => undefined);
   }
 
   /** Garante o servidor ligado com o último modelo usado (antes de transcrever). */
@@ -253,13 +264,14 @@ const DLL_NOT_FOUND = 0xc0000135;
 /** Traduz a saída do servidor que fechou ao iniciar em uma mensagem compreensível. */
 export function describeExit(code: number, stderr: string): Error {
   const unsigned = code >>> 0;
-  const tail = stderr.trim().split(/\r?\n/).filter(Boolean).slice(-1)[0]?.slice(0, 200);
+  const tail = stderr.trim().split(/\r?\n/).filter(Boolean).slice(-2).join(" · ").slice(0, 300);
   if (/bind|address already in use|10048/i.test(stderr))
     return localError(
       `A porta ${LOCAL_WHISPER_PORT} já está em uso por outro programa (talvez outro Whisper aberto). Feche-o ou reinicie o computador e tente de novo.`
     );
-  if (/failed to (load|read|initialize).*model|invalid model|bad magic/i.test(stderr))
-    return localError("O arquivo do modelo parece corrompido. Clique em “remover” e baixe o modelo de novo.");
+  // Falha ao carregar o modelo pode ser da compilação (AVX2): vale tentar a versão compatível.
+  if (/failed to (load|initialize)/i.test(stderr))
+    return new LaunchCrash(`O Whisper não conseguiu carregar o modelo.${tail ? ` Detalhe: ${tail}` : ""}`);
   if (unsigned === ILLEGAL_INSTRUCTION)
     return new LaunchCrash("O processador deste computador não é compatível com a transcrição local (falta a instrução AVX2).");
   if (unsigned === DLL_NOT_FOUND) return new LaunchCrash("Falta um componente do Windows para a transcrição local (DLL não encontrada).");
