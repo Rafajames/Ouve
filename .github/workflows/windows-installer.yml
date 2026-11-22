@@ -28,14 +28,20 @@ jobs:
       # Ele escolhe em tempo de execução a variante certa para o processador (AVX2, AVX, SSE…).
       - name: Baixar whisper.cpp oficial
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          Invoke-WebRequest -Uri "https://github.com/ggml-org/whisper.cpp/releases/download/$env:WHISPER_CPP_TAG/whisper-bin-x64.zip" -OutFile whisper.zip
+          # Release oficial mais recente que traz o pacote pronto para Windows x64.
+          $tag = gh api repos/ggml-org/whisper.cpp/releases --jq '[.[] | select(.assets[].name == "whisper-bin-x64.zip")][0].tag_name'
+          if (-not $tag) { throw "Nenhuma release oficial do whisper.cpp com whisper-bin-x64.zip." }
+          Write-Host "whisper.cpp oficial: $tag"
+          gh release download $tag -R ggml-org/whisper.cpp -p whisper-bin-x64.zip -O whisper.zip
           Expand-Archive whisper.zip -DestinationPath wtmp
           $server = Get-ChildItem wtmp -Recurse -Filter whisper-server.exe | Select-Object -First 1
           New-Item -ItemType Directory -Force apps/desktop/vendor/whisper | Out-Null
           Copy-Item $server.FullName apps/desktop/vendor/whisper/
           Copy-Item (Join-Path $server.DirectoryName "*.dll") apps/desktop/vendor/whisper/
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ggml-org/whisper.cpp/$env:WHISPER_CPP_TAG/LICENSE" -OutFile apps/desktop/vendor/whisper/LICENSE-whisper.cpp.txt
+          gh api "repos/ggml-org/whisper.cpp/contents/LICENSE?ref=$tag" -H "Accept: application/vnd.github.raw" > apps/desktop/vendor/whisper/LICENSE-whisper.cpp.txt
       - name: Conferir whisper-server
         shell: bash
         run: |
