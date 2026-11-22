@@ -39,7 +39,7 @@ pnpm test:e2e             # E2E (no Linux sem tela: xvfb-run -a pnpm test:e2e)
 Uso: em **Provedores de IA**, cadastre um provedor com sua chave e escolha quem faz a transcrição e a análise. Depois use **Nova sessão** (tela, janela ou microfone) ou **Importar arquivo**. Detalhes em [Ambiente](docs/11-ambiente-e-configuracao.md).
 
 ## Autoria
-Idealizado e desenvolvido por **Rafajames** (https://github.com/Rafajames). © 2026 — todos os direitos reservados. Ver [AUTORIA.md](AUTORIA.md).
+Idealizado e desenvolvido por **Rafajames** (https://github.com/Rafajames). © 2026 — todos os direitos reservados. Ver [AUTORIA.md](AUTORIA.md) e a [linha do tempo do desenvolvimento](docs/linha-do-tempo.md).
 
 ## Versões
 - **Web (sem instalar):** https://rafajames.github.io/Ouve/ — atualiza sozinha a cada nova versão.
