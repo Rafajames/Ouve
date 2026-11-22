@@ -44,6 +44,10 @@ const bridge: OuveBridge = {
   files: {
     save: (name, bytes) => invoke(IPC.saveFile, name, bytes)
   },
+  local: {
+    probe: () => invoke(IPC.probeLocal),
+    pullModel: (model) => invoke(IPC.pullLocalModel, model)
+  },
   updates: {
     check: () => invoke(IPC.checkUpdates),
     install: () => invoke(IPC.installUpdate),

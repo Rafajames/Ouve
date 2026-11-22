@@ -11,6 +11,8 @@ import { ReportScreen } from "./screens/ReportScreen";
 import { ImportScreen } from "./screens/ImportScreen";
 import { ProvidersScreen } from "./screens/ProvidersScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
+import { HelpScreen } from "./HelpScreen";
+import { Onboarding } from "./Onboarding";
 
 const NAV: Array<{ screen: Screen; label: string; icon: IconName }> = [
   { screen: "home", label: "Início", icon: "home" },
@@ -19,7 +21,8 @@ const NAV: Array<{ screen: Screen; label: string; icon: IconName }> = [
   { screen: "session", label: "Sessão atual", icon: "transcript" },
   { screen: "report", label: "Análise e relatório", icon: "report" },
   { screen: "providers", label: "Provedores de IA", icon: "providers" },
-  { screen: "settings", label: "Configurações", icon: "settings" }
+  { screen: "settings", label: "Configurações", icon: "settings" },
+  { screen: "help", label: "Ajuda", icon: "help" }
 ];
 
 const THEMES: Array<{ value: ThemePreference; icon: IconName; label: string }> = [
@@ -144,8 +147,15 @@ export default function App() {
           {screen === "import" && <ImportScreen data={data} />}
           {screen === "providers" && <ProvidersScreen data={data} />}
           {screen === "settings" && <SettingsScreen data={data} />}
+          {screen === "help" && <HelpScreen />}
         </div>
       </div>
+      {data.settings && !data.settings.onboardingDone && !window.ouve?.e2e && (
+        <Onboarding
+          onNavigate={setScreen}
+          onClose={() => data.settings && void data.saveSettings({ ...data.settings, onboardingDone: true })}
+        />
+      )}
       {toast && (
         <div className={`toast ${toast.kind}`} role={toast.kind === "error" ? "alert" : "status"}>
           <Icon name={toast.kind === "error" ? "alert" : "check"} />

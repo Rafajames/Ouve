@@ -3,7 +3,7 @@ import type { AppSettings, ProviderSummary, SecretProtection } from "../../share
 import { bridge, hasBridge, unwrap } from "./bridge";
 import type { SessionController, SessionSnapshot } from "./session-controller";
 
-export type Screen = "home" | "new" | "session" | "report" | "import" | "providers" | "settings";
+export type Screen = "home" | "new" | "session" | "report" | "import" | "providers" | "settings" | "help";
 
 export interface AppContextValue {
   controller: SessionController;

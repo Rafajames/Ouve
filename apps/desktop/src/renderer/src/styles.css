@@ -1284,3 +1284,81 @@ label.check {
 label.check.inline {
   display: inline-flex;
 }
+.local-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+.local-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.badge.ok {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 12, 18, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+}
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  width: min(520px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.onb-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.onb-head .muted {
+  flex: 1;
+}
+.onb-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+.onb-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+}
+.onb-dots span.on {
+  background: var(--accent);
+}
+.help-steps li {
+  margin-bottom: 8px;
+}
+.key-pages {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.key-pages li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.glossary dt {
+  font-weight: 600;
+}

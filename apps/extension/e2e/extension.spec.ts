@@ -36,7 +36,8 @@ test("pede o termo uma vez e depois libera a captura sem nova confirmação", as
   await expect(page.getByRole("heading", { name: "Bem-vindo ao Ouve" })).toBeVisible();
   await page.getByRole("button", { name: "Aceitar e começar" }).click();
   await expect(page.getByText("Somente áudio. Nenhuma imagem é capturada.")).toBeVisible();
-  await expect(page.getByText(/sem criptografia do sistema operacional/)).toBeVisible();
+  await expect(page.getByText(/apagadas ao fechá-lo/)).toBeVisible();
+  await expect(page.getByLabel(/Lembrar as chaves neste navegador/)).not.toBeChecked();
   await expect(page.getByRole("button", { name: /Somente microfone/ })).toBeEnabled();
   await page.reload();
   await expect(page.getByRole("heading", { name: "Bem-vindo ao Ouve" })).toHaveCount(0);

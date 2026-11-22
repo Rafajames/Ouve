@@ -165,3 +165,32 @@ describe("HTTP", () => {
     expect(waits).toEqual([100, 150]);
   });
 });
+
+describe("IA local", () => {
+  it("detecta o Ollama aberto com modelos e o whisper.cpp fechado", async () => {
+    const { probeLocalServers } = await import("../src/index.js");
+    const fetchImpl = (async (url: string) => {
+      if (url.includes("11434")) return new Response(JSON.stringify({ models: [{ name: "gemma3:4b", size: 3_300_000_000 }] }));
+      throw new TypeError("connection refused");
+    }) as unknown as typeof fetch;
+    const r = await probeLocalServers(fetchImpl, 200);
+    expect(r.find((x) => x.id === "ollama")).toEqual({
+      id: "ollama",
+      running: true,
+      installedModels: [{ name: "gemma3:4b", sizeGb: 3.3 }]
+    });
+    expect(r.find((x) => x.id === "whisper-cpp")?.running).toBe(false);
+  });
+
+  it("recomenda modelos pelo hardware e gera configuração sem chave", async () => {
+    const { adviseHardware, localProviderConfig, validateProviderConfig, createProviderBundle } = await import("../src/index.js");
+    expect(adviseHardware({ ramGb: 4 }).level).toBe("modest");
+    expect(adviseHardware({ ramGb: 12 }).analysisModel).toBe("gemma3:4b");
+    expect(adviseHardware({}).level).toBe("unknown");
+    const cfg = localProviderConfig("ollama", "gemma3:4b");
+    expect(validateProviderConfig(cfg)).toEqual([]);
+    expect(cfg.enabledTasks).toEqual(["analysis", "report"]);
+    expect(() => createProviderBundle(cfg, undefined, fetch)).not.toThrow();
+    expect(localProviderConfig("whisper-cpp", "").transcriptionModel).toBe("whisper-1");
+  });
+});

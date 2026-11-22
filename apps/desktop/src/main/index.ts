@@ -1,6 +1,7 @@
 import { app, BrowserWindow, desktopCapturer, dialog, ipcMain, safeStorage, session, shell, type IpcMainInvokeEvent } from "electron";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { cpus, totalmem } from "node:os";
 import { createLogger, toOuveError } from "@ouve/shared";
 import type { CompletionRequest } from "@ouve/core";
 import { AUDIO_EXTENSIONS, VIDEO_EXTENSIONS } from "@ouve/core";
@@ -11,6 +12,7 @@ import { spawn } from "node:child_process";
 
 declare const __OUVE_BUILD__: string;
 import { ProviderService } from "./provider-service.js";
+import { probeLocalServers, pullOllamaModel } from "@ouve/providers";
 import { SafeStorageSecretStore, SettingsStore } from "./stores.js";
 import { assertNumber, assertString, parseProviderConfig, parseSettings } from "./validate.js";
 
@@ -235,6 +237,12 @@ function registerIpc(): void {
     }
     await updates.install((percent) => event.sender.send(IPC.updateProgress, percent));
   });
+
+  handle(IPC.probeLocal, async () => ({
+    results: await probeLocalServers((input, init) => fetch(input, init)),
+    hardware: { ramGb: Math.round((totalmem() / 1024 ** 3) * 10) / 10, cores: cpus().length }
+  }));
+  handle(IPC.pullLocalModel, (_e, model) => pullOllamaModel((input, init) => fetch(input, init), assertString(model, "modelo", 80)));
 
   handle(IPC.saveFile, async (_e, name, bytes) => {
     const fileName = assertString(name, "nome", 200).replace(/[\\/:*?"<>|]/g, "_");

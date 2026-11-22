@@ -85,3 +85,6 @@ Recomendação de hardware a exibir: detectar RAM/núcleos (desktop) e sugerir *
 | **G — Copiloto leve (opcional)** | Avisos locais com cooldown: pergunta sem resposta, monólogo longo, marcador sugerido por palavras-chave (“fica decidido”, “prazo”) | Nenhum (regras locais) | Médio |
 
 Ordem sugerida: A → B → C → D → F → E → G.
+
+## 8. Execução — 22/11/2026
+Todos os lotes (A–G) foram implementados na `desenvolvimento/mvp`. Decisões D-072 a D-081 em docs/05. Verificação: lint, formatação, typecheck, 115 testes unitários, builds desktop/extensão/web e 11 E2E (7 desktop Electron, 2 extensão, 2 web) passando. **Não validado:** IA local real (Ollama/whisper.cpp), chaves reais, Windows real.

@@ -2,6 +2,7 @@
  * Contrato IPC entre renderer e processo principal. Canais em allowlist;
  * o renderer nunca recebe chaves de API nem caminhos de arquivos temporários.
  */
+import type { HardwareInfo, LocalProbeResult } from "@ouve/providers";
 import type {
   AiTask,
   CompletionRequest,
@@ -122,6 +123,11 @@ export interface CompleteInput {
 }
 
 /** Erro serializável (OuveError não atravessa o IPC com a classe). */
+export interface LocalStatus {
+  results: LocalProbeResult[];
+  hardware: HardwareInfo;
+}
+
 export interface IpcError {
   code: string;
   message: string;
@@ -177,6 +183,12 @@ export interface OuveBridge {
   files: {
     save(fileName: string, bytes: Uint8Array): Promise<IpcResult<string | null>>;
   };
+  /** IA local: detecção de programas no próprio computador e recomendação por hardware. */
+  local?: {
+    probe(): Promise<IpcResult<LocalStatus>>;
+    /** Desktop: baixa um modelo no Ollama (ação explícita do usuário). */
+    pullModel?(model: string): Promise<IpcResult<void>>;
+  };
   /** Somente no desktop: verificação e instalação manual de atualizações. */
   updates?: {
     check(): Promise<IpcResult<UpdateInfo>>;
@@ -206,6 +218,8 @@ export const IPC = {
   releaseMedia: "media:release",
   mediaProgress: "media:progress",
   saveFile: "files:save",
+  probeLocal: "local:probe",
+  pullLocalModel: "local:pull",
   checkUpdates: "updates:check",
   installUpdate: "updates:install",
   updateProgress: "updates:progress"

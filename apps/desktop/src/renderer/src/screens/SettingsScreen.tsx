@@ -3,6 +3,7 @@ import { capabilitiesFor, detectPlatform, type CaptureFeature } from "@ouve/capt
 import type { AppSettings } from "../../../shared/ipc";
 import { bridge, capturePlatformEnv, unwrap } from "../bridge";
 import { Icon } from "@ouve/ui";
+import { REPORT_CONTEXTS } from "@ouve/core";
 import { OUVE_COPYRIGHT, OUVE_CREDIT, OUVE_REPOSITORY } from "@ouve/shared";
 import type { UpdateInfo } from "../../../shared/ipc";
 import { Page } from "../components";
@@ -215,6 +216,33 @@ export function SettingsScreen({ data }: { data: AppData }) {
           />{" "}
           Incluir a transcrição completa no PDF/DOCX
         </label>
+      </div>
+      <div className="panel">
+        <h2>Durante a sessão</h2>
+        <label className="field">
+          <span>Tipo de sessão padrão</span>
+          <select
+            value={draft.defaultContext}
+            onChange={(e) => update({ defaultContext: e.target.value as AppSettings["defaultContext"] })}
+          >
+            {REPORT_CONTEXTS.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label} — {c.hint}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={draft.liveHints} onChange={(e) => update({ liveHints: e.target.checked })} /> Mostrar avisos
+          discretos (pergunta sem resposta, fala muito longa, possível decisão ou prazo)
+        </label>
+        <p className="muted small-text">
+          Os avisos são calculados no seu computador a partir da transcrição, sem chamadas extras de IA, e aparecem no máximo um a cada 90
+          segundos.
+        </p>
+        <button className="small" onClick={() => void data.saveSettings({ ...draft, onboardingDone: false })}>
+          Mostrar a apresentação inicial de novo
+        </button>
       </div>
       <div className="panel">
         <h2>Capacidades de captura nesta plataforma</h2>

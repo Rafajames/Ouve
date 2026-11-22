@@ -83,3 +83,30 @@ describe("analyzeTranscript", () => {
     ).rejects.toMatchObject({ code: "invalid-input" });
   });
 });
+
+describe("relatório 2.0 na análise", () => {
+  it("valida objetivo, conclusão, divergências, pontos a esclarecer e momentos importantes", () => {
+    const r = validateAnalysis(
+      {
+        summary: "s",
+        objective: "Remarcar audiência",
+        conclusion: "Audiência remarcada",
+        divergences: [{ title: "Data", basis: "explicit", evidence: [{ segmentIds: ["seg-0-1"] }] }],
+        clarifications: [{ title: "Qual sexta?", basis: "explicit", evidence: [] }],
+        keyMoments: [{ title: "Decisão", basis: "explicit", evidence: [{ segmentIds: ["inexistente"] }] }]
+      },
+      segments
+    );
+    expect(r.objective).toBe("Remarcar audiência");
+    expect(r.conclusion).toBe("Audiência remarcada");
+    expect(r.divergences[0]?.basis).toBe("explicit");
+    expect(r.clarifications[0]?.basis).toBe("inferred");
+    expect(r.keyMoments[0]?.evidence).toEqual([]);
+  });
+
+  it("acrescenta orientação do tipo de sessão ao prompt", () => {
+    const msgs = buildAnalysisMessages(segments, { speakerLabel: label, context: "hearing" });
+    expect(msgs[1]?.content).toContain("AUDIÊNCIA");
+    expect(buildAnalysisMessages(segments, { speakerLabel: label })[1]?.content).not.toContain("Tipo de sessão");
+  });
+});

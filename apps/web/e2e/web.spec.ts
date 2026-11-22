@@ -21,8 +21,10 @@ test("versão web: termo, provedor, importação, transcrição, análise e down
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await page.getByRole("button", { name: "Aceitar e começar" }).click();
+  await expect(page.getByRole("heading", { name: "Conheça o Ouve" })).toBeVisible();
+  await page.getByRole("button", { name: "Pular", exact: true }).click();
   await expect(page.getByRole("heading", { name: /Cole sua chave de IA/ })).toBeVisible();
-  await expect(page.getByText("A chave fica salva só neste navegador", { exact: false })).toBeVisible();
+  await expect(page.getByText("A chave fica só nesta aba", { exact: false })).toBeVisible();
 
   await page.getByRole("button", { name: "Provedores de IA", exact: true }).click();
   await page.getByRole("button", { name: "Adicionar provedor" }).click();
@@ -48,19 +50,38 @@ test("versão web: termo, provedor, importação, transcrição, análise e down
   await expect(page.locator(".status-pill")).toHaveText(/Concluído/, { timeout: 60_000 });
   await expect(page.getByText(/Maria vai enviar o parecer/).first()).toBeVisible();
 
+  // Marcadores e métricas locais (sem IA).
+  await page.getByRole("button", { name: "Decisão", exact: true }).click();
+  await page.getByRole("tab", { name: /Marcadores \(1\)/ }).click();
+  await expect(page.locator(".marker-list li")).toHaveCount(1);
+  await page.getByRole("tab", { name: /Métricas/ }).click();
+  await expect(page.getByText("Linha do tempo — quem falou e quando")).toBeVisible();
+  await expect(page.locator(".stage-list li").first()).toBeVisible();
+  await page.getByRole("tab", { name: /Transcrição/ }).click();
+
   await page.getByRole("button", { name: "Analisar e gerar relatório" }).click();
   await expect(page.locator('input[value="Enviar parecer"]')).toBeVisible();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exportar PDF" }).click();
   expect((await download).suggestedFilename()).toBe("aula.pdf");
+  await page.getByText("Exportar e escolher o que incluir").click();
+  const txt = page.waitForEvent("download");
+  await page.getByRole("button", { name: "TXT", exact: true }).click();
+  const txtFile = await (await txt).path();
+  const { readFile } = await import("node:fs/promises");
+  const content = await readFile(txtFile!, "utf8");
+  expect(content).toContain("MARCADORES REGISTRADOS");
+  expect(content).toContain("PARTICIPAÇÃO");
   expect(errors).toEqual([]);
 });
 
 test("versão web: preferências ficam só no navegador e o termo não volta", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Aceitar e começar" }).click();
+  await page.getByRole("button", { name: "Pular", exact: true }).click();
   await page.reload();
   await expect(page.getByRole("heading", { name: "Bem-vindo ao Ouve" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Conheça o Ouve" })).toHaveCount(0);
   const stored = await page.evaluate(() => Object.keys(localStorage));
   expect(stored).toContain("ouve.settings");
 });

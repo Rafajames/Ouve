@@ -64,7 +64,11 @@ export function QuickSetup({ onDone, compact = false }: { onDone: () => void | P
           <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">
             Google AI Studio
           </a>
-          . {isWeb() ? "A chave fica salva só neste navegador" : "A chave fica cifrada neste computador"} e só é enviada para a própria IA.
+          .{" "}
+          {isWeb()
+            ? "A chave fica só nesta aba (apagada ao fechar), a menos que você escolha lembrar neste navegador,"
+            : "A chave fica cifrada neste computador"}{" "}
+          e só é enviada para a própria IA.
         </p>
       )}
       {error && (

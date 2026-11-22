@@ -1,6 +1,6 @@
 # 06 — Estado atual do projeto
 
-**Atualizado em:** 21/11/2026
+**Atualizado em:** 22/11/2026
 **Repositório:** https://github.com/Rafajames/Ouve
 **Branch de desenvolvimento:** `desenvolvimento/mvp` (main preservada até revisão)
 
@@ -32,7 +32,9 @@ Total: 76 testes unitários e 9 testes E2E (7 desktop + 2 extensão) passando lo
 ## Limitações conhecidas
 - Áudio de janela específica no Windows não é isolado (P-030).
 - Firefox não captura áudio de aba/tela (D-052).
-- Chaves na extensão ficam no perfil do navegador (D-049).
+- Na web e na extensão, chaves ficam só na sessão por padrão; se o usuário escolher “lembrar”, ficam no perfil do navegador sem criptografia do SO (D-078).
+- Métricas dependem da qualidade dos horários e da diarização do provedor; perguntas contadas por “?” (D-073).
+- Servidores Whisper locais não separam vozes (D-080).
 - Gemini estima timestamps/falantes; OpenAI `gpt-4o-transcribe` não retorna timestamps internos ao bloco.
 - Transcrição ao vivo por blocos (latência ≈ duração do bloco + resposta do provedor), não streaming.
 - PDF substitui caracteres fora do WinAnsi por “?” (P-032).
@@ -47,6 +49,7 @@ Total: 76 testes unitários e 9 testes E2E (7 desktop + 2 extensão) passando lo
 5. Itens do backlog técnico (AudioWorklet, fonte TTF, streaming, bundle).
 
 ## Histórico
+- **22/11/2026:** auditoria completa (docs/17) e evolução — métricas locais, marcadores, avisos discretos, cronometragem por etapa, relatório 2.0 por tipo de sessão, exportação TXT/CSV com escolha de seções, chaves só na sessão na web/extensão, IA local (Ollama/whisper.cpp), apresentação inicial e Ajuda (D-072–D-081). 115 testes unitários e 11 E2E (7 desktop, 2 extensão, 2 web) passando nesta sessão. Nada validado com IA local real nem com chave real.
 - **20/11/2026:** scaffold do monorepo, núcleo inicial (máquina de estados, contratos, `selectAudioTracks`, registro de provedores), Electron/React com captura desabilitada, base da extensão e CI aprovada (commits a4b628c, cbe8a15).
 - **21/11/2026 (noite, 2):** versão web no GitHub Pages (D-069) e atualização manual do desktop (D-070). 96 testes unitários e 11 E2E (7 desktop, 2 extensão, 2 web) passando.
 - **21/11/2026 (noite):** tela da sessão em tela única — sem rolagem da página; só a transcrição rola (validado por E2E em 1366×768 e 1280×720).

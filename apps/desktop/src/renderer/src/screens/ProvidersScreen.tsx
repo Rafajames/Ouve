@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { AiTask, ConnectionTestResult, ProviderConfig, ProviderProtocol } from "@ouve/core";
 import { PROVIDER_PRESETS, validateProviderConfig } from "@ouve/providers";
 import { createId } from "@ouve/shared";
+import { LocalAiPanel } from "../LocalAiPanel";
 import { Icon } from "@ouve/ui";
 import type { ProviderSummary } from "../../../shared/ipc";
 import { bridge, unwrap } from "../bridge";
@@ -255,6 +256,7 @@ export function ProvidersScreen({ data }: { data: AppData }) {
         </div>
       )}
       {!editing && <QuickSetup compact onDone={data.reload} />}
+      {!editing && <LocalAiPanel data={data} />}
       <h2 className="section-title">Configuração avançada</h2>
       {editing && (
         <ProviderForm

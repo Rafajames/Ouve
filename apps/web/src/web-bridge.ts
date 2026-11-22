@@ -6,6 +6,7 @@ import {
   runQuickSetup,
   validateProviderConfig,
   SwitchableSecretStore,
+  probeLocalServers,
   type AsyncKeyValue
 } from "@ouve/providers";
 import { OuveError, createId, toOuveError } from "@ouve/shared";
@@ -259,6 +260,20 @@ export function createWebBridge(deps: WebBridgeDeps): OuveBridge {
         return ok(undefined);
       },
       onProgress: () => () => undefined
+    },
+    local: {
+      probe: () =>
+        wrap(async () => {
+          const nav = (globalThis as { navigator?: { deviceMemory?: number; hardwareConcurrency?: number } }).navigator;
+          return {
+            results: await probeLocalServers((input, init) => deps.fetch(input, init)),
+            // deviceMemory é limitado pelo navegador (no máx. 8): serve só de indicação.
+            hardware: {
+              ...(nav?.deviceMemory ? { ramGb: nav.deviceMemory } : {}),
+              ...(nav?.hardwareConcurrency ? { cores: nav.hardwareConcurrency } : {})
+            }
+          };
+        })
     },
     files: {
       save: (fileName, bytes) =>
