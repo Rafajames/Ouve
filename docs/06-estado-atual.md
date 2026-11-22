@@ -49,6 +49,7 @@ Total: 76 testes unitários e 9 testes E2E (7 desktop + 2 extensão) passando lo
 5. Itens do backlog técnico (AudioWorklet, fonte TTF, streaming, bundle).
 
 ## Histórico
+- **22/11/2026 (2):** IA local com um clique no desktop (D-082): whisper.cpp embutido no instalador com modelos baixados pela interface e ligados automaticamente ao transcrever; “Instalar Ollama” baixa e abre o instalador oficial. Whisper dentro do app registrado como melhoria futura (docs/15). Não validado em Windows real (P-039).
 - **22/11/2026:** auditoria completa (docs/17) e evolução — métricas locais, marcadores, avisos discretos, cronometragem por etapa, relatório 2.0 por tipo de sessão, exportação TXT/CSV com escolha de seções, chaves só na sessão na web/extensão, IA local (Ollama/whisper.cpp), apresentação inicial e Ajuda (D-072–D-081). 115 testes unitários e 11 E2E (7 desktop, 2 extensão, 2 web) passando nesta sessão. Nada validado com IA local real nem com chave real.
 - **20/11/2026:** scaffold do monorepo, núcleo inicial (máquina de estados, contratos, `selectAudioTracks`, registro de provedores), Electron/React com captura desabilitada, base da extensão e CI aprovada (commits a4b628c, cbe8a15).
 - **21/11/2026 (noite, 2):** versão web no GitHub Pages (D-069) e atualização manual do desktop (D-070). 96 testes unitários e 11 E2E (7 desktop, 2 extensão, 2 web) passando.

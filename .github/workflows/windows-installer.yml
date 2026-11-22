@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  WHISPER_CPP_TAG: v1.9.5
+
 jobs:
   build:
     runs-on: windows-latest
@@ -21,6 +24,32 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Transcrição local (D-082): compila o servidor do whisper.cpp (MIT) numa versão fixa e o embute no instalador.
+      - name: Restaurar whisper.cpp compilado
+        id: whisper-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/desktop/vendor/whisper
+          key: whisper-server-${{ env.WHISPER_CPP_TAG }}-avx2-static-v1
+      - name: Compilar servidor do whisper.cpp
+        if: steps.whisper-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          git clone --depth 1 --branch "$WHISPER_CPP_TAG" https://github.com/ggml-org/whisper.cpp "$RUNNER_TEMP/whisper.cpp"
+          cmake -S "$RUNNER_TEMP/whisper.cpp" -B "$RUNNER_TEMP/wbuild" -DBUILD_SHARED_LIBS=OFF -DWHISPER_BUILD_EXAMPLES=ON \
+            -DWHISPER_BUILD_TESTS=OFF -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DGGML_FMA=ON -DGGML_F16C=ON -DGGML_OPENMP=OFF \
+            -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+          cmake --build "$RUNNER_TEMP/wbuild" --config Release --target whisper-server -j 4
+          mkdir -p apps/desktop/vendor/whisper
+          cp "$(find "$RUNNER_TEMP/wbuild" -name whisper-server.exe | head -1)" apps/desktop/vendor/whisper/
+          cp "$RUNNER_TEMP/whisper.cpp/LICENSE" apps/desktop/vendor/whisper/LICENSE-whisper.cpp.txt
+      - name: Conferir whisper-server
+        shell: bash
+        run: |
+          ls -la apps/desktop/vendor/whisper
+          ./apps/desktop/vendor/whisper/whisper-server.exe --help > help.txt 2>&1 || true
+          head -5 help.txt
+          grep -q -- "--inference-path" help.txt
       - name: Gerar instalador (NSIS, sem assinatura)
         run: pnpm --filter @ouve/desktop package
         env:

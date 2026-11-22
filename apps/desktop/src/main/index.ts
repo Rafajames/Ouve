@@ -14,7 +14,8 @@ declare const __OUVE_BUILD__: string;
 import { ProviderService } from "./provider-service.js";
 import { probeLocalServers, pullOllamaModel } from "@ouve/providers";
 import { SafeStorageSecretStore, SettingsStore } from "./stores.js";
-import { assertNumber, assertString, parseProviderConfig, parseSettings } from "./validate.js";
+import { assertNumber, assertString, parseProviderConfig, parseSettings, parseWhisperModel } from "./validate.js";
+import { LocalAiService } from "./local-ai-service.js";
 
 const log = createLogger("main");
 const E2E = process.env.OUVE_E2E === "1";
@@ -23,6 +24,7 @@ if (E2E && process.env.OUVE_E2E_USER_DATA) app.setPath("userData", process.env.O
 let mainWindow: BrowserWindow | null = null;
 let pendingSourceId: string | null = null;
 let settingsStore: SettingsStore;
+let localAi: LocalAiService;
 let providers: ProviderService;
 const media = new MediaService();
 
@@ -244,6 +246,17 @@ function registerIpc(): void {
   }));
   handle(IPC.pullLocalModel, (_e, model) => pullOllamaModel((input, init) => fetch(input, init), assertString(model, "modelo", 80)));
 
+  const sendLocalProgress = (task: string, percent: number) => mainWindow?.webContents.send(IPC.localProgress, task, percent);
+  handle(IPC.localState, () => localAi.state());
+  handle(IPC.localDownloadModel, (_e, name) => localAi.downloadModel(parseWhisperModel(name), sendLocalProgress));
+  handle(IPC.localRemoveModel, (_e, name) => localAi.removeModel(parseWhisperModel(name)));
+  handle(IPC.localStartWhisper, async (_e, name) =>
+    localAi.startWhisper(parseWhisperModel(name), (await settingsStore.getSettings()).language.split("-")[0])
+  );
+  handle(IPC.localStopWhisper, () => localAi.stopWhisper());
+  handle(IPC.localEnsureWhisper, async () => localAi.ensureWhisper((await settingsStore.getSettings()).language.split("-")[0]));
+  handle(IPC.localInstallOllama, () => localAi.installOllama(sendLocalProgress));
+
   handle(IPC.saveFile, async (_e, name, bytes) => {
     const fileName = assertString(name, "nome", 200).replace(/[\\/:*?"<>|]/g, "_");
     if (!(bytes instanceof Uint8Array)) throw new Error("Conteúdo inválido.");
@@ -276,6 +289,20 @@ app.whenReady().then(() => {
   settingsStore = new SettingsStore(dir);
   secretStore = new SafeStorageSecretStore(join(dir, "credentials.json"), safeStorage);
   providers = new ProviderService(settingsStore, secretStore);
+  localAi = new LocalAiService({
+    userDataDir: dir,
+    tempDir: app.getPath("temp"),
+    ...((process as NodeJS.Process & { resourcesPath?: string }).resourcesPath
+      ? { resourcesPath: (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath as string }
+      : {}),
+    platform: process.platform,
+    threads: Math.max(1, cpus().length - 1),
+    fetch: (input, init) => fetch(input, init),
+    openInstaller: async (path) => {
+      const error = await shell.openPath(path);
+      if (error) throw new Error(`Não foi possível abrir o instalador: ${error}`);
+    }
+  });
   configureSession();
   registerIpc();
   createWindow();
@@ -287,6 +314,7 @@ app.whenReady().then(() => {
 // Descarte de dados temporários ao encerrar.
 app.on("before-quit", () => {
   providers?.cancelAll();
+  void localAi?.stopWhisper();
   void media.releaseAll();
 });
 

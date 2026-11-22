@@ -183,12 +183,21 @@ export class SessionController {
     return settings.transcriptionProviderId;
   }
 
+  /** Transcrição local gerenciada: liga o servidor do whisper.cpp antes de começar (D-082). */
+  private async ensureLocalTranscription(providerId: string): Promise<void> {
+    const managed = bridge().local?.managed;
+    if (providerId !== "local-whisper-cpp" || !managed) return;
+    await this.stages.measure("prepare", () => unwrap(managed.ensureWhisper()), "Ligando a transcrição local");
+  }
+
   // ---------- Captura ao vivo ----------
 
   async startLive(options: LiveStartOptions): Promise<void> {
     if (this.capture) throw new Error("Já existe uma captura em andamento.");
     const settings = await this.loadSettings();
     const providerId = this.requireTranscriptionProvider(settings);
+    this.resetLocal();
+    await this.ensureLocalTranscription(providerId);
     this.set({
       ...newSnapshot(),
       mode: "live",
@@ -198,7 +207,6 @@ export class SessionController {
       microphone: options.includeMicrophone,
       context: settings.defaultContext
     });
-    this.resetLocal();
 
     const devices = navigator.mediaDevices as unknown as MediaDevicesLike;
     const makeStream = (tracks: MediaStreamTrackLike[]) =>
@@ -300,6 +308,7 @@ export class SessionController {
     const media = await unwrap(bridge().media.open());
     if (!media) return false;
     this.resetLocal();
+    await this.ensureLocalTranscription(providerId);
     this.set({
       ...newSnapshot(),
       mode: "import",

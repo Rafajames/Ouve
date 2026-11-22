@@ -97,3 +97,10 @@ O backlog foi reorganizado para iniciar implementação sem exigir validação m
 - [ ] Fichas de política de dados por provedor (P-035).
 - [x] Ícones, tema claro/escuro e layout da sessão com painel lateral (21/11/2026).
 - [ ] Revisar contraste WCAG AA dos dois temas com ferramenta dedicada.
+
+## Novos itens — 22/11/2026
+- [x] Métricas locais, marcadores, avisos discretos, relatório 2.0, TXT/CSV, chaves só na sessão, IA local detectada, apresentação e Ajuda (D-072–D-081).
+- [x] Transcrição local com um clique no desktop (whisper.cpp embutido, modelo baixado pela interface) e instalação do Ollama pelo Ouve (D-082).
+- [ ] Validar no Windows real: whisper-server embutido, modelos, desempenho por hardware e instalador do Ollama (P-039).
+- [ ] **Melhoria futura (sem data — pedido do James em 22/11/2026):** Whisper dentro do próprio Ouve, sem instalar nada (Transformers.js + WebGPU/WASM), funcionando também na web e na extensão. Custos: download de 40 MB a 1,5 GB na primeira vez e lentidão em PCs modestos em gravações longas; sem separação de vozes. Ideia de uso: “modo privado” para arquivos curtos.
+- [ ] Separação de vozes (diarização) local — hoje só provedores externos separam participantes.

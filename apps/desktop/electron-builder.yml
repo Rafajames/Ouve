@@ -13,6 +13,10 @@ files:
 extraResources:
   - from: node_modules/ffmpeg-static/${env.FFMPEG_BIN}
     to: ${env.FFMPEG_BIN}
+  # Servidor do whisper.cpp (MIT), compilado no CI — ver D-082. A pasta pode estar vazia em builds locais.
+  - from: vendor/whisper
+    to: whisper
+    filter: ["**/*", "!.gitkeep"]
 npmRebuild: false
 win:
   target: [nsis]

@@ -8,6 +8,19 @@ import type { FetchLike } from "./http.js";
  */
 export type LocalServerId = "ollama" | "whisper-cpp" | "whisper-compatible";
 
+/** Porta do servidor whisper.cpp (gerenciado pelo Ouve ou aberto manualmente). Evita a 8080, muito usada. */
+export const LOCAL_WHISPER_PORT = 8178;
+
+export type WhisperModelName = "base" | "small" | "medium" | "large-v3-turbo";
+
+/** Modelos do whisper.cpp que o Ouve sabe baixar (huggingface.co/ggerganov/whisper.cpp). */
+export const WHISPER_MODELS: Array<{ name: WhisperModelName; sizeMb: number; minRamGb: number; note: string }> = [
+  { name: "base", sizeMb: 148, minRamGb: 2, note: "Rápido; erra mais em áudio com ruído." },
+  { name: "small", sizeMb: 488, minRamGb: 4, note: "Bom equilíbrio para português." },
+  { name: "medium", sizeMb: 1533, minRamGb: 8, note: "Mais preciso; lento sem placa de vídeo." },
+  { name: "large-v3-turbo", sizeMb: 1624, minRamGb: 8, note: "Muito preciso e mais rápido que o large completo." }
+];
+
 export interface LocalModelSuggestion {
   name: string;
   /** Tamanho aproximado do download. */
@@ -61,26 +74,21 @@ export const LOCAL_SERVERS: LocalServerInfo[] = [
     id: "whisper-cpp",
     name: "whisper.cpp (servidor)",
     task: "transcription",
-    baseUrl: "http://127.0.0.1:8080/v1",
-    probeUrl: "http://127.0.0.1:8080/",
+    baseUrl: `http://127.0.0.1:${LOCAL_WHISPER_PORT}/v1`,
+    probeUrl: `http://127.0.0.1:${LOCAL_WHISPER_PORT}/`,
     installUrl: "https://github.com/ggml-org/whisper.cpp/releases",
     license: "MIT",
     steps: [
-      "Baixe o whisper.cpp para Windows na página de versões (arquivo whisper-bin-x64.zip) e extraia em uma pasta.",
-      "Baixe um modelo (ex.: ggml-base.bin ou ggml-small.bin) em huggingface.co/ggerganov/whisper.cpp e coloque na mesma pasta.",
-      "Abra o servidor: whisper-server -m ggml-small.bin --port 8080 --inference-path /v1/audio/transcriptions",
+      "No aplicativo desktop para Windows, o Ouve já traz o whisper.cpp: basta clicar em “Baixar e usar” num modelo.",
+      "Em outros casos: compile ou obtenha o whisper-server, baixe um modelo (ex.: ggml-small.bin) em huggingface.co/ggerganov/whisper.cpp e rode:",
+      `whisper-server -m ggml-small.bin --port ${LOCAL_WHISPER_PORT} --inference-path /v1/audio/transcriptions -l pt`,
       "Volte aqui e clique em “Verificar de novo”."
     ],
-    models: [
-      { name: "base", sizeGb: 0.15, minRamGb: 2, note: "Rápido; erra mais em áudio ruidoso." },
-      { name: "small", sizeGb: 0.47, minRamGb: 4, note: "Bom equilíbrio para português." },
-      { name: "medium", sizeGb: 1.5, minRamGb: 8, note: "Mais preciso; lento sem placa de vídeo." },
-      { name: "large-v3-turbo", sizeGb: 1.6, minRamGb: 8, note: "Muito preciso e mais rápido que o large completo." }
-    ],
+    models: WHISPER_MODELS.map((m) => ({ name: m.name, sizeGb: Math.round(m.sizeMb / 100) / 10, minRamGb: m.minRamGb, note: m.note })),
     limitations: [
       "Não separa as vozes (sem diarização): todas as falas ficam sem participante — atribua manualmente.",
       "Horários são por bloco de áudio, não por frase.",
-      "Arquivos MP3 exigem iniciar o servidor com a opção --convert (precisa do ffmpeg)."
+      "Usa a memória e o processador do computador durante a transcrição."
     ]
   },
   {

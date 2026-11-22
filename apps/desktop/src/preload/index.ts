@@ -46,7 +46,21 @@ const bridge: OuveBridge = {
   },
   local: {
     probe: () => invoke(IPC.probeLocal),
-    pullModel: (model) => invoke(IPC.pullLocalModel, model)
+    pullModel: (model) => invoke(IPC.pullLocalModel, model),
+    managed: {
+      state: () => invoke(IPC.localState),
+      downloadModel: (name) => invoke(IPC.localDownloadModel, name),
+      removeModel: (name) => invoke(IPC.localRemoveModel, name),
+      startWhisper: (name) => invoke(IPC.localStartWhisper, name),
+      stopWhisper: () => invoke(IPC.localStopWhisper),
+      ensureWhisper: () => invoke(IPC.localEnsureWhisper),
+      installOllama: () => invoke(IPC.localInstallOllama),
+      onProgress: (listener) => {
+        const wrapped = (_: unknown, task: string, percent: number) => listener(task, percent);
+        ipcRenderer.on(IPC.localProgress, wrapped);
+        return () => ipcRenderer.removeListener(IPC.localProgress, wrapped);
+      }
+    }
   },
   updates: {
     check: () => invoke(IPC.checkUpdates),

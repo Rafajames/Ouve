@@ -2,7 +2,7 @@
  * Contrato IPC entre renderer e processo principal. Canais em allowlist;
  * o renderer nunca recebe chaves de API nem caminhos de arquivos temporários.
  */
-import type { HardwareInfo, LocalProbeResult } from "@ouve/providers";
+import type { HardwareInfo, LocalProbeResult, WhisperModelName } from "@ouve/providers";
 import type {
   AiTask,
   CompletionRequest,
@@ -123,6 +123,14 @@ export interface CompleteInput {
 }
 
 /** Erro serializável (OuveError não atravessa o IPC com a classe). */
+export interface LocalAiState {
+  whisperBundled: boolean;
+  whisperRunning: boolean;
+  activeModel?: WhisperModelName;
+  installedModels: Array<{ name: WhisperModelName; sizeMb: number }>;
+  canInstallOllama: boolean;
+}
+
 export interface LocalStatus {
   results: LocalProbeResult[];
   hardware: HardwareInfo;
@@ -188,6 +196,17 @@ export interface OuveBridge {
     probe(): Promise<IpcResult<LocalStatus>>;
     /** Desktop: baixa um modelo no Ollama (ação explícita do usuário). */
     pullModel?(model: string): Promise<IpcResult<void>>;
+    /** Desktop: transcrição local gerenciada (whisper.cpp embutido) e instalação do Ollama (D-082). */
+    managed?: {
+      state(): Promise<IpcResult<LocalAiState>>;
+      downloadModel(name: WhisperModelName): Promise<IpcResult<void>>;
+      removeModel(name: WhisperModelName): Promise<IpcResult<void>>;
+      startWhisper(name: WhisperModelName): Promise<IpcResult<void>>;
+      stopWhisper(): Promise<IpcResult<void>>;
+      ensureWhisper(): Promise<IpcResult<void>>;
+      installOllama(): Promise<IpcResult<void>>;
+      onProgress(listener: (task: string, percent: number) => void): () => void;
+    };
   };
   /** Somente no desktop: verificação e instalação manual de atualizações. */
   updates?: {
@@ -220,6 +239,14 @@ export const IPC = {
   saveFile: "files:save",
   probeLocal: "local:probe",
   pullLocalModel: "local:pull",
+  localState: "local:state",
+  localDownloadModel: "local:download-model",
+  localRemoveModel: "local:remove-model",
+  localStartWhisper: "local:start-whisper",
+  localStopWhisper: "local:stop-whisper",
+  localEnsureWhisper: "local:ensure-whisper",
+  localInstallOllama: "local:install-ollama",
+  localProgress: "local:progress",
   checkUpdates: "updates:check",
   installUpdate: "updates:install",
   updateProgress: "updates:progress"

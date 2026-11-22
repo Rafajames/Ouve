@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { LOCAL_SERVERS, adviseHardware, localProviderConfig, type LocalServerId } from "@ouve/providers";
+import {
+  LOCAL_SERVERS,
+  WHISPER_MODELS,
+  adviseHardware,
+  localProviderConfig,
+  type LocalServerId,
+  type WhisperModelName
+} from "@ouve/providers";
 import { Icon } from "@ouve/ui";
-import type { LocalStatus } from "../../shared/ipc";
+import type { LocalAiState, LocalStatus } from "../../shared/ipc";
 import { bridge, unwrap } from "./bridge";
 import { errorMessage, useApp, type AppData } from "./hooks";
 
@@ -15,18 +22,23 @@ export function LocalAiPanel({ data }: { data: AppData }) {
   const [checking, setChecking] = useState(false);
   const [pulling, setPulling] = useState<string | null>(null);
   const local = window.ouve?.local;
+  const managed = local?.managed;
+  const [mstate, setMstate] = useState<LocalAiState | null>(null);
+  const [progress, setProgress] = useState<Record<string, number>>({});
+  useEffect(() => managed?.onProgress((task, pct) => setProgress((p) => ({ ...p, [task]: pct }))), [managed]);
 
   const check = useCallback(async () => {
     if (!local) return;
     setChecking(true);
     try {
+      if (managed) setMstate(await unwrap(managed.state()));
       setStatus(await unwrap(local.probe()));
     } catch (e) {
       notify(errorMessage(e), "error");
     } finally {
       setChecking(false);
     }
-  }, [local, notify]);
+  }, [local, managed, notify]);
 
   useEffect(() => void check(), [check]);
   if (!local) return null;
@@ -50,6 +62,48 @@ export function LocalAiPanel({ data }: { data: AppData }) {
       notify(errorMessage(e), "error");
     }
   };
+
+  /** Executa uma ação da IA gerenciada mostrando erros de forma compreensível. */
+  const act = async (task: string, run: () => Promise<void>, done?: string) => {
+    setPulling(task);
+    try {
+      await run();
+      if (done) notify(done);
+    } catch (e) {
+      notify(errorMessage(e), "error");
+    } finally {
+      setPulling(null);
+      setProgress((p) => {
+        const next = { ...p };
+        delete next[task];
+        return next;
+      });
+      await check();
+    }
+  };
+
+  const chooseWhisper = (name: WhisperModelName, download: boolean) =>
+    managed &&
+    act(
+      `modelo:${name}`,
+      async () => {
+        if (download) await unwrap(managed.downloadModel(name));
+        await unwrap(managed.startWhisper(name));
+        await use("whisper-cpp", name);
+      },
+      download ? `Modelo ${name} baixado. A transcrição local está pronta.` : undefined
+    );
+
+  const installOllama = () =>
+    managed &&
+    window.confirm(
+      "O Ouve vai baixar o instalador oficial do Ollama (cerca de 1 GB) e abri-lo. Você só precisa confirmar a instalação. Continuar?"
+    ) &&
+    act(
+      "ollama",
+      () => unwrap(managed.installOllama()),
+      "Instalador do Ollama aberto. Conclua a instalação e clique em “Verificar de novo”."
+    );
 
   const pull = async (model: string) => {
     if (!local.pullModel) return;
@@ -103,7 +157,55 @@ export function LocalAiPanel({ data }: { data: AppData }) {
                 {server.task === "analysis" ? "Análise e relatório" : "Transcrição"} · licença {server.license}
                 {inUse && " · em uso"}
               </p>
-              {st?.running ? (
+              {server.id === "whisper-cpp" && mstate?.whisperBundled ? (
+                <div className="managed">
+                  <p className="small-text">
+                    Já incluída no Ouve. Escolha um modelo: ele é baixado uma vez (de huggingface.co) e fica no seu computador.
+                    {mstate.whisperRunning ? ` Ligada com o modelo ${mstate.activeModel}.` : ""}
+                  </p>
+                  <ul className="plain-list small-text model-list">
+                    {WHISPER_MODELS.map((m) => {
+                      const have = mstate.installedModels.some((x) => x.name === m.name);
+                      const task = `modelo:${m.name}`;
+                      const pct = progress[task];
+                      const active = mstate.whisperRunning && mstate.activeModel === m.name && inUse;
+                      return (
+                        <li key={m.name}>
+                          <b>{m.name}</b> · {m.sizeMb >= 1000 ? `${(m.sizeMb / 1000).toFixed(1)} GB` : `${m.sizeMb} MB`} · {m.minRamGb}+ GB
+                          de memória
+                          {m.name === recommended ? " · recomendado" : ""} — {m.note}{" "}
+                          {active ? (
+                            <span className="badge ok">em uso</span>
+                          ) : pulling === task ? (
+                            <span className="small-text">{pct !== undefined && pct < 100 ? `baixando ${pct}%` : "preparando…"}</span>
+                          ) : (
+                            <button className="small link" disabled={pulling !== null} onClick={() => void chooseWhisper(m.name, !have)}>
+                              {have ? "Usar este" : "Baixar e usar"}
+                            </button>
+                          )}
+                          {have && !active && pulling !== task && (
+                            <button
+                              className="small link"
+                              disabled={pulling !== null}
+                              onClick={() =>
+                                managed && void act(task, () => unwrap(managed.removeModel(m.name)), `Modelo ${m.name} removido.`)
+                              }
+                            >
+                              remover
+                            </button>
+                          )}
+                          {pulling === task && pct !== undefined && pct < 100 && <progress max={100} value={pct} />}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {mstate.whisperRunning && (
+                    <button className="small" onClick={() => managed && void act("stop", () => unwrap(managed.stopWhisper()))}>
+                      Desligar para liberar memória
+                    </button>
+                  )}
+                </div>
+              ) : st?.running ? (
                 <>
                   {server.id === "ollama" && installed.length === 0 && <p className="small-text">Nenhum modelo instalado ainda.</p>}
                   {installed.length > 0 && (
@@ -146,23 +248,38 @@ export function LocalAiPanel({ data }: { data: AppData }) {
                   )}
                 </>
               ) : (
-                <details>
-                  <summary className="small-text">Como instalar</summary>
-                  <ol className="small-text">
-                    {server.steps.map((step, i) => (
-                      <li key={i}>{step}</li>
-                    ))}
-                  </ol>
-                  {server.models.length > 0 && (
-                    <p className="small-text">
-                      Modelos sugeridos:{" "}
-                      {server.models.map((m) => `${m.name} (~${m.sizeGb} GB${m.name === recommended ? ", recomendado" : ""})`).join(", ")}.
-                    </p>
+                <>
+                  {server.id === "ollama" && mstate?.canInstallOllama && (
+                    <div className="row">
+                      <button className="small primary" disabled={pulling !== null} onClick={() => void installOllama()}>
+                        <Icon name="download" size={14} />{" "}
+                        {pulling === "ollama"
+                          ? progress.ollama !== undefined && progress.ollama < 100
+                            ? `Baixando ${progress.ollama}%`
+                            : "Abrindo instalador…"
+                          : "Instalar Ollama"}
+                      </button>
+                    </div>
                   )}
-                  <a href={server.installUrl} target="_blank" rel="noreferrer" className="small-text">
-                    Página oficial de download
-                  </a>
-                </details>
+                  <details>
+                    <summary className="small-text">Como instalar</summary>
+                    <ol className="small-text">
+                      {server.steps.map((step, i) => (
+                        <li key={i}>{step}</li>
+                      ))}
+                    </ol>
+                    {server.models.length > 0 && (
+                      <p className="small-text">
+                        Modelos sugeridos:{" "}
+                        {server.models.map((m) => `${m.name} (~${m.sizeGb} GB${m.name === recommended ? ", recomendado" : ""})`).join(", ")}
+                        .
+                      </p>
+                    )}
+                    <a href={server.installUrl} target="_blank" rel="noreferrer" className="small-text">
+                      Página oficial de download
+                    </a>
+                  </details>
+                </>
               )}
               <ul className="plain-list small-text muted">
                 {server.limitations.map((l, i) => (

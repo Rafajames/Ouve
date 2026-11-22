@@ -1,5 +1,6 @@
 import type { AiTask, ProviderConfig, ProviderProtocol, ReportContext } from "@ouve/core";
 import { OuveError, sanitizeLabel } from "@ouve/shared";
+import { WHISPER_MODELS, type WhisperModelName } from "@ouve/providers";
 import { DEFAULT_SETTINGS, type AppSettings } from "../shared/ipc.js";
 
 /** Validação de payloads IPC: o renderer é tratado como não confiável. */
@@ -88,4 +89,10 @@ export function parseSettings(raw: unknown): AppSettings {
     settings.transcriptionProviderId = r.transcriptionProviderId.slice(0, 80);
   if (typeof r.analysisProviderId === "string" && r.analysisProviderId) settings.analysisProviderId = r.analysisProviderId.slice(0, 80);
   return settings;
+}
+
+/** Nome de modelo do whisper.cpp vindo do renderer (lista fechada). */
+export function parseWhisperModel(raw: unknown): WhisperModelName {
+  if (typeof raw === "string" && WHISPER_MODELS.some((m) => m.name === raw)) return raw as WhisperModelName;
+  throw new Error("Modelo de transcrição local inválido.");
 }
