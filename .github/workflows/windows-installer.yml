@@ -24,31 +24,18 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Transcrição local (D-082): compila o servidor do whisper.cpp (MIT) numa versão fixa e o embute no instalador.
-      - name: Restaurar whisper.cpp compilado
-        id: whisper-cache
-        uses: actions/cache@v4
-        with:
-          path: apps/desktop/vendor/whisper
-          key: whisper-server-${{ env.WHISPER_CPP_TAG }}-avx2-compat-static-v2
-      - name: Compilar servidor do whisper.cpp
-        if: steps.whisper-cache.outputs.cache-hit != 'true'
-        shell: bash
+      # Transcrição local (D-082): usa o pacote oficial do whisper.cpp (MIT) para Windows x64, numa versão fixa.
+      # Ele escolhe em tempo de execução a variante certa para o processador (AVX2, AVX, SSE…).
+      - name: Baixar whisper.cpp oficial
+        shell: pwsh
         run: |
-          git clone --depth 1 --branch "$WHISPER_CPP_TAG" https://github.com/ggml-org/whisper.cpp "$RUNNER_TEMP/whisper.cpp"
-          cmake -S "$RUNNER_TEMP/whisper.cpp" -B "$RUNNER_TEMP/wbuild" -DBUILD_SHARED_LIBS=OFF -DWHISPER_BUILD_EXAMPLES=ON \
-            -DWHISPER_BUILD_TESTS=OFF -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DGGML_FMA=ON -DGGML_F16C=ON -DGGML_OPENMP=OFF \
-            -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
-          cmake --build "$RUNNER_TEMP/wbuild" --config Release --target whisper-server -j 4
-          mkdir -p apps/desktop/vendor/whisper
-          cp "$(find "$RUNNER_TEMP/wbuild" -name whisper-server.exe | head -1)" apps/desktop/vendor/whisper/
-          cp "$RUNNER_TEMP/whisper.cpp/LICENSE" apps/desktop/vendor/whisper/LICENSE-whisper.cpp.txt
-          # Versão compatível (sem AVX/AVX2) para processadores antigos; o Ouve usa se a principal travar ao abrir.
-          cmake -S "$RUNNER_TEMP/whisper.cpp" -B "$RUNNER_TEMP/wbuild-compat" -DBUILD_SHARED_LIBS=OFF -DWHISPER_BUILD_EXAMPLES=ON \
-            -DWHISPER_BUILD_TESTS=OFF -DGGML_NATIVE=OFF -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DGGML_F16C=OFF -DGGML_OPENMP=OFF \
-            -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
-          cmake --build "$RUNNER_TEMP/wbuild-compat" --config Release --target whisper-server -j 4
-          cp "$(find "$RUNNER_TEMP/wbuild-compat" -name whisper-server.exe | head -1)" apps/desktop/vendor/whisper/whisper-server-compat.exe
+          Invoke-WebRequest -Uri "https://github.com/ggml-org/whisper.cpp/releases/download/$env:WHISPER_CPP_TAG/whisper-bin-x64.zip" -OutFile whisper.zip
+          Expand-Archive whisper.zip -DestinationPath wtmp
+          $server = Get-ChildItem wtmp -Recurse -Filter whisper-server.exe | Select-Object -First 1
+          New-Item -ItemType Directory -Force apps/desktop/vendor/whisper | Out-Null
+          Copy-Item $server.FullName apps/desktop/vendor/whisper/
+          Copy-Item (Join-Path $server.DirectoryName "*.dll") apps/desktop/vendor/whisper/
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ggml-org/whisper.cpp/$env:WHISPER_CPP_TAG/LICENSE" -OutFile apps/desktop/vendor/whisper/LICENSE-whisper.cpp.txt
       - name: Conferir whisper-server
         shell: bash
         run: |
@@ -56,7 +43,6 @@ jobs:
           ./apps/desktop/vendor/whisper/whisper-server.exe --help > help.txt 2>&1 || true
           head -5 help.txt
           grep -q -- "--inference-path" help.txt
-          ./apps/desktop/vendor/whisper/whisper-server-compat.exe --help 2>&1 | grep -q -- "--inference-path"
       - name: Gerar instalador (NSIS, sem assinatura)
         run: pnpm --filter @ouve/desktop package
         env:

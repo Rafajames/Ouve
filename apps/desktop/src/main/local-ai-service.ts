@@ -160,7 +160,9 @@ export class LocalAiService {
       "-l",
       lang,
       "-t",
-      String(Math.max(1, this.deps.threads))
+      String(Math.max(1, this.deps.threads)),
+      // Evita "falas" inventadas em ruído e silêncio.
+      "--suppress-nst"
     ];
     let last: unknown;
     for (const exe of exes) {

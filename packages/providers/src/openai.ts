@@ -73,6 +73,14 @@ export function parseOpenAiTranscription(body: unknown, durationMs: number): Tra
   return data.language ? { segments, detectedLanguage: data.language } : { segments };
 }
 
+function isLocalUrl(url: string): boolean {
+  try {
+    return ["127.0.0.1", "localhost", "[::1]"].includes(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
 export class OpenAiTranscription implements TranscriptionProvider {
   readonly id: string;
   readonly capabilities: ProviderCapabilities;
@@ -91,7 +99,8 @@ export class OpenAiTranscription implements TranscriptionProvider {
     form.append("response_format", format);
     if (request.language) form.append("language", request.language.split("-")[0] ?? request.language);
     if (format === "diarized_json") form.append("chunking_strategy", "auto");
-    else if (request.previousText) form.append("prompt", request.previousText.slice(-800));
+    // Servidor Whisper local: o texto anterior como dica realimenta erros e repetições.
+    else if (request.previousText && !isLocalUrl(this.options.baseUrl)) form.append("prompt", request.previousText.slice(-800));
     if (format === "verbose_json") form.append("timestamp_granularities[]", "segment");
 
     const response = await sendRequest(
