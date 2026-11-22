@@ -1,3 +1,4 @@
+import { OUVE_CREDIT } from "@ouve/shared";
 import { BrandMark, Icon } from "./icons";
 
 /**
@@ -40,6 +41,7 @@ export function TermsGate({ onAccept, busy = false }: { onAccept: () => void; bu
         <button className="primary large" disabled={busy} onClick={onAccept}>
           Aceitar e começar
         </button>
+        <p className="terms-credit">{OUVE_CREDIT}</p>
       </div>
     </main>
   );

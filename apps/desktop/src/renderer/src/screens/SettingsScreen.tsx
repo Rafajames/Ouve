@@ -3,6 +3,7 @@ import { capabilitiesFor, detectPlatform, type CaptureFeature } from "@ouve/capt
 import type { AppSettings } from "../../../shared/ipc";
 import { bridge, capturePlatformEnv, unwrap } from "../bridge";
 import { Icon } from "@ouve/ui";
+import { OUVE_COPYRIGHT, OUVE_CREDIT, OUVE_REPOSITORY } from "@ouve/shared";
 import type { UpdateInfo } from "../../../shared/ipc";
 import { Page } from "../components";
 import { errorMessage, useApp, type AppData } from "../hooks";
@@ -229,6 +230,19 @@ export function SettingsScreen({ data }: { data: AppData }) {
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="panel">
+        <h2>Sobre o Ouve</h2>
+        <p>
+          <strong>{OUVE_CREDIT}</strong>
+        </p>
+        <p className="muted">
+          {OUVE_COPYRIGHT} Código e histórico de desenvolvimento em{" "}
+          <a href={OUVE_REPOSITORY} target="_blank" rel="noreferrer">
+            github.com/Rafajames/Ouve
+          </a>
+          .
+        </p>
       </div>
       <div className="panel">
         <h2>Privacidade e dados</h2>

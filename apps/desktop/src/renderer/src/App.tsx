@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { formatTimestamp } from "@ouve/shared";
+import { OUVE_CREDIT, formatTimestamp } from "@ouve/shared";
 import { BrandMark, Icon, TERMS_VERSION, TermsGate, applyTheme, type IconName, type ThemePreference } from "@ouve/ui";
 import { hasBridge } from "./bridge";
 import { AppContext, useAppData, useSession, type Screen } from "./hooks";
@@ -132,6 +132,7 @@ export default function App() {
               </button>
             )}
             <span>Somente áudio · sem conta · sem histórico</span>
+            <span className="credit">{OUVE_CREDIT}</span>
           </div>
         </aside>
         <div className="content">

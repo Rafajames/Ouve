@@ -38,6 +38,7 @@ describe("relatório", () => {
       .map((l) => l.text)
       .join("\n");
     expect(text).toContain("Decisões tomadas");
+    expect(text).toContain("Idealizado e desenvolvido por Rafajames");
     expect(text).toContain("Remarcar audiência (inferência da IA)");
     expect(text).toContain("Responsável: Maria · Prazo: não mencionado");
     expect(text).toContain('Evidência: [00:00:00] "Maria vai enviar"');

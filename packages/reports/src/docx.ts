@@ -1,5 +1,6 @@
 import type { ReportDocument } from "@ouve/core";
 import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx";
+import { OUVE_CREDIT } from "@ouve/shared";
 import { reportToLines } from "./model.js";
 
 /** Gera DOCX localmente (nenhum dado sai do dispositivo). */
@@ -21,7 +22,7 @@ export async function exportDocx(report: ReportDocument, options?: { includeTran
     }
   });
   const doc = new Document({
-    creator: "Ouve",
+    creator: `Ouve — ${OUVE_CREDIT}`,
     title: report.title,
     description: "Relatório gerado pelo Ouve",
     styles: { default: { document: { run: { font: "Calibri", size: 22 } } } },

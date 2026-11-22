@@ -1,7 +1,7 @@
 # Instalador Windows (NSIS), gerado no GitHub Actions (windows-latest). Sem assinatura de código (P-033).
 appId: br.ouve.desktop
 productName: Ouve
-copyright: Ouve
+copyright: "© 2026 Rafajames (github.com/Rafajames). Idealizado e desenvolvido por Rafajames."
 directories:
   output: release
   buildResources: build

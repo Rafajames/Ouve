@@ -1,5 +1,5 @@
 import type { AnalysisItem, MeetingAnalysis, ReportDocument, Speaker, TranscriptSegment } from "@ouve/core";
-import { createId, formatTimestamp, sanitizeText } from "@ouve/shared";
+import { OUVE_CREDIT, createId, formatTimestamp, sanitizeText } from "@ouve/shared";
 
 export interface BuildReportInput {
   sessionId: string;
@@ -72,7 +72,7 @@ export function reportToLines(report: ReportDocument, options: { includeTranscri
   const speakerLabel = (id?: string) => report.speakers.find((s) => s.id === id)?.label ?? "Falante não identificado";
   const lines: ReportLine[] = [
     { kind: "h1", text: report.title },
-    { kind: "meta", text: `Gerado em ${new Date(report.createdAt).toLocaleString("pt-BR")} pelo Ouve` },
+    { kind: "meta", text: `Gerado em ${new Date(report.createdAt).toLocaleString("pt-BR")} pelo Ouve (${OUVE_CREDIT})` },
     {
       kind: "meta",
       text: "Conteúdo organizado por IA a partir da transcrição. Itens marcados como inferência não foram ditos explicitamente; revise antes de usar."

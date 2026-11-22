@@ -10,7 +10,7 @@ import {
   type QuickSetupResult
 } from "@ouve/providers";
 import { REPORT_SECTIONS } from "@ouve/reports";
-import { createId, formatTimestamp } from "@ouve/shared";
+import { OUVE_CREDIT, createId, formatTimestamp } from "@ouve/shared";
 import { BrandMark, Icon, TERMS_VERSION, TermsGate } from "@ouve/ui";
 import { ExtensionController } from "./controller";
 import { ExtensionStorage, originPatternFor, type ExtSettings } from "./storage";
@@ -348,6 +348,7 @@ export function App({ pending }: { pending?: PendingTab }) {
         <div>
           <h1>Ouve</h1>
           <p className="muted">Somente áudio. Nenhuma imagem é capturada. Sem conta, sem servidor do Ouve, sem histórico.</p>
+          <p className="muted credit">{OUVE_CREDIT}</p>
         </div>
       </header>
 

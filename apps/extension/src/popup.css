@@ -69,3 +69,8 @@ button:disabled {
   color: #fff;
   font-weight: 800;
 }
+.credit {
+  font-size: 11px;
+  text-align: center;
+  margin-top: 10px;
+}

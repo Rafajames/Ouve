@@ -1021,3 +1021,8 @@ button {
   font-size: 12px;
   padding: 4px 6px;
 }
+
+.credit {
+  font-size: 11px;
+  opacity: 0.85;
+}

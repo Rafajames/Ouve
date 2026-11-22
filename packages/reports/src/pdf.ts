@@ -1,5 +1,6 @@
 import type { ReportDocument } from "@ouve/core";
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
+import { OUVE_CREDIT } from "@ouve/shared";
 import { reportToLines, type ReportLine } from "./model.js";
 
 const PAGE = { width: 595.28, height: 841.89, margin: 56 };
@@ -59,7 +60,7 @@ function wrap(text: string, font: PDFFont, size: number, maxWidth: number): stri
 export async function exportPdf(report: ReportDocument, options?: { includeTranscript?: boolean }): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.setTitle(report.title);
-  pdf.setCreator("Ouve");
+  pdf.setCreator(`Ouve — ${OUVE_CREDIT}`);
   pdf.setProducer("Ouve");
   const fonts = {
     regular: await pdf.embedFont(StandardFonts.Helvetica),
@@ -93,7 +94,7 @@ export async function exportPdf(report: ReportDocument, options?: { includeTrans
 
   const pages = pdf.getPages();
   pages.forEach((p, i) => {
-    p.drawText(`Ouve · página ${i + 1} de ${pages.length}`, {
+    p.drawText(`Ouve · ${OUVE_CREDIT} · página ${i + 1} de ${pages.length}`, {
       x: PAGE.margin,
       y: 28,
       size: 8,

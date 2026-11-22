@@ -33,6 +33,7 @@ describe("manifestos", () => {
       expect(m.permissions).not.toContain("desktopCapture");
       expect(m.host_permissions).toBeUndefined();
       expect(m.version).toBe("0.2.0");
+      expect(m.author).toBe("Rafajames");
     }
   });
 });

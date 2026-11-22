@@ -329,3 +329,6 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+.credit {
+  font-size: 12px;
+}

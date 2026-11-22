@@ -18,5 +18,8 @@
   "devDependencies": {
     "@types/react": "^18.3.18",
     "react": "^18.3.1"
+  },
+  "dependencies": {
+    "@ouve/shared": "workspace:^"
   }
 }

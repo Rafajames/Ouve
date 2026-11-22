@@ -42,6 +42,7 @@ test.afterAll(async () => {
 test("pede o termo de uso só no primeiro uso", async () => {
   await expect(page.getByRole("heading", { name: "Bem-vindo ao Ouve" })).toBeVisible();
   await expect(page.getByText(/informar os participantes/)).toBeVisible();
+  await expect(page.getByText("Idealizado e desenvolvido por Rafajames")).toBeVisible();
   await page.getByRole("button", { name: "Aceitar e começar" }).click();
   await expect(page.getByRole("heading", { name: "Bem-vindo ao Ouve" })).toHaveCount(0);
   await expect.poll(() => readFileSync(join(work, "userdata", "settings.json"), "utf8")).toContain('"termsAcceptedVersion": 1');
