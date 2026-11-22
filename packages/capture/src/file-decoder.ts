@@ -1,4 +1,4 @@
-import { encodeWav } from "@ouve/capture";
+import { encodeWav } from "./pcm.js";
 import { OuveError } from "@ouve/shared";
 import { validateMediaFile } from "@ouve/core";
 

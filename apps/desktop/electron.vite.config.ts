@@ -16,6 +16,8 @@ const workspace = [
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin({ exclude: workspace })],
+    // Commit do build (GitHub Actions define GITHUB_SHA); usado para verificar atualizações.
+    define: { __OUVE_BUILD__: JSON.stringify((process.env.GITHUB_SHA ?? "dev").slice(0, 7)) },
     build: { rollupOptions: { input: resolve(__dirname, "src/main/index.ts") } }
   },
   preload: {

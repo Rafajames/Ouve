@@ -38,8 +38,14 @@ pnpm test:e2e             # E2E (no Linux sem tela: xvfb-run -a pnpm test:e2e)
 
 Uso: em **Provedores de IA**, cadastre um provedor com sua chave e escolha quem faz a transcrição e a análise. Depois use **Nova sessão** (tela, janela ou microfone) ou **Importar arquivo**. Detalhes em [Ambiente](docs/11-ambiente-e-configuracao.md).
 
+## Versões
+- **Web (sem instalar):** https://rafajames.github.io/Ouve/ — atualiza sozinha a cada nova versão.
+- **Desktop Windows:** instalador em [Releases](https://github.com/Rafajames/Ouve/releases/tag/teste-windows); atualização manual em Configurações → Atualizações.
+- **Extensão Chrome/Firefox:** `pnpm build:extension` e carregar `apps/extension/dist/chrome` (ou `dist/firefox`).
+
 ## Estrutura
 - `apps/desktop`: aplicativo Electron + React (main com IPC seguro, cofre de chaves, ffmpeg; renderer com as telas).
+- `apps/web`: versão web (GitHub Pages) que reaproveita as telas do desktop.
 - `apps/extension`: extensão Chrome/Firefox (popup de captura de aba e página do Ouve).
 - `packages/core`: domínio, contratos e transcrição da sessão.
 - `packages/shared`: erros, cancelamento/retry, logger com redação, sanitização.

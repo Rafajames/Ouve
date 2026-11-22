@@ -13,11 +13,17 @@ import {
   type MediaStreamTrackLike
 } from "@ouve/capture";
 import type { DesktopSource } from "../../../shared/ipc";
-import { bridge, unwrap } from "../bridge";
+import { bridge, capturePlatformEnv, isWeb, unwrap } from "../bridge";
 import { LevelMeter, Page } from "../components";
 import { errorMessage, useApp, useSession, type AppData } from "../hooks";
 
-type SourceKind = "screen" | "window" | "tab" | "microphone";
+type SourceKind = "screen" | "window" | "tab" | "microphone" | "browser";
+
+/** Versão web: o seletor de aba/janela/tela é o do próprio navegador, como no Google Meet. */
+const WEB_KINDS: Array<{ kind: SourceKind; label: string; hint: string; icon: IconName }> = [
+  { kind: "browser", label: "Aba ou tela", hint: "Seletor do navegador", icon: "tab" },
+  { kind: "microphone", label: "Somente microfone", hint: "Sem fonte compartilhada", icon: "mic" }
+];
 
 const KINDS: Array<{ kind: SourceKind; label: string; hint: string; icon: IconName }> = [
   { kind: "screen", label: "Tela inteira", hint: "Escolha um monitor", icon: "monitor" },
@@ -80,7 +86,7 @@ function useAudioTest() {
 export function NewSessionScreen({ data }: { data: AppData }) {
   const { controller, navigate, notify } = useApp();
   const session = useSession();
-  const [kind, setKind] = useState<SourceKind>("screen");
+  const [kind, setKind] = useState<SourceKind>(isWeb() ? "browser" : "screen");
   const [sources, setSources] = useState<DesktopSource[]>([]);
   const [selected, setSelected] = useState<DesktopSource | null>(null);
   const [mic, setMic] = useState(false);
@@ -90,7 +96,7 @@ export function NewSessionScreen({ data }: { data: AppData }) {
   const [starting, setStarting] = useState(false);
   const test = useAudioTest();
 
-  const platform = detectPlatform({ isElectron: true, os: bridge().platform });
+  const platform = detectPlatform(capturePlatformEnv());
   const caps = capabilitiesFor(platform);
   const transcriber = data.providers.find((p) => p.config.id === data.settings?.transcriptionProviderId)?.config;
   const providerName = transcriber?.displayName;
@@ -113,11 +119,12 @@ export function NewSessionScreen({ data }: { data: AppData }) {
 
   const visible = sources.filter((s) => s.kind === kind);
   const needsSource = kind === "screen" || kind === "window";
-  const canStart = !!providerName && !starting && !busy && (needsSource ? !!selected : kind === "microphone");
+  const canStart = !!providerName && !starting && !busy && (needsSource ? !!selected : kind === "microphone" || kind === "browser");
 
   const devices = navigator.mediaDevices as unknown as MediaDevicesLike;
   const testSource = () => {
-    if (needsSource && selected) {
+    if (kind === "browser") void test.run(() => acquireDisplayAudio(devices, makeStream));
+    else if (needsSource && selected) {
       void test.run(async () => {
         await unwrap(bridge().capture.selectSource(selected.id));
         return acquireDisplayAudio(devices, makeStream);
@@ -137,8 +144,8 @@ export function NewSessionScreen({ data }: { data: AppData }) {
       await controller.discard();
       await controller.startLive({
         title: title.trim() || "Sessão ao vivo",
-        ...(needsSource && selected ? { sourceId: selected.id } : {}),
-        sourceLabel: needsSource && selected ? selected.name : "Microfone",
+        ...(needsSource && selected ? { sourceId: selected.id } : kind === "browser" ? { sourceId: "browser" } : {}),
+        sourceLabel: needsSource && selected ? selected.name : kind === "browser" ? "Fonte do navegador" : "Microfone",
         includeMicrophone: kind === "microphone" || mic,
         ...(micId ? { microphoneDeviceId: micId } : {})
       });
@@ -175,7 +182,7 @@ export function NewSessionScreen({ data }: { data: AppData }) {
       <div className="panel">
         <h2>Fonte de áudio</h2>
         <div className="choices" role="radiogroup" aria-label="Tipo de fonte">
-          {KINDS.map((k) => (
+          {(isWeb() ? WEB_KINDS : KINDS).map((k) => (
             <button
               key={k.kind}
               role="radio"
@@ -222,6 +229,16 @@ export function NewSessionScreen({ data }: { data: AppData }) {
               </ul>
             )}
           </>
+        )}
+        {kind === "browser" && (
+          <div className="callout">
+            <Icon name="info" size={16} />
+            <span>
+              Ao iniciar, o navegador abre o seletor. Escolha a <strong>aba</strong> e deixe marcado “Compartilhar áudio da aba”, ou a{" "}
+              <strong>tela inteira</strong> com “Compartilhar áudio do sistema” (Windows). Janelas avulsas não trazem áudio no navegador. O
+              volume do Windows não interfere; o volume do próprio vídeo, sim.
+            </span>
+          </div>
         )}
         {kind === "tab" && (
           <div className="callout">

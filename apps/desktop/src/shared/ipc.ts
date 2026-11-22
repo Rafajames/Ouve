@@ -103,6 +103,15 @@ export interface IpcError {
 
 export type IpcResult<T> = { ok: true; value: T } | { ok: false; error: IpcError };
 
+export interface UpdateInfo {
+  currentBuild: string;
+  latestBuild?: string;
+  available: boolean;
+  publishedAt?: string;
+  downloadUrl?: string;
+  message: string;
+}
+
 export interface OuveBridge {
   platform: string;
   version: string;
@@ -139,6 +148,12 @@ export interface OuveBridge {
   files: {
     save(fileName: string, bytes: Uint8Array): Promise<IpcResult<string | null>>;
   };
+  /** Somente no desktop: verificação e instalação manual de atualizações. */
+  updates?: {
+    check(): Promise<IpcResult<UpdateInfo>>;
+    install(): Promise<IpcResult<void>>;
+    onProgress(listener: (percent: number) => void): () => void;
+  };
 }
 
 export const IPC = {
@@ -161,7 +176,10 @@ export const IPC = {
   readSegment: "media:read-segment",
   releaseMedia: "media:release",
   mediaProgress: "media:progress",
-  saveFile: "files:save"
+  saveFile: "files:save",
+  checkUpdates: "updates:check",
+  installUpdate: "updates:install",
+  updateProgress: "updates:progress"
 } as const;
 
 export const ALL_TASKS: AiTask[] = ["transcription", "diarization", "analysis", "report"];

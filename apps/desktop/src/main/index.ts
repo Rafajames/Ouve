@@ -6,6 +6,10 @@ import type { CompletionRequest } from "@ouve/core";
 import { AUDIO_EXTENSIONS, VIDEO_EXTENSIONS } from "@ouve/core";
 import { IPC, type DesktopSource, type IpcResult, type SaveProviderInput } from "../shared/ipc.js";
 import { MediaService } from "./media-service.js";
+import { RELEASE_PAGE, UpdateService } from "./update-service.js";
+import { spawn } from "node:child_process";
+
+declare const __OUVE_BUILD__: string;
 import { ProviderService } from "./provider-service.js";
 import { SafeStorageSecretStore, SettingsStore } from "./stores.js";
 import { assertNumber, assertString, parseProviderConfig, parseSettings } from "./validate.js";
@@ -223,6 +227,15 @@ function registerIpc(): void {
   });
   handle(IPC.releaseMedia, (_e, token) => media.release(assertString(token, "token", 100)));
 
+  handle(IPC.checkUpdates, () => updates.check());
+  handle(IPC.installUpdate, async (event) => {
+    if (process.platform !== "win32") {
+      await shell.openExternal(RELEASE_PAGE);
+      return;
+    }
+    await updates.install((percent) => event.sender.send(IPC.updateProgress, percent));
+  });
+
   handle(IPC.saveFile, async (_e, name, bytes) => {
     const fileName = assertString(name, "nome", 200).replace(/[\\/:*?"<>|]/g, "_");
     if (!(bytes instanceof Uint8Array)) throw new Error("Conteúdo inválido.");
@@ -239,6 +252,16 @@ function registerIpc(): void {
 }
 
 let secretStore: SafeStorageSecretStore;
+
+// Atualização manual: só roda quando o usuário pede (D-070).
+const updates = new UpdateService({
+  fetch: (input, init) => fetch(input, init),
+  currentBuild: __OUVE_BUILD__,
+  launchInstaller: (path) => {
+    spawn(path, [], { detached: true, stdio: "ignore" }).unref();
+    setTimeout(() => app.quit(), 500);
+  }
+});
 
 app.whenReady().then(() => {
   const dir = app.getPath("userData");

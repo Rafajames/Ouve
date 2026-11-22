@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { decodeFile } from "../src/app/file-decoder";
+import { decodeFile } from "@ouve/capture";
 import { ExtensionStorage, originPatternFor, type StorageAreaLike } from "../src/app/storage";
 
 function memoryArea(): StorageAreaLike & { data: Record<string, unknown> } {

@@ -9,6 +9,7 @@ import { MediaService, locateFfmpeg, parseDurationMs, parseSegmentList } from ".
 import { ProviderService } from "../src/main/provider-service";
 import { SafeStorageSecretStore, SettingsStore } from "../src/main/stores";
 import { parseProviderConfig, parseSettings } from "../src/main/validate";
+import { UpdateService, parseRelease } from "../src/main/update-service";
 
 let dir: string;
 beforeAll(async () => {
@@ -223,4 +224,44 @@ describe("MediaService (ffmpeg real)", () => {
     },
     30_000
   );
+});
+
+describe("atualização manual", () => {
+  const release = {
+    body: "Instalador gerado automaticamente a partir do commit abc1234 da branch desenvolvimento/mvp.",
+    assets: [{ name: "Ouve-Setup-0.2.0.exe", browser_download_url: "https://exemplo.test/Ouve.exe", updated_at: "2026-11-21T23:00:00Z" }]
+  };
+
+  it("lê o commit e o instalador da pré-release", () => {
+    expect(parseRelease(release)).toEqual({
+      build: "abc1234",
+      downloadUrl: "https://exemplo.test/Ouve.exe",
+      publishedAt: "2026-11-21T23:00:00Z"
+    });
+  });
+
+  it("indica nova versão só quando o commit é diferente", async () => {
+    const fetch = vi.fn(async () => new Response(JSON.stringify(release)));
+    const newer = await new UpdateService({ fetch, currentBuild: "0000000", launchInstaller: vi.fn() }).check();
+    expect(newer).toMatchObject({ available: true, latestBuild: "abc1234" });
+    const same = await new UpdateService({ fetch, currentBuild: "abc1234", launchInstaller: vi.fn() }).check();
+    expect(same).toMatchObject({ available: false, message: expect.stringMatching(/mais recente/) });
+    const dev = await new UpdateService({ fetch, currentBuild: "dev", launchInstaller: vi.fn() }).check();
+    expect(dev.available).toBe(false);
+  });
+
+  it("baixa o instalador com progresso e só então o executa", async () => {
+    const payload = new Uint8Array(5000).fill(7);
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(release)))
+      .mockResolvedValueOnce(new Response(payload, { headers: { "content-length": "5000" } }));
+    const launchInstaller = vi.fn();
+    const service = new UpdateService({ fetch, currentBuild: "0000000", launchInstaller });
+    const progress: number[] = [];
+    const path = await service.install((p) => progress.push(p));
+    expect(progress.at(-1)).toBe(100);
+    expect((await readFile(path)).byteLength).toBe(5000);
+    expect(launchInstaller).toHaveBeenCalledWith(path);
+  });
 });

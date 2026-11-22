@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { capabilitiesFor, detectPlatform, type CaptureFeature } from "@ouve/capture";
 import type { AppSettings } from "../../../shared/ipc";
-import { bridge } from "../bridge";
+import { bridge, capturePlatformEnv, unwrap } from "../bridge";
+import { Icon } from "@ouve/ui";
+import type { UpdateInfo } from "../../../shared/ipc";
 import { Page } from "../components";
 import { errorMessage, useApp, type AppData } from "../hooks";
 
@@ -25,11 +27,78 @@ const FEATURES: Record<CaptureFeature, string> = {
   mix: "Fonte + microfone"
 };
 
+/** Atualização manual: só verifica e instala quando o usuário clica (D-070). */
+function UpdatesPanel() {
+  const updates = bridge().updates;
+  const [info, setInfo] = useState<UpdateInfo | null>(null);
+  const [busy, setBusy] = useState<"check" | "install" | null>(null);
+  const [progress, setProgress] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => updates?.onProgress((p) => setProgress(p)), [updates]);
+  if (!updates) return null;
+
+  const check = async () => {
+    setBusy("check");
+    setError(null);
+    try {
+      setInfo(await unwrap(updates.check()));
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+  const install = async () => {
+    if (!window.confirm("O Ouve vai baixar a nova versão, fechar e abrir o instalador. A sessão atual será descartada. Continuar?")) return;
+    setBusy("install");
+    setError(null);
+    try {
+      await unwrap(updates.install());
+    } catch (e) {
+      setError(errorMessage(e));
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="panel">
+      <h2>
+        <Icon name="refresh" /> Atualizações
+      </h2>
+      <p className="muted">
+        Versão {bridge().version}
+        {info ? ` · compilação ${info.currentBuild}` : ""}. O Ouve não se atualiza sozinho: verifique e instale quando quiser.
+      </p>
+      <div className="row">
+        <button onClick={() => void check()} disabled={busy !== null}>
+          <Icon name="refresh" /> {busy === "check" ? "Verificando…" : "Verificar atualizações"}
+        </button>
+        {info?.available && (
+          <button className="primary" onClick={() => void install()} disabled={busy !== null}>
+            <Icon name="download" /> {busy === "install" ? `Baixando… ${progress ?? 0}%` : "Baixar e instalar"}
+          </button>
+        )}
+      </div>
+      {info && (
+        <p className={info.available ? "ok-text" : "muted"} role="status">
+          {info.message}
+          {info.available && info.publishedAt ? ` Publicada em ${new Date(info.publishedAt).toLocaleString("pt-BR")}.` : ""}
+        </p>
+      )}
+      {error && (
+        <p className="warn-text" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function SettingsScreen({ data }: { data: AppData }) {
   const { notify } = useApp();
   const [draft, setDraft] = useState<AppSettings | undefined>(data.settings);
   useEffect(() => setDraft(data.settings), [data.settings]);
-  const caps = capabilitiesFor(detectPlatform({ isElectron: true, os: bridge().platform }));
+  const caps = capabilitiesFor(detectPlatform(capturePlatformEnv()));
 
   if (!draft) return <Page title="Configurações">Carregando…</Page>;
   const update = (patch: Partial<AppSettings>) => setDraft({ ...draft, ...patch });
@@ -134,6 +203,7 @@ export function SettingsScreen({ data }: { data: AppData }) {
           Valores de referência (2 GB / 4 h) ainda não validados com arquivos reais; custos e limites dos provedores também se aplicam.
         </p>
       </div>
+      <UpdatesPanel />
       <div className="panel">
         <h2>Exportação</h2>
         <label className="check">

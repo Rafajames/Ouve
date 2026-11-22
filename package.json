@@ -15,7 +15,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:e2e": "pnpm --filter @ouve/desktop test:e2e && pnpm --filter @ouve/extension test:e2e"
+    "test:e2e": "pnpm --filter @ouve/desktop test:e2e && pnpm --filter @ouve/extension test:e2e && pnpm --filter @ouve/web test:e2e",
+    "build:web": "pnpm --filter @ouve/web build"
   },
   "devDependencies": {
     "@eslint/js": "^9",

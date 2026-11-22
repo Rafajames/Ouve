@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Icon } from "@ouve/ui";
 import type { QuickSetupOutcome } from "../../shared/ipc";
-import { bridge, unwrap } from "./bridge";
+import { bridge, isWeb, unwrap } from "./bridge";
 import { errorMessage } from "./hooks";
 
 /** Configuração rápida: colar a chave e pronto (D-065). */
@@ -64,7 +64,7 @@ export function QuickSetup({ onDone, compact = false }: { onDone: () => void | P
           <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">
             Google AI Studio
           </a>
-          . A chave fica cifrada neste computador e só é enviada para a própria IA.
+          . {isWeb() ? "A chave fica salva só neste navegador" : "A chave fica cifrada neste computador"} e só é enviada para a própria IA.
         </p>
       )}
       {error && (

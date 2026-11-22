@@ -3,6 +3,7 @@ import { GEMINI_FREE_TIER_NOTE } from "@ouve/providers";
 import { Icon } from "@ouve/ui";
 import { AUDIO_EXTENSIONS, VIDEO_EXTENSIONS } from "@ouve/core";
 import { Page } from "../components";
+import { isWeb } from "../bridge";
 import { errorMessage, useApp, useSession, type AppData } from "../hooks";
 
 export function ImportScreen({ data }: { data: AppData }) {
@@ -52,10 +53,11 @@ export function ImportScreen({ data }: { data: AppData }) {
           <strong>Vídeo (como contêiner de áudio):</strong> {VIDEO_EXTENSIONS.join(", ").toUpperCase()}
         </p>
         <p className="muted">
-          Limites configurados: até {data.settings?.maxFileGb ?? 2} GB e {data.settings?.maxHours ?? 4} h (ajustáveis em Configurações;
-          valores de referência ainda não validados com arquivos reais). O arquivo não é reproduzido: o áudio é extraído direto e enviado em
-          pedaços, vários ao mesmo tempo, escolhidos automaticamente para a IA configurada. Os temporários são apagados ao final. Uma
-          gravação de 1 hora costuma ficar pronta em poucos minutos, dependendo da IA.
+          {isWeb()
+            ? "Na versão web o arquivo é decodificado no próprio navegador: até 300 MB e 2 h. Para gravações maiores, use o aplicativo desktop."
+            : `Limites configurados: até ${data.settings?.maxFileGb ?? 2} GB e ${data.settings?.maxHours ?? 4} h (ajustáveis em Configurações).`}{" "}
+          O arquivo não é reproduzido: o áudio é extraído direto e enviado em pedaços, vários ao mesmo tempo, escolhidos automaticamente
+          para a IA configurada. Uma gravação de 1 hora costuma ficar pronta em poucos minutos, dependendo da IA.
         </p>
       </div>
       <div className="panel">

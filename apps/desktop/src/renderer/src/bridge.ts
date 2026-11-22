@@ -20,6 +20,16 @@ export function bridge(): OuveBridge {
   return window.ouve;
 }
 
+/** Versão web (navegador): sem seletor próprio de fontes, sem ffmpeg e sem atualização do app. */
+export function isWeb(): boolean {
+  return typeof window !== "undefined" && window.ouve?.platform === "web";
+}
+
+/** Plataforma de captura para a matriz de capacidades. */
+export function capturePlatformEnv(): { isElectron: boolean; os?: string; userAgent?: string } {
+  return isWeb() ? { isElectron: false, userAgent: navigator.userAgent } : { isElectron: true, os: bridge().platform };
+}
+
 export function hasBridge(): boolean {
   return typeof window !== "undefined" && !!window.ouve;
 }

@@ -126,6 +126,11 @@ export default function App() {
                 </button>
               ))}
             </div>
+            {window.ouve?.updates && (
+              <button className="nav small-link" onClick={() => setScreen("settings")}>
+                <Icon name="refresh" size={15} /> Verificar atualizações
+              </button>
+            )}
             <span>Somente áudio · sem conta · sem histórico</span>
           </div>
         </aside>

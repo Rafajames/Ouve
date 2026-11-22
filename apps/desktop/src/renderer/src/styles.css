@@ -1016,3 +1016,8 @@ button {
     grid-template-columns: minmax(0, 1fr) 220px;
   }
 }
+
+.small-link {
+  font-size: 12px;
+  padding: 4px 6px;
+}

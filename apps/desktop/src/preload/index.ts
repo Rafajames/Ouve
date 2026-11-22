@@ -43,6 +43,15 @@ const bridge: OuveBridge = {
   },
   files: {
     save: (name, bytes) => invoke(IPC.saveFile, name, bytes)
+  },
+  updates: {
+    check: () => invoke(IPC.checkUpdates),
+    install: () => invoke(IPC.installUpdate),
+    onProgress: (listener) => {
+      const wrapped = (_: unknown, percent: number) => listener(percent);
+      ipcRenderer.on(IPC.updateProgress, wrapped);
+      return () => ipcRenderer.removeListener(IPC.updateProgress, wrapped);
+    }
   }
 };
 

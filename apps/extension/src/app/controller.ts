@@ -14,7 +14,7 @@ import { createProviderBundle, credentialRefFor, planImport, type ProviderBundle
 import { buildReport, exportDocx, exportFileName, exportPdf, reportToMarkdown } from "@ouve/reports";
 import { createId, sleep, toOuveError } from "@ouve/shared";
 import { TranscriptionPipeline, type PipelineStats } from "@ouve/transcription";
-import { decodeFile } from "./file-decoder";
+import { decodeFile } from "@ouve/capture";
 import type { ExtensionStorage, ExtSettings } from "./storage";
 
 export interface ExtSnapshot {

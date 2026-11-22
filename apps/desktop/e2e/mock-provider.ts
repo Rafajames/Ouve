@@ -25,6 +25,17 @@ export async function startMockProvider(): Promise<MockProvider> {
     requests.push({ method: req.method ?? "", path });
     const raw = await body(req);
     res.setHeader("content-type", "application/json");
+    // CORS: as APIs reais aceitam chamadas do navegador; a versão web depende disso.
+    res.setHeader("access-control-allow-origin", "*");
+    res.setHeader(
+      "access-control-allow-headers",
+      "authorization, content-type, x-goog-api-key, x-api-key, anthropic-version, anthropic-dangerous-direct-browser-access"
+    );
+    res.setHeader("access-control-allow-methods", "GET, POST, OPTIONS");
+    if (req.method === "OPTIONS") {
+      res.statusCode = 204;
+      return res.end();
+    }
     if (req.method === "GET" && path === "/v1/models")
       return res.end(JSON.stringify({ data: [{ id: "mock-transcribe" }, { id: "mock-chat" }] }));
     if (req.method === "POST" && path === "/v1/audio/transcriptions") {
