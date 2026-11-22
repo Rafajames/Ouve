@@ -166,7 +166,13 @@ function registerIpc(): void {
     return providers.save(parsed);
   });
   handle(IPC.removeProvider, (_e, id) => providers.remove(assertString(id, "id", 80)));
-  handle(IPC.testProvider, (_e, id) => providers.test(assertString(id, "id", 80)));
+  handle(IPC.testProvider, async (_e, raw) => {
+    const id = assertString(raw, "id", 80);
+    // A transcrição local precisa estar ligada para responder ao teste.
+    if (id === "local-whisper-cpp" && localAi.whisperExecutable())
+      await localAi.ensureWhisper((await settingsStore.getSettings()).language.split("-")[0]);
+    return providers.test(id);
+  });
   handle(IPC.secretProtection, () => ({ protection: secretStore.protection }));
   handle(IPC.quickSetup, (_e, key) => providers.quickSetup(assertString(key, "chave", 500)));
 

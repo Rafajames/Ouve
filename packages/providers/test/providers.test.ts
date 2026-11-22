@@ -194,3 +194,17 @@ describe("IA local", () => {
     expect(localProviderConfig("whisper-cpp", "").transcriptionModel).toBe("whisper-1");
   });
 });
+
+describe("teste de conexão de servidor só de transcrição", () => {
+  it("não pede /models ao whisper.cpp local", async () => {
+    const { createProviderBundle, localProviderConfig } = await import("../src");
+    const urls: string[] = [];
+    const fetchImpl = async (url: string) => {
+      urls.push(url);
+      return new Response("ok");
+    };
+    const result = await createProviderBundle(localProviderConfig("whisper-cpp", "small"), undefined, fetchImpl).testConnection();
+    expect(result.ok).toBe(true);
+    expect(urls[0]).not.toContain("/models");
+  });
+});

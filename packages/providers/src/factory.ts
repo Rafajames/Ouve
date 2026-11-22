@@ -98,7 +98,12 @@ export function createProviderBundle(
       const bundle: ProviderBundle = {
         config,
         testConnection: (signal) =>
-          safeTest(() => testOpenAiConnection({ ...base, model: config.model, capabilities: preset.completion }, signal))
+          safeTest(() =>
+            // Servidores só de transcrição (ex.: whisper.cpp) não têm /models: basta o servidor responder.
+            wantsText
+              ? testOpenAiConnection({ ...base, model: config.model, capabilities: preset.completion }, signal)
+              : testServerReachable(config.baseUrl ?? "", base.providerName, fetchImpl, signal)
+          )
       };
       if (wants("transcription") && preset.transcription) {
         bundle.transcription = new OpenAiTranscription({
@@ -111,6 +116,19 @@ export function createProviderBundle(
       return bundle;
     }
   }
+}
+
+async function testServerReachable(
+  baseUrl: string,
+  providerName: string,
+  fetchImpl: FetchLike,
+  signal?: AbortSignal
+): Promise<ConnectionTestResult> {
+  const started = Date.now();
+  const res = await fetchImpl(new URL("/", baseUrl).toString(), { method: "GET", signal: signal ?? AbortSignal.timeout(5000) });
+  if (res.status >= 500)
+    throw new OuveError("provider-unavailable", `${providerName}: o servidor respondeu com erro (HTTP ${res.status}).`);
+  return { ok: true, latencyMs: Date.now() - started, message: `Conexão estabelecida com ${providerName}.` };
 }
 
 async function safeTest(run: () => Promise<ConnectionTestResult>): Promise<ConnectionTestResult> {
