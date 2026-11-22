@@ -4,13 +4,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 import { startMockProvider, type MockProvider } from "../../desktop/e2e/mock-provider";
+import { locateFfmpeg } from "../../desktop/src/main/media-service";
 
 let mock: MockProvider;
 const work = mkdtempSync(join(tmpdir(), "ouve-web-"));
 const audio = join(work, "aula.wav");
 
 test.beforeAll(async () => {
-  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=300:duration=6", "-ac", "1", audio]);
+  execFileSync(locateFfmpeg(), ["-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=300:duration=6", "-ac", "1", audio]);
   mock = await startMockProvider();
 });
 test.afterAll(async () => mock?.close());
