@@ -139,5 +139,6 @@ Todo o desenvolvimento registrado abaixo aconteceu nesses dois dias, fora de dia
 | 22/11/2026 04:17 | `e17fb46` | Claude | feat: IA local (Ollama/whisper.cpp), apresentação inicial, Ajuda e avisos configuráveis |
 | 22/11/2026 04:40 | `5616e21` | Claude | feat: IA local com um clique no desktop — whisper.cpp embutido e instalação do Ollama (D-082) |
 | 22/11/2026 05:00 | `3ba7980` | Claude | feat(ui): painel Sessão de cima a baixo; status e processamento na coluna da transcrição |
+| 22/11/2026 05:15 | `61ea085` | Claude | fix: escolha de provedor órfã não gera mais "Provedor não configurado" |
 
 > Para atualizar esta tabela: `git log --reverse --format='%at|%h|%an|%s'` convertendo os horários para UTC−04:00.
