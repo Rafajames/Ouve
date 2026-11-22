@@ -176,99 +176,99 @@ export function SessionScreen() {
         </button>
       }
     >
-      <div className={`status-bar ${s.status}`}>
-        <span className={`status-pill ${s.status}`}>
-          {s.status === "capturing" && <span className="rec-dot" aria-hidden />}
-          {s.status === "completed" && <Icon name="check" size={14} />}
-          {s.status === "failed" && <Icon name="alert" size={14} />}
-          {STATUS_LABEL[s.status]}
-        </span>
-        {live && (
-          <span className="mono">
-            <Icon name="clock" size={14} /> {formatTimestamp(s.capturedMs)}
-          </span>
-        )}
-        {live && active && <LevelMeter level={s.status === "capturing" ? s.level : 0} />}
-        {live && s.activity === "no-audio" && s.status === "capturing" && <span className="badge warn">sem áudio</span>}
-        <span className="muted">
-          {s.stats.done} transcritos · {s.stats.skipped} em silêncio · {pending} na fila
-        </span>
-        <span className="spacer" />
-        {live && s.status === "capturing" && (
-          <button onClick={() => controller.pause()}>
-            <Icon name="pause" /> Pausar
-          </button>
-        )}
-        {live && s.status === "paused" && (
-          <button onClick={() => controller.resume()}>
-            <Icon name="play" /> Retomar
-          </button>
-        )}
-        {live && active && s.microphone && (
-          <button onClick={() => controller.setMicrophoneMuted(!s.microphoneMuted)}>
-            <Icon name={s.microphoneMuted ? "mic" : "micOff"} /> {s.microphoneMuted ? "Ativar microfone" : "Silenciar microfone"}
-          </button>
-        )}
-        {live && active && (
-          <button className="danger" onClick={() => void controller.stopLive()}>
-            <Icon name="stop" /> Encerrar captura
-          </button>
-        )}
-        {!live && s.status === "processing" && (
-          <button className="danger" onClick={() => controller.cancelImport()}>
-            <Icon name="x" /> Cancelar
-          </button>
-        )}
-        {s.stats.failed > 0 && !active && (
-          <button onClick={() => notify(`${controller.retryFailed()} trecho(s) reenviado(s).`)}>
-            <Icon name="refresh" /> Tentar novamente
-          </button>
-        )}
-      </div>
-
-      {s.importInfo && s.status === "processing" && (
-        <div className="panel">
-          <p>
-            {s.importInfo.phase === "extracting"
-              ? `Extraindo o áudio… ${formatTimestamp(s.importInfo.processedMs)}${s.importInfo.durationMs ? ` de ${formatTimestamp(s.importInfo.durationMs)}` : ""}`
-              : `Transcrevendo ${s.importInfo.segments} pedaços… (${s.stats.done + s.stats.failed} de ${s.importInfo.segments})`}
-          </p>
-          {s.importPlanLabel && (
-            <p className="muted small-text">
-              <Icon name="sparkles" size={13} /> Modo rápido: {s.importPlanLabel}.
-            </p>
-          )}
-          <progress
-            max={1}
-            value={
-              s.importInfo.phase === "extracting"
-                ? s.importInfo.durationMs
-                  ? s.importInfo.processedMs / s.importInfo.durationMs
-                  : undefined
-                : s.importInfo.segments
-                  ? (s.stats.done + s.stats.failed) / s.importInfo.segments
-                  : undefined
-            }
-          />
-        </div>
-      )}
-
-      {!live && s.status === "completed" && s.processingMs !== undefined && (
-        <div className="callout">
-          <Icon name="check" size={16} />
-          <span>
-            Transcrição pronta em <strong>{formatDuration(s.processingMs)}</strong>. A análise é opcional: use “Analisar e gerar relatório”
-            quando quiser.
-          </span>
-        </div>
-      )}
-
-      <Messages />
-      <HintBanner />
-      <MarkerBar compact />
-
       <div className="session-grid">
         <div className="session-main">
+          <div className={`status-bar ${s.status}`}>
+            <span className={`status-pill ${s.status}`}>
+              {s.status === "capturing" && <span className="rec-dot" aria-hidden />}
+              {s.status === "completed" && <Icon name="check" size={14} />}
+              {s.status === "failed" && <Icon name="alert" size={14} />}
+              {STATUS_LABEL[s.status]}
+            </span>
+            {live && (
+              <span className="mono">
+                <Icon name="clock" size={14} /> {formatTimestamp(s.capturedMs)}
+              </span>
+            )}
+            {live && active && <LevelMeter level={s.status === "capturing" ? s.level : 0} />}
+            {live && s.activity === "no-audio" && s.status === "capturing" && <span className="badge warn">sem áudio</span>}
+            <span className="muted">
+              {s.stats.done} transcritos · {s.stats.skipped} em silêncio · {pending} na fila
+            </span>
+            <span className="spacer" />
+            {live && s.status === "capturing" && (
+              <button onClick={() => controller.pause()}>
+                <Icon name="pause" /> Pausar
+              </button>
+            )}
+            {live && s.status === "paused" && (
+              <button onClick={() => controller.resume()}>
+                <Icon name="play" /> Retomar
+              </button>
+            )}
+            {live && active && s.microphone && (
+              <button onClick={() => controller.setMicrophoneMuted(!s.microphoneMuted)}>
+                <Icon name={s.microphoneMuted ? "mic" : "micOff"} /> {s.microphoneMuted ? "Ativar microfone" : "Silenciar microfone"}
+              </button>
+            )}
+            {live && active && (
+              <button className="danger" onClick={() => void controller.stopLive()}>
+                <Icon name="stop" /> Encerrar captura
+              </button>
+            )}
+            {!live && s.status === "processing" && (
+              <button className="danger" onClick={() => controller.cancelImport()}>
+                <Icon name="x" /> Cancelar
+              </button>
+            )}
+            {s.stats.failed > 0 && !active && (
+              <button onClick={() => notify(`${controller.retryFailed()} trecho(s) reenviado(s).`)}>
+                <Icon name="refresh" /> Tentar novamente
+              </button>
+            )}
+          </div>
+
+          {s.importInfo && s.status === "processing" && (
+            <div className="panel">
+              <p>
+                {s.importInfo.phase === "extracting"
+                  ? `Extraindo o áudio… ${formatTimestamp(s.importInfo.processedMs)}${s.importInfo.durationMs ? ` de ${formatTimestamp(s.importInfo.durationMs)}` : ""}`
+                  : `Transcrevendo ${s.importInfo.segments} pedaços… (${s.stats.done + s.stats.failed} de ${s.importInfo.segments})`}
+              </p>
+              {s.importPlanLabel && (
+                <p className="muted small-text">
+                  <Icon name="sparkles" size={13} /> Modo rápido: {s.importPlanLabel}.
+                </p>
+              )}
+              <progress
+                max={1}
+                value={
+                  s.importInfo.phase === "extracting"
+                    ? s.importInfo.durationMs
+                      ? s.importInfo.processedMs / s.importInfo.durationMs
+                      : undefined
+                    : s.importInfo.segments
+                      ? (s.stats.done + s.stats.failed) / s.importInfo.segments
+                      : undefined
+                }
+              />
+            </div>
+          )}
+
+          {!live && s.status === "completed" && s.processingMs !== undefined && (
+            <div className="callout">
+              <Icon name="check" size={16} />
+              <span>
+                Transcrição pronta em <strong>{formatDuration(s.processingMs)}</strong>. A análise é opcional: use “Analisar e gerar
+                relatório” quando quiser.
+              </span>
+            </div>
+          )}
+
+          <Messages />
+          <HintBanner />
+          <MarkerBar compact />
+
           <div className="tabs" role="tablist">
             <button
               role="tab"

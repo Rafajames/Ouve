@@ -938,8 +938,8 @@ button {
   padding: 5px 10px;
   font-size: 13px;
 }
-.page.fit > .panel,
-.page.fit > .callout {
+.page.fit .session-main > .panel:not(.transcript-panel),
+.page.fit .session-main > .callout {
   flex-shrink: 0;
   padding: 8px 12px;
   gap: 4px;
@@ -965,6 +965,7 @@ button {
 }
 .page.fit .tabs .tab {
   padding: 5px 10px;
+  white-space: nowrap;
 }
 .page.fit .transcript-panel {
   flex: 1;
@@ -987,6 +988,21 @@ button {
 .page.fit .session-side .panel {
   padding: 10px 12px;
   gap: 8px;
+  flex-shrink: 0;
+}
+.page.fit .session-side .stats {
+  grid-template-columns: repeat(4, 1fr);
+}
+.page.fit .session-side .stat {
+  padding: 6px 4px;
+  text-align: center;
+}
+.page.fit .session-side .stat span {
+  font-size: 11px;
+}
+.page.fit .session-side > .small-text {
+  margin: auto 0 0;
+  font-size: 11px;
 }
 .page.fit .stats {
   gap: 6px;
@@ -1015,6 +1031,15 @@ button {
   .page.fit .session-grid {
     grid-template-columns: minmax(0, 1fr) 220px;
   }
+  .page.fit .session-side .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.page.fit .session-main > * {
+  flex-shrink: 0;
+}
+.page.fit .session-main > .transcript-panel {
+  flex-shrink: 1;
 }
 
 .small-link {
