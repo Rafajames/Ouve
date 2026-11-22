@@ -109,3 +109,21 @@ describe("IA local gerenciada", () => {
     await expect(none.startWhisper("base")).rejects.toThrow(/não está incluída/);
   });
 });
+
+describe("servidor do Whisper que fecha ao iniciar", () => {
+  it("mostra a mensagem real e tenta a versão compatível quando o processador não tem AVX2", async () => {
+    const { service, root, spawnImpl, child } = await setup();
+    await writeFile(join(root, "resources", "whisper", "whisper-server-compat.exe"), "");
+    await mkdir(join(root, "data", "local-ai", "whisper"), { recursive: true });
+    await writeFile(join(root, "data", "local-ai", "whisper", "ggml-base.bin"), "x");
+    child.exitCode = 0xc000001d;
+    await expect(service.startWhisper("base")).rejects.toThrow(/AVX2/);
+    expect(spawnImpl).toHaveBeenCalledTimes(2);
+    expect(String((spawnImpl.mock.calls[1] as unknown[])[0])).toMatch(/compat/);
+  });
+
+  it("explica porta ocupada", async () => {
+    const { describeExit } = await import("../src/main/local-ai-service");
+    expect(describeExit(1, "error: couldn't bind to server socket").message).toMatch(/porta 8178/);
+  });
+});

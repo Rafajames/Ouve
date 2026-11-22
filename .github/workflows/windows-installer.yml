@@ -30,7 +30,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: apps/desktop/vendor/whisper
-          key: whisper-server-${{ env.WHISPER_CPP_TAG }}-avx2-static-v1
+          key: whisper-server-${{ env.WHISPER_CPP_TAG }}-avx2-compat-static-v2
       - name: Compilar servidor do whisper.cpp
         if: steps.whisper-cache.outputs.cache-hit != 'true'
         shell: bash
@@ -43,6 +43,12 @@ jobs:
           mkdir -p apps/desktop/vendor/whisper
           cp "$(find "$RUNNER_TEMP/wbuild" -name whisper-server.exe | head -1)" apps/desktop/vendor/whisper/
           cp "$RUNNER_TEMP/whisper.cpp/LICENSE" apps/desktop/vendor/whisper/LICENSE-whisper.cpp.txt
+          # Versão compatível (sem AVX/AVX2) para processadores antigos; o Ouve usa se a principal travar ao abrir.
+          cmake -S "$RUNNER_TEMP/whisper.cpp" -B "$RUNNER_TEMP/wbuild-compat" -DBUILD_SHARED_LIBS=OFF -DWHISPER_BUILD_EXAMPLES=ON \
+            -DWHISPER_BUILD_TESTS=OFF -DGGML_NATIVE=OFF -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DGGML_F16C=OFF -DGGML_OPENMP=OFF \
+            -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+          cmake --build "$RUNNER_TEMP/wbuild-compat" --config Release --target whisper-server -j 4
+          cp "$(find "$RUNNER_TEMP/wbuild-compat" -name whisper-server.exe | head -1)" apps/desktop/vendor/whisper/whisper-server-compat.exe
       - name: Conferir whisper-server
         shell: bash
         run: |
@@ -50,6 +56,7 @@ jobs:
           ./apps/desktop/vendor/whisper/whisper-server.exe --help > help.txt 2>&1 || true
           head -5 help.txt
           grep -q -- "--inference-path" help.txt
+          ./apps/desktop/vendor/whisper/whisper-server-compat.exe --help 2>&1 | grep -q -- "--inference-path"
       - name: Gerar instalador (NSIS, sem assinatura)
         run: pnpm --filter @ouve/desktop package
         env:
