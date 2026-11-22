@@ -4,8 +4,9 @@ import { credentialRefFor, presetFor, type SecretStore } from "@ouve/providers";
 /**
  * Armazenamento da extensão (chrome.storage.local). Somente preferências,
  * configurações de provedores e chaves — nunca áudio, transcrição ou relatório.
- * As chaves ficam no perfil do navegador, SEM criptografia do sistema
- * operacional (limitação documentada em docs/09 e exibida na interface).
+ * Chaves: por padrão em chrome.storage.session (memória, somem ao fechar o
+ * navegador). “Lembrar neste navegador” as guarda no storage local, SEM
+ * criptografia do sistema operacional — escolha do usuário, com aviso.
  */
 export interface ExtSettings {
   language: string;
@@ -28,8 +29,52 @@ export function localArea(): StorageAreaLike {
   return chrome.storage.local as unknown as StorageAreaLike;
 }
 
+/** chrome.storage.session quando disponível (Chrome 102+, Firefox 115+). */
+export function sessionArea(): StorageAreaLike | undefined {
+  return (globalThis as { chrome?: { storage?: { session?: unknown } } }).chrome?.storage?.session as StorageAreaLike | undefined;
+}
+
+function memoryArea(): StorageAreaLike {
+  const map = new Map<string, unknown>();
+  return {
+    async get(keys) {
+      const out: Record<string, unknown> = {};
+      for (const k of Array.isArray(keys) ? keys : [keys]) if (map.has(k)) out[k] = map.get(k);
+      return out;
+    },
+    async set(items) {
+      for (const [k, v] of Object.entries(items)) map.set(k, v);
+    },
+    async remove(keys) {
+      for (const k of Array.isArray(keys) ? keys : [keys]) map.delete(k);
+    }
+  };
+}
+
 export class ExtensionStorage {
-  constructor(private readonly area: StorageAreaLike = localArea()) {}
+  private readonly session: StorageAreaLike;
+  constructor(
+    private readonly area: StorageAreaLike = localArea(),
+    session: StorageAreaLike | undefined = sessionArea()
+  ) {
+    this.session = session ?? memoryArea();
+  }
+
+  /** Lembrar chaves no navegador? Quem já tinha chave salva no local continua lembrando. */
+  async rememberKeys(): Promise<boolean> {
+    const { rememberKeys } = await this.area.get("rememberKeys");
+    if (typeof rememberKeys === "boolean") return rememberKeys;
+    const all = await this.area.get((await this.providers()).map((p) => `secret:${credentialRefFor(p.id)}`));
+    return Object.values(all).some((v) => typeof v === "string" && v);
+  }
+
+  async setRememberKeys(remember: boolean): Promise<void> {
+    const store = this.secrets();
+    const refs = (await this.providers()).map((p) => credentialRefFor(p.id));
+    const values = await Promise.all(refs.map(async (ref) => [ref, await store.get(ref)] as const));
+    await this.area.set({ rememberKeys: remember });
+    for (const [ref, value] of values) if (value) await store.set(ref, value);
+  }
 
   async settings(): Promise<ExtSettings> {
     const { settings } = await this.area.get("settings");
@@ -60,19 +105,27 @@ export class ExtensionStorage {
   }
 
   secrets(): SecretStore {
-    const area = this.area;
+    const local = this.area;
+    const session = this.session;
     const key = (ref: string) => `secret:${ref}`;
+    const rememberKeys = () => this.rememberKeys();
+    const read = async (area: StorageAreaLike, ref: string) => {
+      const value = (await area.get(key(ref)))[key(ref)];
+      return typeof value === "string" ? value : undefined;
+    };
     return {
-      protection: "browser-profile",
+      protection: "session-only",
       async get(ref) {
-        const value = (await area.get(key(ref)))[key(ref)];
-        return typeof value === "string" ? value : undefined;
+        return (await read(session, ref)) ?? (await read(local, ref));
       },
       async set(ref, secret) {
-        await area.set({ [key(ref)]: secret });
+        const remember = await rememberKeys();
+        await (remember ? local : session).set({ [key(ref)]: secret });
+        await (remember ? session : local).remove(key(ref));
       },
       async delete(ref) {
-        await area.remove(key(ref));
+        await session.remove(key(ref));
+        await local.remove(key(ref));
       }
     };
   }

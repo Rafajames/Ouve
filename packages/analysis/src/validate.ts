@@ -10,7 +10,18 @@ import {
 } from "@ouve/core";
 import { OuveError, sanitizeText } from "@ouve/shared";
 
-const LIST_KEYS = ["topics", "questionsAndAnswers", "decisions", "pendingItems", "actionItems", "attentionPoints", "nextSteps"] as const;
+const LIST_KEYS = [
+  "topics",
+  "questionsAndAnswers",
+  "decisions",
+  "pendingItems",
+  "actionItems",
+  "attentionPoints",
+  "nextSteps",
+  "divergences",
+  "clarifications",
+  "keyMoments"
+] as const;
 type ListKey = (typeof LIST_KEYS)[number];
 
 const LABELS: Record<ListKey, string> = {
@@ -20,7 +31,10 @@ const LABELS: Record<ListKey, string> = {
   pendingItems: "pendência",
   actionItems: "tarefa",
   attentionPoints: "ponto de atenção",
-  nextSteps: "encaminhamento"
+  nextSteps: "encaminhamento",
+  divergences: "divergência",
+  clarifications: "ponto a esclarecer",
+  keyMoments: "momento importante"
 };
 
 const MAX_ITEMS = 60;
@@ -57,6 +71,10 @@ export function validateAnalysis(raw: unknown, segments: TranscriptSegment[], id
   const byId = new Map(segments.map((s) => [s.id, s]));
   const result = emptyAnalysis();
   result.summary = str(data.summary, 8000);
+  const objective = str(data.objective, 1000);
+  if (objective) result.objective = objective;
+  const conclusion = str(data.conclusion, 4000);
+  if (conclusion) result.conclusion = conclusion;
   let counter = 0;
 
   for (const key of LIST_KEYS) {
@@ -120,6 +138,10 @@ export function validateAnalysis(raw: unknown, segments: TranscriptSegment[], id
 export function mergeAnalyses(parts: MeetingAnalysis[], summary: string): MeetingAnalysis {
   const merged = emptyAnalysis();
   merged.summary = summary;
+  const objective = parts.find((p) => p.objective)?.objective;
+  if (objective) merged.objective = objective;
+  const conclusion = [...parts].reverse().find((p) => p.conclusion)?.conclusion;
+  if (conclusion) merged.conclusion = conclusion;
   for (const part of parts) {
     for (const key of LIST_KEYS) (merged[key] as AnalysisItem[]).push(...(part[key] as AnalysisItem[]));
     merged.warnings.push(...part.warnings);

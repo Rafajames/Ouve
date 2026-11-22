@@ -123,6 +123,16 @@ export interface MeetingAnalysis {
   actionItems: ActionItem[];
   attentionPoints: AnalysisItem[];
   nextSteps: AnalysisItem[];
+  /** Divergências e contradições aparentes. */
+  divergences: AnalysisItem[];
+  /** Pontos que precisam de esclarecimento. */
+  clarifications: AnalysisItem[];
+  /** Momentos importantes da sessão. */
+  keyMoments: AnalysisItem[];
+  /** Objetivo ou assunto principal, quando identificável. */
+  objective?: string;
+  /** Conclusão ou desfecho, quando houver. */
+  conclusion?: string;
   /** Avisos do validador (itens descartados, campos removidos por falta de evidência). */
   warnings: string[];
 }

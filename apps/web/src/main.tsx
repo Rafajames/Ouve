@@ -27,6 +27,7 @@ function download(fileName: string, bytes: Uint8Array): void {
 
 window.ouve = createWebBridge({
   storage: window.localStorage,
+  sessionStorage: window.sessionStorage,
   fetch: (input, init) => window.fetch(input, init),
   pickFile,
   download,

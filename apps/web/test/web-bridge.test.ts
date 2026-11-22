@@ -34,6 +34,24 @@ describe("ponte web", () => {
     expect(list.ok && list.value[0]?.hasKey).toBe(true);
   });
 
+  it("guarda a chave só na sessão por padrão e move ao escolher lembrar", async () => {
+    const fetchImpl = vi.fn(async () => json({ models: [{ name: "models/gemini-3.7-flash" }] }));
+    const session = memory();
+    const { b, storage } = bridge(fetchImpl as unknown as typeof fetch, { sessionStorage: session });
+    await b.providers.quickSetup("AQ.Ab8exemploExemploExemplo123456");
+    const inLocal = () => [...storage.data.entries()].some(([k, v]) => k.startsWith("ouve.secret.") && v.startsWith("AQ."));
+    const inSession = () => [...session.data.values()].some((v) => v.startsWith("AQ."));
+    expect(inLocal()).toBe(false);
+    expect(inSession()).toBe(true);
+    expect(await b.providers.protection()).toEqual({ ok: true, value: { protection: "session-only" } });
+    await b.providers.setKeyPersistence?.(true);
+    expect(inLocal()).toBe(true);
+    expect(inSession()).toBe(false);
+    expect(storage.data.get("ouve.rememberKeys")).toBe("1");
+    await b.providers.setKeyPersistence?.(false);
+    expect(inLocal()).toBe(false);
+  });
+
   it("devolve erros serializados em vez de lançar", async () => {
     const { b } = bridge(vi.fn());
     const r = await b.providers.test("inexistente");

@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { emptyAnalysis } from "@ouve/core";
 import { PDFDocument } from "pdf-lib";
-import { buildReport, exportDocx, exportFileName, exportPdf, reportToLines, reportToMarkdown } from "../src/index.js";
+import {
+  buildReport,
+  exportDocx,
+  exportFileName,
+  exportPdf,
+  reportToCsv,
+  reportToLines,
+  reportToMarkdown,
+  reportToText
+} from "../src/index.js";
 
 function sample(longTranscript = false) {
   const analysis = emptyAnalysis();
@@ -63,5 +72,46 @@ describe("relatório", () => {
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBeGreaterThan(5);
     expect(doc.getTitle()).toBe("Audiência nº 12/2026");
+  });
+});
+
+describe("relatório 2.0", () => {
+  it("organiza por contexto de audiência, inclui marcadores, métricas e perguntas sem resposta", () => {
+    const r = sample();
+    r.context = "hearing";
+    r.analysis.questionsAndAnswers.push({ id: "q1", title: "Onde estava no dia?", description: "", basis: "explicit", evidence: [] });
+    r.analysis.objective = "Oitiva de testemunha";
+    r.markers = [{ id: "mk-1", kind: "decision", atMs: 1000, origin: "user", note: "deferido" }];
+    const text = reportToLines(r)
+      .map((l) => l.text)
+      .join("\n");
+    expect(text.indexOf("Perguntas e respostas")).toBeLessThan(text.indexOf("Tópicos discutidos"));
+    expect(text).toContain("Deliberações");
+    expect(text).toContain("Perguntas sem resposta identificada");
+    expect(text).toContain("[00:00:01] Decisão — deferido");
+    expect(text).toContain("Falas por participante (linha do tempo)");
+    expect(text).toContain("Falou em: 00:00:00–00:00:09");
+    expect(text).toContain("Oitiva de testemunha");
+  });
+
+  it("respeita a escolha de seções e o desligamento de horários", () => {
+    const text = reportToText(sample(), {
+      sections: ["decisions"],
+      includeTimestamps: false,
+      includeMetrics: false,
+      includeTranscript: false
+    });
+    expect(text).toContain("DECISÕES TOMADAS");
+    expect(text).not.toContain("TAREFAS");
+    expect(text).not.toContain("[00:");
+  });
+
+  it("gera CSV seguro para planilhas", () => {
+    const r = sample();
+    r.transcript[0]!.text = "=SOMA(A1)";
+    const csv = reportToCsv(r);
+    expect(csv.startsWith("﻿")).toBe(true);
+    expect(csv).toContain(`"'=SOMA(A1)"`);
+    expect(exportFileName("x", "csv")).toBe("x.csv");
   });
 });

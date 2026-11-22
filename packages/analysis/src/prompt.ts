@@ -1,4 +1,4 @@
-import type { ChatMessage, TranscriptSegment } from "@ouve/core";
+import type { ChatMessage, ReportContext, TranscriptSegment } from "@ouve/core";
 import { formatTimestamp } from "@ouve/shared";
 
 export const ANALYSIS_SCHEMA_VERSION = 1;
@@ -17,23 +17,44 @@ REGRAS OBRIGATÓRIAS
 7. Escreva em português brasileiro, salvo se o usuário solicitar outro idioma.
 8. Se uma categoria não tiver itens, retorne lista vazia.
 
+9. Perguntas sem resposta: inclua em "questionsAndAnswers" sem o campo "answer".
+10. Não transforme os dados em julgamento sobre personalidade, comportamento ou competência de alguém.
+
 FORMATO: responda SOMENTE com JSON neste formato:
 {
-  "summary": "resumo geral em 1 a 3 parágrafos",
+  "summary": "resumo executivo em 1 a 3 parágrafos",
+  "objective": "objetivo ou assunto principal, se identificável; senão string vazia",
   "topics": [${ITEM}],
   "questionsAndAnswers": [${ITEM.replace("}", ',"answer":"resposta dada, se houver"}')}],
   "decisions": [${ITEM}],
   "pendingItems": [${ITEM}],
   "actionItems": [${ITEM.replace("}", ',"assignee":"apenas se mencionado","dueDate":"apenas se mencionado"}')}],
   "attentionPoints": [${ITEM}],
-  "nextSteps": [${ITEM}]
+  "nextSteps": [${ITEM}],
+  "divergences": [${ITEM}],
+  "clarifications": [${ITEM}],
+  "keyMoments": [${ITEM}],
+  "conclusion": "desfecho ou conclusão, se houver; senão string vazia"
 }`;
+
+/** Orientações adicionais por tipo de sessão. */
+export const CONTEXT_GUIDANCE: Record<ReportContext, string> = {
+  general: "",
+  meeting: "Tipo de sessão: REUNIÃO. Priorize decisões, tarefas (com responsável e prazo apenas se ditos), encaminhamentos e pendências.",
+  hearing:
+    "Tipo de sessão: AUDIÊNCIA. Priorize perguntas e respostas de cada participante, fatos declarados, divergências e contradições entre depoimentos, " +
+    "pontos que precisam de esclarecimento e deliberações. Use linguagem neutra e não emita juízo sobre credibilidade.",
+  interview: "Tipo de sessão: ENTREVISTA. Priorize perguntas, respostas, perguntas sem resposta e pontos a aprofundar.",
+  class:
+    "Tipo de sessão: AULA. Use os tópicos para conteúdos e conceitos, perguntas e respostas para dúvidas, e encaminhamentos para tarefas e leituras."
+};
 
 export interface PromptContext {
   title?: string;
   language?: string;
   speakerLabel: (speakerId: string | undefined) => string;
   part?: { index: number; total: number };
+  context?: ReportContext;
 }
 
 export function formatTranscriptForPrompt(segments: TranscriptSegment[], speakerLabel: PromptContext["speakerLabel"]): string {
@@ -46,6 +67,7 @@ export function buildAnalysisMessages(segments: TranscriptSegment[], context: Pr
   const header = [
     context.title ? `Título informado pelo usuário: ${context.title}` : undefined,
     `Idioma do relatório: ${context.language ?? "pt-BR"}`,
+    context.context ? CONTEXT_GUIDANCE[context.context] || undefined : undefined,
     context.part ? `Esta é a parte ${context.part.index} de ${context.part.total} da transcrição; analise apenas esta parte.` : undefined
   ]
     .filter(Boolean)

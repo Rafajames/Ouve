@@ -6,3 +6,7 @@ export * from "./audio/contracts.js";
 export * from "./audio/audio-only.js";
 export * from "./ai/contracts.js";
 export * from "./ai/provider-registry.js";
+export * from "./domain/metrics.js";
+export * from "./domain/markers.js";
+export * from "./domain/live-hints.js";
+export * from "./domain/stage-timer.js";

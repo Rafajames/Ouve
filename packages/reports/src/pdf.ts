@@ -1,7 +1,7 @@
 import type { ReportDocument } from "@ouve/core";
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 import { OUVE_CREDIT } from "@ouve/shared";
-import { reportToLines, type ReportLine } from "./model.js";
+import { reportToLines, type ExportOptions, type ReportLine } from "./model.js";
 
 const PAGE = { width: 595.28, height: 841.89, margin: 56 };
 
@@ -57,7 +57,7 @@ function wrap(text: string, font: PDFFont, size: number, maxWidth: number): stri
 }
 
 /** Gera PDF localmente com paginação e quebra de linhas. */
-export async function exportPdf(report: ReportDocument, options?: { includeTranscript?: boolean }): Promise<Uint8Array> {
+export async function exportPdf(report: ReportDocument, options?: ExportOptions): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.setTitle(report.title);
   pdf.setCreator(`Ouve — ${OUVE_CREDIT}`);

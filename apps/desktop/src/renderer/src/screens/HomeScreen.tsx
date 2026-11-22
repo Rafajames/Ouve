@@ -64,7 +64,11 @@ export function HomeScreen({ data }: { data: AppData }) {
                 ? "criptografia do sistema operacional"
                 : data.protection === "memory-only"
                   ? "somente memória (sem criptografia do SO)"
-                  : "—"}
+                  : data.protection === "session-only"
+                    ? "só nesta aba (apagadas ao fechar)"
+                    : data.protection === "browser-profile"
+                      ? "lembradas neste navegador (sem criptografia do SO)"
+                      : "—"}
             </dd>
           </dl>
         </div>

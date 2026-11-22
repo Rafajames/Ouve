@@ -5,7 +5,8 @@ import {
   presetFor,
   runQuickSetup,
   validateProviderConfig,
-  type SecretStore
+  SwitchableSecretStore,
+  type AsyncKeyValue
 } from "@ouve/providers";
 import { OuveError, createId, toOuveError } from "@ouve/shared";
 import type { AppSettings, ExtractedSegment, IpcResult, OuveBridge, ProviderSummary } from "../../desktop/src/shared/ipc";
@@ -16,8 +17,9 @@ import type { ProviderConfig } from "@ouve/core";
  * Ponte da versão web (D-069): implementa a mesma interface do desktop no
  * navegador, para reaproveitar todas as telas. Sem servidor do Ouve: as
  * chamadas de IA saem direto do navegador para o provedor configurado.
- * Preferências e chaves ficam no localStorage deste navegador (sem a
- * criptografia do sistema operacional do desktop).
+ * Preferências ficam no localStorage. Chaves ficam por padrão só na sessão
+ * (sessionStorage, somem ao fechar a aba); lembrar no navegador é escolha do
+ * usuário, com aviso de que não há criptografia do sistema operacional.
  */
 
 export interface KeyValueStore {
@@ -41,6 +43,8 @@ async function wrap<T>(run: () => Promise<T> | T): Promise<IpcResult<T>> {
 
 export interface WebBridgeDeps {
   storage: KeyValueStore;
+  /** Armazenamento da sessão (sessionStorage). Ausente = memória. */
+  sessionStorage?: KeyValueStore;
   fetch: typeof fetch;
   /** Abre o seletor de arquivos; resolve null se o usuário cancelar. */
   pickFile: () => Promise<File | null>;
@@ -62,18 +66,23 @@ export function createWebBridge(deps: WebBridgeDeps): OuveBridge {
   };
   const write = (key: string, value: unknown) => storage.setItem(key, JSON.stringify(value));
 
-  const secrets: SecretStore = {
-    protection: "browser-profile",
-    async get(ref) {
-      return storage.getItem(`ouve.secret.${ref}`) ?? undefined;
-    },
-    async set(ref, secret) {
-      storage.setItem(`ouve.secret.${ref}`, secret);
-    },
-    async delete(ref) {
-      storage.removeItem(`ouve.secret.${ref}`);
-    }
+  const kv = (area: KeyValueStore): AsyncKeyValue => ({
+    get: async (ref) => area.getItem(`ouve.secret.${ref}`) ?? undefined,
+    set: async (ref, value) => area.setItem(`ouve.secret.${ref}`, value),
+    delete: async (ref) => area.removeItem(`ouve.secret.${ref}`)
+  });
+  const memory = new Map<string, string>();
+  const sessionArea: KeyValueStore = deps.sessionStorage ?? {
+    getItem: (k) => memory.get(k) ?? null,
+    setItem: (k, v) => void memory.set(k, v),
+    removeItem: (k) => void memory.delete(k)
   };
+  // Quem já tinha chaves salvas antes desta versão continua com "lembrar" ligado (sem surpresa).
+  const legacy = read<ProviderConfig[]>("ouve.providers", []).some((p) => storage.getItem(`ouve.secret.${credentialRefFor(p.id)}`));
+  const rememberFlag = storage.getItem("ouve.rememberKeys");
+  const secrets = new SwitchableSecretStore(kv(sessionArea), kv(storage), rememberFlag ? rememberFlag === "1" : legacy, (remember) =>
+    storage.setItem("ouve.rememberKeys", remember ? "1" : "0")
+  );
 
   const getSettings = (): AppSettings => ({ ...DEFAULT_SETTINGS, ...read<Partial<AppSettings>>("ouve.settings", {}) });
   const listConfigs = (): ProviderConfig[] => read<ProviderConfig[]>("ouve.providers", []);
@@ -149,7 +158,15 @@ export function createWebBridge(deps: WebBridgeDeps): OuveBridge {
       save: (input) => wrap(() => saveProvider(input.config, input.apiKey)),
       remove: (id) => wrap(() => removeProvider(id)),
       test: (id) => wrap(async () => (await bundle(id)).testConnection()),
-      protection: async () => ok({ protection: "browser-profile" as const }),
+      protection: async () => ok({ protection: secrets.protection }),
+      setKeyPersistence: (remember) =>
+        wrap(async () => {
+          await secrets.setRemember(
+            remember,
+            listConfigs().map((c) => credentialRefFor(c.id))
+          );
+          return { protection: secrets.protection };
+        }),
       quickSetup: (apiKey) =>
         wrap(async () => {
           const id = `rapido-${Date.now().toString(36)}`;

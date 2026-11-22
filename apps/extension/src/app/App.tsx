@@ -30,8 +30,10 @@ function ProvidersPanel({ settings, onSettings }: { settings: ExtSettings; onSet
   const [form, setForm] = useState<ProviderConfig | null>(null);
   const [key, setKey] = useState("");
   const [status, setStatus] = useState("");
+  const [remember, setRemember] = useState(false);
 
   const reload = useCallback(async () => {
+    setRemember(await storage.rememberKeys());
     const providers = await storage.providers();
     setList(await Promise.all(providers.map(async (p) => ({ ...p, hasKey: !!(await storage.secrets().get(credentialRefFor(p.id))) }))));
   }, []);
@@ -121,10 +123,16 @@ function ProvidersPanel({ settings, onSettings }: { settings: ExtSettings; onSet
       <h2>
         <Icon name="providers" /> Provedores de IA (BYOK)
       </h2>
-      <p className="callout warn">
-        <Icon name="alert" size={16} /> As chaves ficam no armazenamento local do navegador, sem criptografia do sistema operacional. Para
-        maior proteção, use o aplicativo desktop.
+      <p className={remember ? "callout warn" : "callout"}>
+        <Icon name={remember ? "alert" : "shield"} size={16} />{" "}
+        {remember
+          ? "As chaves ficam guardadas neste navegador, sem criptografia do sistema operacional. Para maior proteção, use o aplicativo desktop."
+          : "As chaves ficam só enquanto o navegador estiver aberto e são apagadas ao fechá-lo."}
       </p>
+      <label className="row">
+        <input type="checkbox" checked={remember} onChange={(e) => void storage.setRememberKeys(e.target.checked).then(reload)} />
+        Lembrar as chaves neste navegador (menos seguro)
+      </label>
       <form
         className="row"
         onSubmit={(e) => {

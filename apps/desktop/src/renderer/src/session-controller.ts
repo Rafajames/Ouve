@@ -8,9 +8,32 @@ import {
   type MediaStreamLike,
   type MediaStreamTrackLike
 } from "@ouve/capture";
-import { TranscriptStore, emptyAnalysis, type MeetingAnalysis, type ReportDocument, type SessionStatus } from "@ouve/core";
+import {
+  LiveHintEngine,
+  MarkerStore,
+  StageTimer,
+  TranscriptStore,
+  emptyAnalysis,
+  type LiveHint,
+  type MarkerKind,
+  type MeetingAnalysis,
+  type ReportContext,
+  type ReportDocument,
+  type SessionStatus
+} from "@ouve/core";
 import { planImport } from "@ouve/providers";
-import { buildReport, exportDocx, exportFileName, exportPdf, reportToMarkdown } from "@ouve/reports";
+import {
+  buildReport,
+  exportDocx,
+  exportFileName,
+  exportPdf,
+  reportToCsv,
+  reportToMarkdown,
+  reportToText,
+  type ExportFormat,
+  type ExportOptions,
+  type SectionKey
+} from "@ouve/reports";
 import { createId, formatTimestamp, sleep, toOuveError } from "@ouve/shared";
 import { TranscriptionPipeline, type PipelineStats } from "@ouve/transcription";
 import type { AppSettings, ImportedMedia } from "../../shared/ipc";
@@ -41,6 +64,10 @@ export interface SessionSnapshot {
   importPlanLabel?: string;
   analysisProgress?: { done: number; total: number };
   report?: ReportDocument;
+  /** Tipo de sessão (adapta análise e relatório). */
+  context: ReportContext;
+  /** Aviso discreto atual (regras locais). */
+  hint?: LiveHint | undefined;
 }
 
 const EMPTY_STATS: PipelineStats = { queued: 0, running: 0, done: 0, skipped: 0, failed: 0, transcribedUntilMs: 0 };
@@ -60,7 +87,8 @@ function newSnapshot(): SessionSnapshot {
     capturedMs: 0,
     stats: EMPTY_STATS,
     messages: [],
-    analysisStatus: "idle"
+    analysisStatus: "idle",
+    context: "general"
   };
 }
 
@@ -79,6 +107,9 @@ export interface LiveStartOptions {
  */
 export class SessionController {
   readonly store = new TranscriptStore();
+  readonly markers = new MarkerStore();
+  readonly stages = new StageTimer();
+  private readonly hints = new LiveHintEngine();
   private snap: SessionSnapshot = newSnapshot();
   private listeners = new Set<() => void>();
   private capture: AudioCaptureSession | undefined;
@@ -90,6 +121,16 @@ export class SessionController {
 
   constructor() {
     this.store.subscribe(() => this.bump());
+    this.markers.subscribe(() => this.bump());
+    this.stages.subscribe(() => this.bump());
+  }
+
+  /** Recomeça os auxiliares locais de uma nova sessão. */
+  private resetLocal(): void {
+    this.store.clear();
+    this.markers.clear();
+    this.stages.reset();
+    this.hints.reset();
   }
 
   subscribe = (listener: () => void): (() => void) => {
@@ -154,9 +195,10 @@ export class SessionController {
       status: "preparing",
       title: options.title || "Sessão ao vivo",
       sourceLabel: options.sourceLabel,
-      microphone: options.includeMicrophone
+      microphone: options.includeMicrophone,
+      context: settings.defaultContext
     });
-    this.store.clear();
+    this.resetLocal();
 
     const devices = navigator.mediaDevices as unknown as MediaDevicesLike;
     const makeStream = (tracks: MediaStreamTrackLike[]) =>
@@ -206,7 +248,15 @@ export class SessionController {
     });
     this.set({ status: "capturing" });
     void bridge().capture.setActive(true);
-    this.timer = setInterval(() => this.set({ capturedMs: this.capture?.capturedMs ?? this.snap.capturedMs }), 500);
+    this.timer = setInterval(() => {
+      const capturedMs = this.capture?.capturedMs ?? this.snap.capturedMs;
+      const patch: Partial<SessionSnapshot> = { capturedMs };
+      if (this.settings?.liveHints && this.snap.status === "capturing" && !this.snap.hint) {
+        const hint = this.hints.evaluate(this.store.segments(), capturedMs);
+        if (hint) patch.hint = hint;
+      }
+      this.set(patch);
+    }, 500);
   }
 
   pause(): void {
@@ -237,7 +287,8 @@ export class SessionController {
     this.capture = undefined;
     void bridge().capture.setActive(false);
     this.set({ status: "processing", level: 0, capturedMs: captured });
-    await this.pipeline?.whenIdle();
+    this.set({ hint: undefined });
+    await this.stages.measure("transcribe", async () => this.pipeline?.whenIdle(), "Blocos restantes após encerrar");
     this.set({ status: "completed" });
   }
 
@@ -248,13 +299,14 @@ export class SessionController {
     const providerId = this.requireTranscriptionProvider(settings);
     const media = await unwrap(bridge().media.open());
     if (!media) return false;
-    this.store.clear();
+    this.resetLocal();
     this.set({
       ...newSnapshot(),
       mode: "import",
       status: "processing",
       title: media.name.replace(/\.[^.]+$/, ""),
       sourceLabel: media.name,
+      context: settings.defaultContext,
       importInfo: { ...media, phase: "extracting", processedMs: 0, segments: 0 }
     });
     this.importAbort = new AbortController();
@@ -272,8 +324,13 @@ export class SessionController {
       this.set({
         importPlanLabel: `Pedaços de ${Math.round(plan.segmentSeconds / 60)} min em ${plan.format.toUpperCase()}, ${plan.concurrency} ao mesmo tempo`
       });
-      const segments = await unwrap(bridge().media.extract(media.token, plan.segmentSeconds, plan.format));
+      const segments = await this.stages.measure(
+        "convert",
+        () => unwrap(bridge().media.extract(media.token, plan.segmentSeconds, plan.format)),
+        `${plan.format.toUpperCase()} em pedaços de ${Math.round(plan.segmentSeconds / 60)} min`
+      );
       off();
+      this.stages.start("transcribe", `${segments.length} pedaço(s), ${plan.concurrency} ao mesmo tempo (inclui envio)`);
       if (!this.snap.importInfo) return true;
       this.set({ importInfo: { ...this.snap.importInfo, phase: "transcribing", segments: segments.length } });
       this.pipeline = this.createPipeline(providerId, settings.language, plan.concurrency);
@@ -290,6 +347,7 @@ export class SessionController {
         });
       }
       await this.pipeline.whenIdle();
+      this.stages.end("transcribe", this.pipeline.stats().failed > 0 ? "failed" : "done");
       if (this.snap.importInfo)
         this.set({ importInfo: { ...this.snap.importInfo, phase: "done" }, status: "completed", processingMs: Date.now() - started });
       if (this.pipeline.stats().failed > 0)
@@ -297,6 +355,8 @@ export class SessionController {
     } catch (error) {
       off();
       const e = toOuveError(error);
+      for (const st of this.stages.list())
+        if (st.status === "running") this.stages.end(st.stage, e.code === "cancelled" ? "canceled" : "failed");
       if (e.code !== "cancelled") {
         this.message("error", e.message);
         this.set({ status: "failed" });
@@ -351,19 +411,23 @@ export class SessionController {
     this.analysisAbort = new AbortController();
     this.set({ analysisStatus: "running", analysisProgress: { done: 0, total: 1 } });
     try {
+      this.stages.start("analyze", "Somente o texto da transcrição é enviado; o áudio não é reenviado");
       const analysis = await analyzeTranscript({
         provider: new IpcCompletionProvider(settings.analysisProviderId),
         segments,
         speakerLabel: (id) => this.store.speakerLabel(id),
         title: this.snap.title,
         language: settings.language,
+        context: this.snap.context,
         signal: this.analysisAbort.signal,
         onProgress: (done, total) => this.set({ analysisProgress: { done, total } })
       });
+      this.stages.end("analyze");
       this.applyAnalysis(analysis);
       this.set({ analysisStatus: "done" });
     } catch (error) {
       const e = toOuveError(error);
+      this.stages.end("analyze", e.code === "cancelled" ? "canceled" : "failed");
       this.set({ analysisStatus: e.code === "cancelled" ? "idle" : "error" });
       if (e.code !== "cancelled") throw e;
     }
@@ -384,6 +448,9 @@ export class SessionController {
       transcript: this.store.segments(),
       speakers: this.store.speakerList(),
       analysis,
+      context: this.snap.context,
+      markers: this.markers.list(),
+      durationMs: this.sessionDurationMs(),
       ...(providers ? { providers } : {})
     });
     this.set({ report });
@@ -403,19 +470,87 @@ export class SessionController {
     if (this.snap.report) this.set({ report: { ...this.snap.report, title } });
   }
 
-  async exportReport(format: "pdf" | "docx" | "md"): Promise<string | null> {
+  /** Opções de exportação a partir das configurações (seções escolhidas na hora). */
+  exportOptions(sections?: SectionKey[]): ExportOptions {
+    const st = this.settings;
+    return {
+      includeTranscript: st?.includeTranscriptInExport ?? true,
+      includeTimestamps: st?.exportTimestamps ?? true,
+      includeMetrics: st?.exportMetrics ?? true,
+      includeMarkers: st?.exportMarkers ?? true,
+      includeNotes: st?.exportNotes ?? true,
+      includeEvidence: st?.exportEvidence ?? true,
+      ...(sections ? { sections } : {})
+    };
+  }
+
+  /** Relatório com a transcrição, falantes e marcadores mais recentes (inclui edições). */
+  currentReport(): ReportDocument | undefined {
     const base = this.snap.report;
-    if (!base) throw new Error("Gere ou crie um relatório antes de exportar.");
-    // Usa a transcrição mais recente (com edições e nomes de falantes).
-    const report: ReportDocument = { ...base, transcript: this.store.segments(), speakers: this.store.speakerList() };
-    const includeTranscript = this.settings?.includeTranscriptInExport ?? true;
-    const bytes =
-      format === "pdf"
-        ? await exportPdf(report, { includeTranscript })
-        : format === "docx"
-          ? await exportDocx(report, { includeTranscript })
-          : new TextEncoder().encode(reportToMarkdown(report, { includeTranscript }));
+    if (!base) return undefined;
+    const markers = this.markers.list();
+    return {
+      ...base,
+      transcript: this.store.segments(),
+      speakers: this.store.speakerList(),
+      context: this.snap.context,
+      ...(markers.length ? { markers } : { markers: [] })
+    };
+  }
+
+  async exportReport(format: ExportFormat, sections?: SectionKey[]): Promise<string | null> {
+    if (!this.settings) await this.loadSettings();
+    const report = this.currentReport();
+    if (!report) throw new Error("Gere ou crie um relatório antes de exportar.");
+    const options = this.exportOptions(sections);
+    const bytes = await this.stages.measure(
+      "export",
+      async () => {
+        switch (format) {
+          case "pdf":
+            return exportPdf(report, options);
+          case "docx":
+            return exportDocx(report, options);
+          case "txt":
+            return new TextEncoder().encode(reportToText(report, options));
+          case "csv":
+            return new TextEncoder().encode(reportToCsv(report));
+          default:
+            return new TextEncoder().encode(reportToMarkdown(report, options));
+        }
+      },
+      format.toUpperCase()
+    );
     return unwrap(bridge().files.save(exportFileName(report.title, format), bytes));
+  }
+
+  // ---------- Contexto, marcadores e avisos ----------
+
+  setContext(context: ReportContext): void {
+    this.set({ context });
+    if (this.snap.report) this.set({ report: { ...this.snap.report, context } });
+  }
+
+  /** Tempo decorrido atual da sessão: captura ao vivo ou fim do último trecho. */
+  sessionDurationMs(): number {
+    if (this.snap.mode === "live") return this.capture?.capturedMs ?? this.snap.capturedMs;
+    if (this.snap.importInfo?.durationMs) return this.snap.importInfo.durationMs;
+    return this.store.segments().reduce((max, s) => Math.max(max, s.endMs), 0);
+  }
+
+  addMarker(kind: MarkerKind, atMs?: number, note?: string): void {
+    const at = atMs ?? this.sessionDurationMs();
+    this.markers.add(kind, at, note ? { note } : {});
+  }
+
+  acceptHint(): void {
+    const hint = this.snap.hint;
+    if (hint?.suggestedMarker) this.markers.add(hint.suggestedMarker, hint.atMs, { origin: "suggested", note: hint.text });
+    this.set({ hint: undefined });
+  }
+
+  dismissHint(): void {
+    this.set({ hint: undefined });
   }
 
   transcriptText(): string {
@@ -436,7 +571,7 @@ export class SessionController {
     }
     this.pipeline?.discard();
     this.pipeline = undefined;
-    this.store.clear();
+    this.resetLocal();
     this.snap = { ...newSnapshot(), version: this.snap.version + 1 };
     for (const l of this.listeners) l();
   }

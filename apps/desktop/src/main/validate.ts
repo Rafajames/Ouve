@@ -1,4 +1,4 @@
-import type { AiTask, ProviderConfig, ProviderProtocol } from "@ouve/core";
+import type { AiTask, ProviderConfig, ProviderProtocol, ReportContext } from "@ouve/core";
 import { OuveError, sanitizeLabel } from "@ouve/shared";
 import { DEFAULT_SETTINGS, type AppSettings } from "../shared/ipc.js";
 
@@ -50,12 +50,15 @@ export function parseProviderConfig(raw: unknown): ProviderConfig {
   return config;
 }
 
+const CONTEXTS: ReportContext[] = ["general", "meeting", "hearing", "interview", "class"];
+
 export function parseSettings(raw: unknown): AppSettings {
   const r = (typeof raw === "object" && raw !== null ? raw : {}) as Record<string, unknown>;
   const num = (key: keyof AppSettings, min: number, max: number) => {
     const v = r[key];
     return typeof v === "number" && v >= min && v <= max ? v : (DEFAULT_SETTINGS[key] as number);
   };
+  const bool = (key: keyof AppSettings) => (typeof r[key] === "boolean" ? (r[key] as boolean) : (DEFAULT_SETTINGS[key] as boolean));
   const settings: AppSettings = {
     language: typeof r.language === "string" && /^[A-Za-z-]{2,10}$/.test(r.language) ? r.language : DEFAULT_SETTINGS.language,
     liveChunkSeconds: num("liveChunkSeconds", 5, 120),
@@ -64,8 +67,16 @@ export function parseSettings(raw: unknown): AppSettings {
     maxFileGb: num("maxFileGb", 0.1, 8),
     maxHours: num("maxHours", 0.25, 12),
     includeTranscriptInExport: typeof r.includeTranscriptInExport === "boolean" ? r.includeTranscriptInExport : true,
-    theme: r.theme === "light" || r.theme === "dark" ? r.theme : "system"
+    theme: r.theme === "light" || r.theme === "dark" ? r.theme : "system",
+    liveHints: bool("liveHints"),
+    defaultContext: CONTEXTS.includes(r.defaultContext as ReportContext) ? (r.defaultContext as ReportContext) : "general",
+    exportTimestamps: bool("exportTimestamps"),
+    exportMetrics: bool("exportMetrics"),
+    exportMarkers: bool("exportMarkers"),
+    exportNotes: bool("exportNotes"),
+    exportEvidence: bool("exportEvidence")
   };
+  if (r.onboardingDone === true) settings.onboardingDone = true;
   if (
     typeof r.termsAcceptedVersion === "number" &&
     Number.isInteger(r.termsAcceptedVersion) &&

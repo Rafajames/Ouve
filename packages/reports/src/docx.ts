@@ -1,10 +1,10 @@
 import type { ReportDocument } from "@ouve/core";
 import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx";
 import { OUVE_CREDIT } from "@ouve/shared";
-import { reportToLines } from "./model.js";
+import { reportToLines, type ExportOptions } from "./model.js";
 
 /** Gera DOCX localmente (nenhum dado sai do dispositivo). */
-export async function exportDocx(report: ReportDocument, options?: { includeTranscript?: boolean }): Promise<Uint8Array> {
+export async function exportDocx(report: ReportDocument, options?: ExportOptions): Promise<Uint8Array> {
   const children = reportToLines(report, options).map((line) => {
     switch (line.kind) {
       case "h1":

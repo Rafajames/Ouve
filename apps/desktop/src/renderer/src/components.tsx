@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Icon } from "@ouve/ui";
 import { formatTimestamp } from "@ouve/shared";
+import { markerLabel, segmentForMarker } from "@ouve/core";
 import { useApp, useSession } from "./hooks";
 
 export function Page({
@@ -65,6 +66,11 @@ export function TranscriptView({ editable = true }: { editable?: boolean }) {
   const speakers = controller.store.speakerList();
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const markersBySeg = new Map<string, string[]>();
+  for (const m of controller.markers.list()) {
+    const seg = segmentForMarker(segments, m.atMs);
+    if (seg) markersBySeg.set(seg.id, [...(markersBySeg.get(seg.id) ?? []), markerLabel(m.kind)]);
+  }
 
   if (segments.length === 0)
     return (
@@ -82,7 +88,7 @@ export function TranscriptView({ editable = true }: { editable?: boolean }) {
       {segments.map((s) => {
         const low = controller.store.isLowConfidence(s);
         return (
-          <li key={s.id} className={low ? "segment low" : "segment"}>
+          <li key={s.id} data-seg-id={s.id} className={low ? "segment low" : "segment"}>
             <div className="segment-meta">
               <span className="time">{formatTimestamp(s.startMs)}</span>
               {editable && speakers.length > 0 ? (
@@ -108,6 +114,11 @@ export function TranscriptView({ editable = true }: { editable?: boolean }) {
                 </span>
               )}
               {s.edited && <span className="badge">editado</span>}
+              {markersBySeg.get(s.id)?.map((label, i) => (
+                <span key={i} className="badge flag">
+                  <Icon name="flag" size={11} /> {label}
+                </span>
+              ))}
             </div>
             {editing === s.id ? (
               <div className="segment-edit">

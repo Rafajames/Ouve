@@ -236,6 +236,24 @@ export function ProvidersScreen({ data }: { data: AppData }) {
           novamente ao reabrir o app.
         </div>
       )}
+      {window.ouve?.providers.setKeyPersistence && (data.protection === "session-only" || data.protection === "browser-profile") && (
+        <div className={data.protection === "browser-profile" ? "callout warn" : "callout"}>
+          <Icon name={data.protection === "browser-profile" ? "alert" : "lock"} size={16} />
+          <span>
+            {data.protection === "browser-profile"
+              ? "As chaves estão guardadas neste navegador, sem criptografia do sistema operacional. Quem usar este computador e navegador pode lê-las."
+              : "Por segurança, as chaves ficam só nesta aba e são apagadas ao fechá-la. Você precisará colá-las de novo na próxima vez."}{" "}
+            <label className="check inline">
+              <input
+                type="checkbox"
+                checked={data.protection === "browser-profile"}
+                onChange={(e) => void window.ouve?.providers.setKeyPersistence?.(e.target.checked).then(() => data.reload())}
+              />
+              Lembrar neste navegador
+            </label>
+          </span>
+        </div>
+      )}
       {!editing && <QuickSetup compact onDone={data.reload} />}
       <h2 className="section-title">Configuração avançada</h2>
       {editing && (

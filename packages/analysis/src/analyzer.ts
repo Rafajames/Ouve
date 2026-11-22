@@ -1,4 +1,4 @@
-import type { CompletionProvider, MeetingAnalysis, TranscriptSegment } from "@ouve/core";
+import type { CompletionProvider, MeetingAnalysis, ReportContext, TranscriptSegment } from "@ouve/core";
 import { OuveError, retry } from "@ouve/shared";
 import { buildAnalysisMessages, buildSummaryConsolidationMessages, formatTranscriptForPrompt } from "./prompt.js";
 import { extractJsonObject, mergeAnalyses, validateAnalysis } from "./validate.js";
@@ -9,6 +9,7 @@ export interface AnalyzeOptions {
   speakerLabel: (speakerId: string | undefined) => string;
   title?: string;
   language?: string;
+  context?: ReportContext;
   /** Tamanho máximo de transcrição por chamada (caracteres). */
   maxCharsPerPart?: number;
   signal?: AbortSignal;
@@ -48,6 +49,7 @@ export async function analyzeTranscript(options: AnalyzeOptions): Promise<Meetin
       speakerLabel: options.speakerLabel,
       ...(options.title ? { title: options.title } : {}),
       ...(options.language ? { language: options.language } : {}),
+      ...(options.context ? { context: options.context } : {}),
       ...(parts.length > 1 ? { part: { index: i + 1, total: parts.length } } : {})
     });
     // Resposta inválida é reexecutável: o modelo pode acertar o formato na nova tentativa.

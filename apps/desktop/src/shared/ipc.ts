@@ -2,7 +2,15 @@
  * Contrato IPC entre renderer e processo principal. Canais em allowlist;
  * o renderer nunca recebe chaves de API nem caminhos de arquivos temporários.
  */
-import type { AiTask, CompletionRequest, ConnectionTestResult, ProviderConfig, ProviderProtocol, ProviderSegment } from "@ouve/core";
+import type {
+  AiTask,
+  CompletionRequest,
+  ReportContext,
+  ConnectionTestResult,
+  ProviderConfig,
+  ProviderProtocol,
+  ProviderSegment
+} from "@ouve/core";
 
 export interface DesktopSource {
   id: string;
@@ -26,6 +34,18 @@ export interface AppSettings {
   theme: "system" | "light" | "dark";
   /** Versão do termo de uso aceita no primeiro uso (D-063). */
   termsAcceptedVersion?: number;
+  /** Avisos discretos durante a captura (regras locais, sem IA). */
+  liveHints: boolean;
+  /** Tipo de sessão padrão para análise e relatório. */
+  defaultContext: ReportContext;
+  /** O que incluir ao exportar. */
+  exportTimestamps: boolean;
+  exportMetrics: boolean;
+  exportMarkers: boolean;
+  exportNotes: boolean;
+  exportEvidence: boolean;
+  /** Apresentação inicial concluída ou dispensada. */
+  onboardingDone?: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -36,7 +56,14 @@ export const DEFAULT_SETTINGS: AppSettings = {
   maxFileGb: 2,
   maxHours: 4,
   includeTranscriptInExport: true,
-  theme: "system"
+  theme: "system",
+  liveHints: true,
+  defaultContext: "general",
+  exportTimestamps: true,
+  exportMetrics: true,
+  exportMarkers: true,
+  exportNotes: true,
+  exportEvidence: true
 };
 
 export interface ProviderSummary {
@@ -60,7 +87,7 @@ export interface QuickSetupOutcome {
 }
 
 export interface SecretProtection {
-  protection: "os-encrypted" | "browser-profile" | "memory-only";
+  protection: "os-encrypted" | "session-only" | "browser-profile" | "memory-only";
 }
 
 export interface ImportedMedia {
@@ -131,6 +158,8 @@ export interface OuveBridge {
     remove(id: string): Promise<IpcResult<void>>;
     test(id: string): Promise<IpcResult<ConnectionTestResult>>;
     protection(): Promise<IpcResult<SecretProtection>>;
+    /** Só na web: lembrar as chaves neste navegador (true) ou só nesta sessão (false). */
+    setKeyPersistence?(remember: boolean): Promise<IpcResult<SecretProtection>>;
     quickSetup(apiKey: string): Promise<IpcResult<QuickSetupOutcome>>;
   };
   ai: {

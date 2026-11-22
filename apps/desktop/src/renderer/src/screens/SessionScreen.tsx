@@ -3,6 +3,7 @@ import { formatTimestamp } from "@ouve/shared";
 import { Icon } from "@ouve/ui";
 import { LevelMeter, Messages, Page, SpeakersPanel, TranscriptView } from "../components";
 import { errorMessage, useApp, useSession } from "../hooks";
+import { ContextSelect, HintBanner, MarkerBar, MarkerList, MetricsPanel, StagesPanel } from "../insights";
 
 function formatDuration(ms: number): string {
   const total = Math.max(1, Math.round(ms / 1000));
@@ -82,8 +83,11 @@ function SidePanel() {
         </div>
       )}
 
+      <StagesPanel />
+
       <div className="panel">
         <h3 className="side-title">Próximos passos</h3>
+        <ContextSelect id="ctx-session" />
         <ol className="steps">
           <li className={transcribed ? "done" : ""}>
             <span className="step-dot">{transcribed ? <Icon name="check" size={12} /> : 1}</span>
@@ -125,7 +129,7 @@ function SidePanel() {
 export function SessionScreen() {
   const { controller, navigate, notify } = useApp();
   const s = useSession();
-  const [tab, setTab] = useState<"transcript" | "speakers">("transcript");
+  const [tab, setTab] = useState<"transcript" | "speakers" | "markers" | "metrics">("transcript");
 
   if (s.mode === "none") {
     return (
@@ -260,6 +264,8 @@ export function SessionScreen() {
       )}
 
       <Messages />
+      <HintBanner />
+      <MarkerBar compact />
 
       <div className="session-grid">
         <div className="session-main">
@@ -280,11 +286,32 @@ export function SessionScreen() {
             >
               <Icon name="users" /> Participantes ({controller.store.speakerList().length})
             </button>
+            <button
+              role="tab"
+              aria-selected={tab === "markers"}
+              className={tab === "markers" ? "tab active" : "tab"}
+              onClick={() => setTab("markers")}
+            >
+              <Icon name="flag" /> Marcadores ({controller.markers.list().length})
+            </button>
+            <button
+              role="tab"
+              aria-selected={tab === "metrics"}
+              className={tab === "metrics" ? "tab active" : "tab"}
+              onClick={() => setTab("metrics")}
+            >
+              <Icon name="chart" /> Métricas
+            </button>
             {tab === "transcript" && controller.store.segments().length > 0 && (
               <span className="muted small-text">Clique duas vezes em um trecho para corrigir.</span>
             )}
           </div>
-          <div className="panel transcript-panel">{tab === "transcript" ? <TranscriptView /> : <SpeakersPanel />}</div>
+          <div className="panel transcript-panel">
+            {tab === "transcript" && <TranscriptView />}
+            {tab === "speakers" && <SpeakersPanel />}
+            {tab === "markers" && <MarkerList onJump={() => setTab("transcript")} />}
+            {tab === "metrics" && <MetricsPanel />}
+          </div>
         </div>
         <SidePanel />
       </div>
