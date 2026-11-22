@@ -135,5 +135,7 @@ Todo o desenvolvimento registrado abaixo aconteceu nesses dois dias, fora de dia
 | 21/11/2026 20:04 | `0f8975d` | Claude | feat: versão web no GitHub Pages e atualização manual do desktop |
 | 21/11/2026 20:07 | `68c579b` | Claude | test(web): usar o ffmpeg do projeto no E2E |
 | 21/11/2026 20:25 | `864ccb7` | Claude | feat: autoria do Ouve em todas as versões e nos relatórios |
+| 22/11/2026 04:06 | `417ce43` | Claude | feat: métricas locais, marcadores, avisos discretos, cronometragem por etapa, relatório 2.0 e chaves só na sessão na web/extensão |
+| 22/11/2026 04:17 | `e17fb46` | Claude | feat: IA local (Ollama/whisper.cpp), apresentação inicial, Ajuda e avisos configuráveis |
 
 > Para atualizar esta tabela: `git log --reverse --format='%at|%h|%an|%s'` convertendo os horários para UTC−04:00.
