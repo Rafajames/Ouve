@@ -12,7 +12,7 @@ import { spawn } from "node:child_process";
 
 declare const __OUVE_BUILD__: string;
 import { ProviderService } from "./provider-service.js";
-import { probeLocalServers, pullOllamaModel } from "@ouve/providers";
+import { probeLocalServers, pullOllamaModel, reconcileProviderSelection } from "@ouve/providers";
 import { SafeStorageSecretStore, SettingsStore } from "./stores.js";
 import { assertNumber, assertString, parseProviderConfig, parseSettings, parseWhisperModel } from "./validate.js";
 import { LocalAiService } from "./local-ai-service.js";
@@ -155,7 +155,7 @@ function registerIpc(): void {
     mainWindow?.setProgressBar(active ? 2 : -1, { mode: active ? "indeterminate" : "none" });
   });
 
-  handle(IPC.getSettings, () => settingsStore.getSettings());
+  handle(IPC.getSettings, async () => reconcileProviderSelection(await settingsStore.getSettings(), await settingsStore.listProviders()));
   handle(IPC.saveSettings, (_e, raw) => settingsStore.saveSettings(parseSettings(raw)));
 
   handle(IPC.listProviders, () => providers.list());

@@ -413,7 +413,7 @@ export class SessionController {
   // ---------- Análise e relatório ----------
 
   async analyze(): Promise<void> {
-    const settings = this.settings ?? (await this.loadSettings());
+    const settings = await this.loadSettings();
     if (!settings.analysisProviderId) throw new Error("Escolha um provedor de análise em Provedores de IA.");
     const segments = this.store.segments();
     if (segments.length === 0) throw new Error("Ainda não há transcrição para analisar.");

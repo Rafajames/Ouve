@@ -7,6 +7,7 @@ import {
   validateProviderConfig,
   SwitchableSecretStore,
   probeLocalServers,
+  reconcileProviderSelection,
   type AsyncKeyValue
 } from "@ouve/providers";
 import { OuveError, createId, toOuveError } from "@ouve/shared";
@@ -85,7 +86,8 @@ export function createWebBridge(deps: WebBridgeDeps): OuveBridge {
     storage.setItem("ouve.rememberKeys", remember ? "1" : "0")
   );
 
-  const getSettings = (): AppSettings => ({ ...DEFAULT_SETTINGS, ...read<Partial<AppSettings>>("ouve.settings", {}) });
+  const getSettings = (): AppSettings =>
+    reconcileProviderSelection({ ...DEFAULT_SETTINGS, ...read<Partial<AppSettings>>("ouve.settings", {}) }, listConfigs());
   const listConfigs = (): ProviderConfig[] => read<ProviderConfig[]>("ouve.providers", []);
   const summaries = async (): Promise<ProviderSummary[]> =>
     Promise.all(listConfigs().map(async (config) => ({ config, hasKey: !!(await secrets.get(credentialRefFor(config.id))) })));
