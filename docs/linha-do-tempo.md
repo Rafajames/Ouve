@@ -145,5 +145,6 @@ Todo o desenvolvimento registrado abaixo aconteceu nesses dois dias, fora de dia
 | 22/11/2026 05:45 | `e423630` | Claude | fix(local): "Testar conexão" do Whisper local não pede /models (HTTP 404) |
 | 22/11/2026 07:15 | `923ca95` | Claude | fix(local): Whisper oficial do whisper.cpp no instalador e sem dica de texto anterior |
 | 23/11/2026 00:07 | `83c5a38` | Claude | feat(ui): redesign completo da interface (docs/18) |
+| 23/11/2026 01:10 | `67de6cd` | Claude | feat: separação de vozes local gratuita (sherpa-onnx), perfis de desempenho e teclas 1–9 de quem fala |
 
 > Para atualizar esta tabela: `git log --reverse --format='%at|%h|%an|%s'` convertendo os horários para UTC−04:00.
