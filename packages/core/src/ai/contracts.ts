@@ -1,15 +1,26 @@
-export type AiTask = "transcription" | "diarization" | "analysis";
-export type ProviderProtocol = "openai-compatible" | "gemini" | "anthropic" | "xai" | "custom";
+/**
+ * Serviços separados (prompt mestre §5): transcrição, identificação de
+ * falantes, análise e geração de relatório. Um provedor diferente pode
+ * atender cada serviço.
+ */
+export type AiTask = "transcription" | "diarization" | "analysis" | "report";
+export type ProviderProtocol = "openai" | "openai-compatible" | "gemini" | "anthropic" | "xai" | "custom";
 
 export interface ProviderConfig {
   id: string;
   displayName: string;
   baseUrl?: string;
   model: string;
+  /** Modelo opcional usado só para transcrição (ex.: whisper-1). */
+  transcriptionModel?: string;
   protocol: ProviderProtocol;
   enabledTasks: AiTask[];
   /** Opaque reference to a secret in the platform's secure local store. */
   credentialRef?: string;
+  timeoutMs?: number;
+  maxRetries?: number;
+  /** Cabeçalhos extras não secretos para provedores personalizados. */
+  extraHeaders?: Record<string, string>;
 }
 
 export interface ProviderCredentials {
@@ -21,8 +32,14 @@ export interface ProviderCapabilities {
   tasks: AiTask[];
   streaming: boolean;
   diarization: boolean;
+  /** Timestamps por segmento retornados pela API (e não estimados). */
+  segmentTimestamps: boolean;
+  /** Confiança por segmento disponível. */
+  confidence: boolean;
   supportedMimeTypes?: string[];
   maxAudioBytes?: number;
+  /** Observações em pt-BR sobre limitações conhecidas do adaptador. */
+  notes?: string[];
 }
 
 export interface TranscriptSegment {
@@ -32,16 +49,34 @@ export interface TranscriptSegment {
   text: string;
   speakerId?: string;
   confidence?: number;
+  /** Índice do bloco de áudio de origem; garante idempotência em novas tentativas. */
+  chunkIndex?: number;
+  /** Texto foi editado manualmente pelo usuário. */
+  edited?: boolean;
+}
+
+/** Segmento como retornado pelo provedor, relativo ao início do bloco. */
+export interface ProviderSegment {
+  startMs: number;
+  endMs: number;
+  text: string;
+  /** Rótulo cru do provedor (ex.: "A", "speaker_0"); nunca é um nome real. */
+  speakerLabel?: string;
+  confidence?: number;
 }
 
 export interface TranscriptionRequest {
   audio: Blob;
   mimeType: string;
+  /** Duração do bloco, usada quando o provedor não retorna timestamps. */
+  durationMs: number;
   language?: string;
+  /** Texto anterior para dar contexto ao modelo (não é instrução). */
+  previousText?: string;
 }
 
 export interface TranscriptionResult {
-  segments: TranscriptSegment[];
+  segments: ProviderSegment[];
   detectedLanguage?: string;
 }
 
@@ -56,23 +91,80 @@ export interface AnalysisEvidence {
   quote?: string;
 }
 
+/** Informação explícita no conteúdo versus inferência produzida pela IA. */
+export type AnalysisBasis = "explicit" | "inferred";
+
 export interface AnalysisItem {
   id: string;
   title: string;
   description: string;
+  basis: AnalysisBasis;
   evidence: AnalysisEvidence[];
   confidence?: number;
+}
+
+export interface ActionItem extends AnalysisItem {
+  /** Responsável apenas quando mencionado na transcrição. */
+  assignee?: string;
+  /** Prazo apenas quando mencionado na transcrição. */
+  dueDate?: string;
+}
+
+export interface QuestionAnswer extends AnalysisItem {
+  answer?: string;
 }
 
 export interface MeetingAnalysis {
   summary: string;
   topics: AnalysisItem[];
-  questionsAndAnswers: AnalysisItem[];
+  questionsAndAnswers: QuestionAnswer[];
   decisions: AnalysisItem[];
-  actionItems: Array<AnalysisItem & { assignee?: string; dueDate?: string }>;
+  pendingItems: AnalysisItem[];
+  actionItems: ActionItem[];
+  attentionPoints: AnalysisItem[];
+  nextSteps: AnalysisItem[];
+  /** Divergências e contradições aparentes. */
+  divergences: AnalysisItem[];
+  /** Pontos que precisam de esclarecimento. */
+  clarifications: AnalysisItem[];
+  /** Momentos importantes da sessão. */
+  keyMoments: AnalysisItem[];
+  /** Objetivo ou assunto principal, quando identificável. */
+  objective?: string;
+  /** Conclusão ou desfecho, quando houver. */
+  conclusion?: string;
+  /** Avisos do validador (itens descartados, campos removidos por falta de evidência). */
+  warnings: string[];
+}
+
+export interface ChatMessage {
+  role: "system" | "user";
+  content: string;
+}
+
+export interface CompletionRequest {
+  messages: ChatMessage[];
+  /** Solicita resposta em JSON quando o provedor suporta. */
+  json: boolean;
+  maxOutputTokens?: number;
+  temperature?: number;
+}
+
+/** Provedor de texto usado para análise e geração de relatório. */
+export interface CompletionProvider {
+  readonly id: string;
+  readonly capabilities: ProviderCapabilities;
+  complete(request: CompletionRequest, signal?: AbortSignal): Promise<string>;
 }
 
 export interface AnalysisProvider {
   readonly id: string;
   analyze(segments: TranscriptSegment[], signal?: AbortSignal): Promise<MeetingAnalysis>;
+}
+
+export interface ConnectionTestResult {
+  ok: boolean;
+  latencyMs: number;
+  message: string;
+  models?: string[];
 }

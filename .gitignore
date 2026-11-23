@@ -11,3 +11,16 @@ coverage/
 Thumbs.db
 .vscode/*
 !.vscode/extensions.json
+
+# Playwright
+test-results/
+playwright-report/
+
+# Instaladores
+apps/desktop/release/
+
+# whisper.cpp compilado no CI (D-082)
+apps/desktop/vendor/whisper/*
+!apps/desktop/vendor/whisper/.gitkeep
+apps/desktop/vendor/diarization/*
+!apps/desktop/vendor/diarization/.gitkeep

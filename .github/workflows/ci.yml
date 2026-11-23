@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "desenvolvimento/**"]
   pull_request:
     branches: [main]
 
@@ -17,8 +17,38 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: pnpm install --no-frozen-lockfile
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build:desktop
       - run: pnpm build:extension
+      - run: pnpm build:web
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Instalar Chromium do Playwright (extensão)
+        run: pnpm --filter @ouve/extension exec playwright install --with-deps chromium
+      - name: E2E desktop (Electron) e extensão
+        run: xvfb-run -a pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: |
+            apps/desktop/test-results
+            apps/extension/test-results
+            apps/web/test-results

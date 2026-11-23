@@ -1,0 +1,11 @@
+dist
+out
+release
+coverage
+pnpm-lock.yaml
+docs
+*.md
+apps/*/dist
+apps/*/out
+**/test-results
+**/playwright-report

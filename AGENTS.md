@@ -73,3 +73,13 @@ Leia README.md e docs/00–15 relevantes, incluindo blueprint, arquitetura, inte
 - Estados claros: aguardando, capturando, processando, concluído, erro e cancelado.
 - Testes unitários para domínio e integração para adaptadores.
 - Acessibilidade básica e interface em português brasileiro.
+
+## Mapa do código (atualizado em 21/11/2026)
+- Regras de domínio e contratos: `packages/core`. Utilitários transversais: `packages/shared`.
+- Captura: `packages/capture` (pura/testável) + integração em `apps/desktop/src/renderer/src/session-controller.ts` e `apps/extension/src/app/controller.ts`.
+- Provedores: novo provedor = adaptador em `packages/providers/src`, entrada no catálogo (`catalog.ts`) com capacidades e notas, caso no `factory.ts`, testes com fetch simulado.
+- Desktop: canais IPC só em `apps/desktop/src/shared/ipc.ts`; todo payload validado em `src/main/validate.ts`; chaves nunca saem do processo principal.
+- Extensão: permissões em `apps/extension/public/manifest*.json` (testadas em `test/extension.test.ts`).
+- Antes de concluir: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build:desktop && pnpm build:extension` e, quando houver ambiente gráfico, `pnpm test:e2e` (`xvfb-run -a` no Linux).
+- Testes nunca usam chaves reais; E2E usa `apps/desktop/e2e/mock-provider.ts`.
+- Pendências e limitações abertas: docs/05 (P-020 a P-035) e docs/06.

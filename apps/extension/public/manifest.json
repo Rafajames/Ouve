@@ -1,9 +1,19 @@
 {
   "manifest_version": 3,
   "name": "Ouve — Assistente de áudio",
-  "version": "0.1.0",
-  "description": "Transcreva e organize o áudio de reuniões e audiências.",
-  "action": { "default_popup": "popup.html" },
-  "background": { "service_worker": "background.js", "type": "module" },
-  "permissions": ["storage", "activeTab"]
+  "version": "0.2.0",
+  "description": "Transcreva e organize o áudio de reuniões e audiências. Somente áudio, sem gravação de tela.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Ouve"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["storage", "tabCapture", "activeTab"],
+  "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+  "minimum_chrome_version": "116",
+  "author": "Rafajames",
+  "homepage_url": "https://github.com/Rafajames/Ouve"
 }

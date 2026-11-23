@@ -1,0 +1,104 @@
+name: Instalador Windows
+
+on:
+  push:
+    branches: ["desenvolvimento/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  WHISPER_CPP_TAG: v1.9.5
+  # Separação de vozes local (D-087): sherpa-onnx (Apache-2.0), versão fixa.
+  SHERPA_ONNX_TAG: v1.13.8
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Transcrição local (D-082): usa o pacote oficial do whisper.cpp (MIT) para Windows x64, numa versão fixa.
+      # Ele escolhe em tempo de execução a variante certa para o processador (AVX2, AVX, SSE…).
+      - name: Baixar whisper.cpp oficial
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Release oficial mais recente que traz o pacote pronto para Windows x64.
+          $tag = gh api repos/ggml-org/whisper.cpp/releases --jq '[.[] | select(.assets[].name == "whisper-bin-x64.zip")][0].tag_name'
+          if (-not $tag) { throw "Nenhuma release oficial do whisper.cpp com whisper-bin-x64.zip." }
+          Write-Host "whisper.cpp oficial: $tag"
+          gh release download $tag -R ggml-org/whisper.cpp -p whisper-bin-x64.zip -O whisper.zip
+          Expand-Archive whisper.zip -DestinationPath wtmp
+          $server = Get-ChildItem wtmp -Recurse -Filter whisper-server.exe | Select-Object -First 1
+          New-Item -ItemType Directory -Force apps/desktop/vendor/whisper | Out-Null
+          Copy-Item $server.FullName apps/desktop/vendor/whisper/
+          Copy-Item (Join-Path $server.DirectoryName "*.dll") apps/desktop/vendor/whisper/
+          gh api "repos/ggml-org/whisper.cpp/contents/LICENSE?ref=$tag" -H "Accept: application/vnd.github.raw" > apps/desktop/vendor/whisper/LICENSE-whisper.cpp.txt
+      - name: Conferir whisper-server
+        shell: bash
+        run: |
+          ls -la apps/desktop/vendor/whisper
+          ./apps/desktop/vendor/whisper/whisper-server.exe --help > help.txt 2>&1 || true
+          head -5 help.txt
+          grep -q -- "--inference-path" help.txt
+      # Separação de vozes (D-087): só o executável estático do sherpa-onnx (sem DLLs nem Visual C++)
+      # e o modelo de segmentação pyannote 3.0 (MIT, ~6 MB; a versão int8 perdeu uma voz no teste). Os modelos de voz são baixados sob pedido.
+      - name: Baixar sherpa-onnx (separação de vozes)
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://github.com/k2-fsa/sherpa-onnx/releases/download"
+          pkg="sherpa-onnx-${SHERPA_ONNX_TAG}-win-x64-static-MT-Release"
+          curl -fsSL -o sherpa.tar.bz2 "$base/$SHERPA_ONNX_TAG/$pkg.tar.bz2"
+          tar xjf sherpa.tar.bz2 "$pkg/bin/sherpa-onnx-offline-speaker-diarization.exe"
+          curl -fsSL -o seg.tar.bz2 "$base/speaker-segmentation-models/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2"
+          tar xjf seg.tar.bz2
+          mkdir -p apps/desktop/vendor/diarization
+          cp "$pkg/bin/sherpa-onnx-offline-speaker-diarization.exe" apps/desktop/vendor/diarization/
+          cp sherpa-onnx-pyannote-segmentation-3-0/model.onnx apps/desktop/vendor/diarization/segmentation.onnx
+          cp sherpa-onnx-pyannote-segmentation-3-0/LICENSE apps/desktop/vendor/diarization/LICENSE-pyannote-segmentation.txt
+          curl -fsSL -o apps/desktop/vendor/diarization/LICENSE-sherpa-onnx.txt "https://raw.githubusercontent.com/k2-fsa/sherpa-onnx/$SHERPA_ONNX_TAG/LICENSE"
+          rm -rf sherpa.tar.bz2 seg.tar.bz2 "$pkg" sherpa-onnx-pyannote-segmentation-3-0
+      - name: Conferir separação de vozes (teste com áudio real)
+        shell: bash
+        run: |
+          set -euo pipefail
+          d=apps/desktop/vendor/diarization
+          ls -la $d
+          curl -fsSL -o voz.onnx "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_campplus_sv_zh_en_16k-common_advanced.onnx"
+          curl -fsSL -o teste.wav "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/0-four-speakers-zh.wav"
+          $d/sherpa-onnx-offline-speaker-diarization.exe --clustering.num-clusters=4 --segmentation.pyannote-model=$d/segmentation.onnx \
+            --segmentation.num-threads=1 --embedding.model=voz.onnx --embedding.num-threads=1 teste.wav > saida.txt
+          grep -E "speaker_0[0-3]" saida.txt | head -5
+          test "$(grep -oE 'speaker_[0-9]+' saida.txt | sort -u | wc -l)" -eq 4
+          rm -f voz.onnx teste.wav saida.txt
+      - name: Gerar instalador (NSIS, sem assinatura)
+        run: pnpm --filter @ouve/desktop package
+        env:
+          FFMPEG_BIN: ffmpeg.exe
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ouve-Setup-Windows
+          path: apps/desktop/release/*.exe
+      - name: Publicar versão de teste
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="teste-windows"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --prerelease --target "$GITHUB_SHA" \
+            --title "Ouve — versão de teste para Windows" \
+            --notes "Instalador gerado automaticamente a partir da branch de desenvolvimento. Não assinado: o Windows pode mostrar o aviso do SmartScreen (Mais informações → Executar assim mesmo). Não validado em uso real."
+          gh release upload "$TAG" apps/desktop/release/*.exe --clobber
+          gh release edit "$TAG" --target "$GITHUB_SHA" --notes "Instalador gerado automaticamente a partir do commit ${GITHUB_SHA::7} da branch ${GITHUB_REF_NAME}. Não assinado: o Windows pode mostrar o aviso do SmartScreen (Mais informações → Executar assim mesmo). Não validado em uso real."

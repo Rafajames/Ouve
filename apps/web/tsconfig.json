@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "jsx": "react-jsx", "noEmit": true, "types": ["node"] },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "test/**/*.ts",
+    "e2e/**/*.ts",
+    "vite.config.ts",
+    "playwright.config.ts",
+    "../desktop/src/shared/**/*.ts",
+    "../desktop/src/renderer/src/**/*.ts",
+    "../desktop/src/renderer/src/**/*.tsx"
+  ]
+}

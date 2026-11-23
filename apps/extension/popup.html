@@ -1,11 +1,23 @@
 <!doctype html>
-<html lang="pt-BR">
-  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Ouve</title></head>
+<html lang="pt-BR" data-theme="system">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ouve</title>
+  </head>
   <body>
     <main>
-      <h1>Ouve</h1>
-      <p>Captura e análise de áudio de reuniões.</p>
-      <p id="status">A captura de áudio ainda está em implementação.</p>
+      <header>
+        <span class="mark" aria-hidden="true">O</span>
+        <h1>Ouve</h1>
+      </header>
+      <p>Transcreva o áudio desta aba. Somente o som é capturado; a aba continua tocando normalmente.</p>
+      <div id="tab-section">
+        <label><input type="checkbox" id="mic" /> <span>Incluir meu microfone</span></label>
+        <button class="primary" id="capture">Capturar áudio desta aba</button>
+      </div>
+      <button id="open">Abrir o Ouve</button>
+      <p id="status" role="status"></p>
+      <p class="credit">Idealizado e desenvolvido por Rafajames</p>
       <script type="module" src="/src/popup.ts"></script>
     </main>
   </body>

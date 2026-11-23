@@ -1,6 +1,6 @@
 {
   "name": "@ouve/desktop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,21 +8,35 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests"
-  },
-  "dependencies": {
-    "@ouve/core": "workspace:*",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "test": "vitest run --dir test",
+    "test:e2e": "electron-vite build && playwright test",
+    "package": "electron-vite build && electron-builder --win --publish never"
   },
   "devDependencies": {
+    "@ouve/analysis": "workspace:^",
+    "@ouve/capture": "workspace:^",
+    "@ouve/core": "workspace:*",
+    "@ouve/providers": "workspace:^",
+    "@ouve/reports": "workspace:^",
+    "@ouve/shared": "workspace:^",
+    "@ouve/transcription": "workspace:^",
+    "@ouve/ui": "workspace:^",
+    "@playwright/test": "^1.49",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^33.2.1",
+    "electron-builder": "^25",
     "electron-vite": "^3.0.0",
+    "ffmpeg-static": "^5.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "vite": "^6.0.7",
     "vitest": "^2.1.8"
-  }
+  },
+  "main": "out/main/index.js",
+  "description": "Ouve \u2014 assistente de transcri\u00e7\u00e3o e an\u00e1lise de reuni\u00f5es e audi\u00eancias (somente \u00e1udio).",
+  "author": "Rafajames",
+  "dependencies": {}
 }
