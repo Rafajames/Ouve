@@ -46,7 +46,7 @@ test("versão web: termo, provedor, importação, transcrição, análise e down
   await expect(page.getByText(/Janelas avulsas não trazem áudio/)).toBeVisible();
 
   await nav(page, "Importar arquivo").click();
-  await expect(page.getByText(/até 300 MB e 2 h/)).toBeVisible();
+  await expect(page.getByText(/300 MB e 2 h/)).toBeVisible();
   const chooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Escolher arquivo" }).click();
   await (await chooser).setFiles(audio);
