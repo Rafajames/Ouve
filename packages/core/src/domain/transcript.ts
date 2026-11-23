@@ -1,5 +1,10 @@
 import type { ProviderSegment, TranscriptSegment } from "../ai/contracts.js";
 import type { Speaker } from "./report.js";
+import { matchTurns, type SpeakerTurn } from "./speaker-turns.js";
+
+/** Quem decidiu o falante de um trecho; uma fonte só substitui outra de prioridade igual ou menor. */
+const SPEAKER_PRIORITY = { provider: 1, auto: 2, keys: 3, manual: 4 } as const;
+export type SpeakerSource = keyof typeof SPEAKER_PRIORITY;
 
 export interface TranscriptChunkResult {
   chunkIndex: number;
@@ -22,6 +27,7 @@ export class TranscriptStore {
   private readonly speakers = new Map<string, Speaker>();
   private readonly labelToSpeaker = new Map<string, string>();
   private readonly listeners = new Set<() => void>();
+  private readonly speakerSource = new Map<string, number>();
 
   constructor(private readonly lowConfidenceThreshold = 0.6) {}
 
@@ -50,7 +56,10 @@ export class TranscriptStore {
         text,
         chunkIndex: result.chunkIndex
       };
-      if (raw.speakerLabel) segment.speakerId = this.speakerFor(raw.speakerLabel);
+      if (raw.speakerLabel) {
+        segment.speakerId = this.speakerFor(raw.speakerLabel);
+        this.speakerSource.set(segment.id, SPEAKER_PRIORITY.provider);
+      }
       if (raw.confidence !== undefined) segment.confidence = raw.confidence;
       segments.push(segment);
     });
@@ -97,7 +106,49 @@ export class TranscriptStore {
   assignSpeaker(segmentId: string, speakerId: string | "new"): void {
     const targetId = speakerId === "new" ? this.speakerFor(`manual-${this.speakers.size + 1}`) : speakerId;
     if (!this.speakers.has(targetId)) throw new Error("Falante não encontrado.");
+    this.speakerSource.set(segmentId, SPEAKER_PRIORITY.manual);
     this.updateSegment(segmentId, (s) => ({ ...s, speakerId: targetId }));
+  }
+
+  /** Falante já criado para um rótulo de origem (ex.: "tecla:2"), se houver. */
+  speakerIdForLabel(label: string): string | undefined {
+    return this.labelToSpeaker.get(label);
+  }
+
+  /** Garante um falante para o rótulo, com nome inicial (ex.: tecla 2 = "Testemunha"). Não renomeia depois. */
+  defineSpeaker(label: string, name?: string): string {
+    const existed = this.labelToSpeaker.has(label);
+    const id = this.speakerFor(label);
+    const clean = name?.replace(/\s+/g, " ").trim().slice(0, 80);
+    if (!existed && clean) this.speakers.set(id, { ...(this.speakers.get(id) as Speaker), label: clean });
+    return id;
+  }
+
+  /**
+   * Aplica turnos de fala aos trechos por maior sobreposição de tempo. Não desfaz
+   * escolhas de fonte mais forte (atribuição manual > teclas > automático > provedor).
+   * Retorna quantos trechos mudaram.
+   */
+  applySpeakerTurns(turns: SpeakerTurn[], source: "auto" | "keys", names: Record<string, string> = {}): number {
+    const priority = SPEAKER_PRIORITY[source];
+    const matches = matchTurns(this.segments(), turns);
+    let changed = 0;
+    for (const [index, list] of this.chunks) {
+      let next: TranscriptSegment[] | undefined;
+      list.forEach((seg, i) => {
+        const label = matches.get(seg.id);
+        if (!label || (this.speakerSource.get(seg.id) ?? 0) > priority) return;
+        const speakerId = this.defineSpeaker(label, names[label]);
+        this.speakerSource.set(seg.id, priority);
+        if (seg.speakerId === speakerId) return;
+        next ??= [...list];
+        next[i] = { ...seg, speakerId };
+        changed++;
+      });
+      if (next) this.chunks.set(index, next);
+    }
+    if (changed) this.emit();
+    return changed;
   }
 
   editSegmentText(segmentId: string, text: string): void {
@@ -138,6 +189,7 @@ export class TranscriptStore {
     this.chunks.clear();
     this.speakers.clear();
     this.labelToSpeaker.clear();
+    this.speakerSource.clear();
     this.emit();
   }
 }

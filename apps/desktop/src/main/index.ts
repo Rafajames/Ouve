@@ -1,5 +1,5 @@
 import { app, BrowserWindow, desktopCapturer, dialog, ipcMain, safeStorage, session, shell, type IpcMainInvokeEvent } from "electron";
-import { writeFile } from "node:fs/promises";
+import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { cpus, totalmem } from "node:os";
 import { createLogger, toOuveError } from "@ouve/shared";
@@ -14,8 +14,11 @@ declare const __OUVE_BUILD__: string;
 import { ProviderService } from "./provider-service.js";
 import { probeLocalServers, pullOllamaModel, reconcileProviderSelection } from "@ouve/providers";
 import { SafeStorageSecretStore, SettingsStore } from "./stores.js";
-import { assertNumber, assertString, parseProviderConfig, parseSettings, parseWhisperModel } from "./validate.js";
+import { assertNumber, assertString, parseProviderConfig, parseSettings, parseSpeakerModel, parseWhisperModel } from "./validate.js";
 import { LocalAiService } from "./local-ai-service.js";
+import { MachineProbe } from "./machine.js";
+import { LiveAudioRecorder } from "./diarization.js";
+import { resolveProfile } from "@ouve/providers";
 
 const log = createLogger("main");
 const E2E = process.env.OUVE_E2E === "1";
@@ -27,6 +30,27 @@ let settingsStore: SettingsStore;
 let localAi: LocalAiService;
 let providers: ProviderService;
 const media = new MediaService();
+const machine = new MachineProbe(() => app.getGPUInfo("basic"));
+let liveRecorder: LiveAudioRecorder | undefined;
+let diarizationAbort: AbortController | undefined;
+
+/** Ajusta os núcleos da IA local ao perfil de desempenho (D-088). Religa o Whisper se mudou. */
+async function applyPerformanceProfile(): Promise<void> {
+  const report = await machine.report((await settingsStore.getSettings()).performanceProfile);
+  if (report.threads !== localAi.currentThreads) {
+    localAi.setThreads(report.threads);
+    await localAi.stopWhisper();
+  }
+}
+
+async function resetLiveRecorder(): Promise<void> {
+  const old = liveRecorder;
+  liveRecorder = undefined;
+  if (old) {
+    await old.close();
+    await rm(old.path, { force: true });
+  }
+}
 
 function isTrustedSender(event: IpcMainInvokeEvent): boolean {
   return mainWindow !== null && event.sender === mainWindow.webContents;
@@ -156,7 +180,11 @@ function registerIpc(): void {
   });
 
   handle(IPC.getSettings, async () => reconcileProviderSelection(await settingsStore.getSettings(), await settingsStore.listProviders()));
-  handle(IPC.saveSettings, (_e, raw) => settingsStore.saveSettings(parseSettings(raw)));
+  handle(IPC.saveSettings, async (_e, raw) => {
+    const saved = await settingsStore.saveSettings(parseSettings(raw));
+    await applyPerformanceProfile();
+    return saved;
+  });
 
   handle(IPC.listProviders, () => providers.list());
   handle(IPC.saveProvider, (_e, raw) => {
@@ -262,6 +290,41 @@ function registerIpc(): void {
   handle(IPC.localStopWhisper, () => localAi.stopWhisper());
   handle(IPC.localEnsureWhisper, async () => localAi.ensureWhisper((await settingsStore.getSettings()).language.split("-")[0]));
   handle(IPC.localInstallOllama, () => localAi.installOllama(sendLocalProgress));
+  handle(IPC.localMachine, async (_e, rerun) => machine.report((await settingsStore.getSettings()).performanceProfile, rerun === true));
+  handle(IPC.localDownloadSpeakerModel, (_e, id) => localAi.downloadSpeakerModel(parseSpeakerModel(id), sendLocalProgress));
+  handle(IPC.localRemoveSpeakerModel, (_e, id) => localAi.removeSpeakerModel(parseSpeakerModel(id)));
+
+  // Separação de vozes local (D-087): áudio só em arquivo temporário, apagado no descarte.
+  handle(IPC.diarizationResetLive, () => resetLiveRecorder());
+  handle(IPC.diarizationAppendLive, async (_e, index, bytes) => {
+    if (!(bytes instanceof Uint8Array)) throw new Error("Bloco de áudio inválido.");
+    liveRecorder ??= new LiveAudioRecorder(join(app.getPath("temp"), `ouve-ao-vivo-${process.pid}.wav`));
+    await liveRecorder.append(assertNumber(index, "índice", 0, 1_000_000), bytes);
+  });
+  handle(IPC.diarizationCancel, () => diarizationAbort?.abort());
+  handle(IPC.diarizationRun, async (_e, rawSource, rawSpeakers) => {
+    const speakers = assertNumber(rawSpeakers, "pessoas", 0, 20);
+    const src = (typeof rawSource === "object" && rawSource !== null ? rawSource : {}) as { kind?: unknown; token?: unknown };
+    diarizationAbort?.abort();
+    const abort = new AbortController();
+    diarizationAbort = abort;
+    let wav: string;
+    if (src.kind === "live") {
+      if (!liveRecorder) throw new Error("Não há áudio gravado desta captura para separar as vozes.");
+      await liveRecorder.finish();
+      wav = liveRecorder.path;
+    } else if (src.kind === "import") wav = await media.fullWav(assertString(src.token, "token", 100), abort.signal);
+    else throw new Error("Origem inválida.");
+    const settings = await settingsStore.getSettings();
+    const report = await machine.report(settings.performanceProfile);
+    const spec = resolveProfile(settings.performanceProfile, report.machine);
+    return localAi.diarize(
+      wav,
+      { model: spec.speakerModel, speakers, threads: report.threads },
+      (pct) => sendLocalProgress("separando-vozes", pct),
+      abort.signal
+    );
+  });
 
   handle(IPC.saveFile, async (_e, name, bytes) => {
     const fileName = assertString(name, "nome", 200).replace(/[\\/:*?"<>|]/g, "_");
@@ -311,6 +374,7 @@ app.whenReady().then(() => {
   });
   configureSession();
   registerIpc();
+  void applyPerformanceProfile().catch(() => undefined);
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -322,6 +386,8 @@ app.on("before-quit", () => {
   providers?.cancelAll();
   void localAi?.stopWhisper();
   void media.releaseAll();
+  diarizationAbort?.abort();
+  void resetLiveRecorder();
 });
 
 app.on("window-all-closed", () => {

@@ -17,6 +17,10 @@ extraResources:
   - from: vendor/whisper
     to: whisper
     filter: ["**/*", "!.gitkeep"]
+  # Separação de vozes: sherpa-onnx (Apache-2.0) + segmentação pyannote 3.0 (MIT) — ver D-087.
+  - from: vendor/diarization
+    to: diarization
+    filter: ["**/*", "!.gitkeep"]
 npmRebuild: false
 win:
   target: [nsis]

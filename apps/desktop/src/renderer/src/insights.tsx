@@ -371,3 +371,59 @@ export function ContextSelect({ id = "ctx" }: { id?: string }) {
     </label>
   );
 }
+
+/**
+ * Marcação manual de quem está falando (teclas 1–9; 0 = ninguém). Funciona em
+ * qualquer computador e tem prioridade sobre a separação automática de vozes.
+ * Clique duplo no botão para dar nome à tecla (ex.: 1 = Juiz, 2 = Testemunha).
+ */
+export function SpeakerKeysBar() {
+  const { controller, notify } = useApp();
+  const s = useSession();
+  const active = s.mode === "live" && (s.status === "capturing" || s.status === "paused");
+
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.repeat || !/^[0-9]$/.test(e.key)) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
+      e.preventDefault();
+      controller.markSpeaker(Number(e.key));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [active, controller]);
+
+  if (!active) return null;
+  let count = 4;
+  for (let k = 1; k <= 9; k++) if (controller.speakerKeyName(k) !== `Pessoa ${k}`) count = Math.max(count, Math.min(9, k + 1));
+  const keys = Array.from({ length: count }, (_, i) => i + 1);
+  const rename = (key: number) => {
+    const name = window.prompt(`Nome para a tecla ${key}:`, controller.speakerKeyName(key));
+    if (name === null) return;
+    void controller.renameSpeakerKey(key, name).catch((e: unknown) => notify(e instanceof Error ? e.message : String(e), "error"));
+  };
+  return (
+    <div className="marker-bar compact speaker-keys" role="group" aria-label="Quem está falando (teclas 1 a 9)">
+      <span className="marker-bar-label" title="Aperte a tecla quando a pessoa começar a falar. Clique duas vezes para dar nome.">
+        <Icon name="users" size={14} /> Quem fala:
+      </span>
+      {keys.map((k) => (
+        <button
+          key={k}
+          className={`chip${s.speakerKey === k ? " active" : ""}`}
+          aria-pressed={s.speakerKey === k}
+          title={`Tecla ${k} · clique duas vezes para renomear`}
+          onClick={() => controller.markSpeaker(k)}
+          onDoubleClick={() => rename(k)}
+        >
+          <kbd>{k}</kbd> {controller.speakerKeyName(k)}
+        </button>
+      ))}
+      <button className="chip" title="Tecla 0: ninguém / pausa" onClick={() => controller.markSpeaker(0)}>
+        <kbd>0</kbd> ninguém
+      </button>
+    </div>
+  );
+}

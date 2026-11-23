@@ -11,6 +11,7 @@ import { Icon } from "@ouve/ui";
 import type { LocalAiState, LocalStatus } from "../../shared/ipc";
 import { bridge, unwrap } from "./bridge";
 import { errorMessage, useApp, type AppData } from "./hooks";
+import { PerformanceCard } from "./PerformanceCard";
 
 /**
  * IA no próprio computador: detecta Ollama e servidores Whisper, recomenda
@@ -139,6 +140,20 @@ export function LocalAiPanel({ data }: { data: AppData }) {
           <Icon name="info" size={15} /> {advice.message}
           {status.hardware.cores ? ` (${status.hardware.cores} núcleos)` : ""}
         </p>
+      )}
+      {managed && (
+        <PerformanceCard
+          data={data}
+          mstate={mstate}
+          progress={progress}
+          busy={pulling}
+          act={act}
+          useWhisper={async (name) => {
+            if (!mstate?.installedModels.some((m) => m.name === name)) await unwrap(managed.downloadModel(name));
+            await unwrap(managed.startWhisper(name));
+            await use("whisper-cpp", name);
+          }}
+        />
       )}
       <div className="local-grid">
         {LOCAL_SERVERS.map((server) => {

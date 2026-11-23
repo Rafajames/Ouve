@@ -1,6 +1,6 @@
 import type { AiTask, ProviderConfig, ProviderProtocol, ReportContext } from "@ouve/core";
 import { OuveError, sanitizeLabel } from "@ouve/shared";
-import { WHISPER_MODELS, type WhisperModelName } from "@ouve/providers";
+import { SPEAKER_MODELS, WHISPER_MODELS, type ProfileChoice, type SpeakerModelId, type WhisperModelName } from "@ouve/providers";
 import { DEFAULT_SETTINGS, type AppSettings } from "../shared/ipc.js";
 
 /** Validação de payloads IPC: o renderer é tratado como não confiável. */
@@ -51,6 +51,8 @@ export function parseProviderConfig(raw: unknown): ProviderConfig {
   return config;
 }
 
+const PROFILES: ProfileChoice[] = ["auto", "leve", "equilibrado", "maximo"];
+
 const CONTEXTS: ReportContext[] = ["general", "meeting", "hearing", "interview", "class"];
 
 export function parseSettings(raw: unknown): AppSettings {
@@ -77,7 +79,13 @@ export function parseSettings(raw: unknown): AppSettings {
     exportNotes: bool("exportNotes"),
     exportEvidence: bool("exportEvidence"),
     keepReportsInSession: bool("keepReportsInSession"),
-    sidebarCollapsed: bool("sidebarCollapsed")
+    sidebarCollapsed: bool("sidebarCollapsed"),
+    performanceProfile: PROFILES.includes(r.performanceProfile as ProfileChoice) ? (r.performanceProfile as ProfileChoice) : "auto",
+    autoDiarization: bool("autoDiarization"),
+    speakerCount: typeof r.speakerCount === "number" && Number.isInteger(r.speakerCount) ? Math.min(20, Math.max(0, r.speakerCount)) : 0,
+    speakerKeys: Array.isArray(r.speakerKeys)
+      ? r.speakerKeys.slice(0, 9).map((n) => (typeof n === "string" ? sanitizeLabel(n, 40) : ""))
+      : []
   };
   if (r.onboardingDone === true) settings.onboardingDone = true;
   if (
@@ -97,4 +105,10 @@ export function parseSettings(raw: unknown): AppSettings {
 export function parseWhisperModel(raw: unknown): WhisperModelName {
   if (typeof raw === "string" && WHISPER_MODELS.some((m) => m.name === raw)) return raw as WhisperModelName;
   throw new Error("Modelo de transcrição local inválido.");
+}
+
+/** Modelo de voz (separação de falantes) vindo do renderer (lista fechada). */
+export function parseSpeakerModel(raw: unknown): SpeakerModelId {
+  if (typeof raw === "string" && SPEAKER_MODELS.some((m) => m.id === raw)) return raw as SpeakerModelId;
+  throw new Error("Modelo de separação de vozes inválido.");
 }

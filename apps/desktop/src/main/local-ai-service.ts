@@ -4,8 +4,17 @@ import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/p
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import { LOCAL_WHISPER_PORT, WHISPER_MODELS, type WhisperModelName } from "@ouve/providers";
+import { parseSherpaTurns, type SpeakerTurn } from "@ouve/core";
+import {
+  LOCAL_WHISPER_PORT,
+  SPEAKER_MODELS,
+  SPEAKER_MODEL_URL,
+  WHISPER_MODELS,
+  type SpeakerModelId,
+  type WhisperModelName
+} from "@ouve/providers";
 import { OuveError } from "@ouve/shared";
+import { diarizationArgs, parseProgress } from "./diarization.js";
 
 /**
  * IA local gerenciada pelo Ouve (D-082):
@@ -20,6 +29,9 @@ export interface LocalAiState {
   activeModel?: WhisperModelName;
   installedModels: Array<{ name: WhisperModelName; sizeMb: number }>;
   canInstallOllama: boolean;
+  /** Separação de vozes local (sherpa-onnx) incluída nesta instalação. */
+  diarizationBundled: boolean;
+  installedSpeakerModels: SpeakerModelId[];
 }
 
 export type ProgressFn = (task: string, percent: number) => void;
@@ -44,7 +56,20 @@ export class LocalAiService {
   private activeModel: WhisperModelName | undefined;
   private busy = new Set<string>();
 
-  constructor(private readonly deps: LocalAiDeps) {}
+  private threads: number;
+
+  constructor(private readonly deps: LocalAiDeps) {
+    this.threads = deps.threads;
+  }
+
+  /** Núcleos usados pela IA local conforme o perfil de desempenho (vale ao religar o Whisper). */
+  setThreads(threads: number): void {
+    this.threads = Math.max(1, Math.floor(threads));
+  }
+
+  get currentThreads(): number {
+    return this.threads;
+  }
 
   private get dir(): string {
     return join(this.deps.userDataDir, "local-ai", "whisper");
@@ -93,7 +118,9 @@ export class LocalAiService {
       whisperRunning: !!this.child && this.child.exitCode === null,
       ...(active ? { activeModel: active } : {}),
       installedModels: installed,
-      canInstallOllama: this.deps.platform === "win32"
+      canInstallOllama: this.deps.platform === "win32",
+      diarizationBundled: !!this.diarizationFiles(),
+      installedSpeakerModels: SPEAKER_MODELS.filter((m) => existsSync(this.speakerModelPath(m.id))).map((m) => m.id)
     };
   }
 
@@ -160,7 +187,7 @@ export class LocalAiService {
       "-l",
       lang,
       "-t",
-      String(Math.max(1, this.deps.threads)),
+      String(this.threads),
       // Evita "falas" inventadas em ruído e silêncio.
       "--suppress-nst"
     ];
@@ -240,6 +267,96 @@ export class LocalAiService {
     const child = this.child;
     this.child = undefined;
     if (child && child.exitCode === null) child.kill();
+  }
+
+  // ---------- Separação de vozes (D-087) ----------
+
+  private get speakerDir(): string {
+    return join(this.deps.userDataDir, "local-ai", "falantes");
+  }
+
+  speakerModelPath(id: SpeakerModelId): string {
+    const model = SPEAKER_MODELS.find((m) => m.id === id);
+    if (!model) throw localError("Modelo de voz desconhecido.");
+    return join(this.speakerDir, model.file);
+  }
+
+  /** Executável do sherpa-onnx e modelo de segmentação embutidos no instalador. */
+  diarizationFiles(): { exe: string; segmentation: string } | undefined {
+    const ext = this.deps.platform === "win32" ? ".exe" : "";
+    const base = this.deps.resourcesPath ? join(this.deps.resourcesPath, "diarization") : undefined;
+    const exe = process.env.OUVE_DIARIZATION_PATH || (base && join(base, `sherpa-onnx-offline-speaker-diarization${ext}`));
+    const segmentation = process.env.OUVE_SEGMENTATION_MODEL || (base && join(base, "segmentation.onnx"));
+    return exe && segmentation && existsSync(exe) && existsSync(segmentation) ? { exe, segmentation } : undefined;
+  }
+
+  async downloadSpeakerModel(id: SpeakerModelId, onProgress: ProgressFn): Promise<void> {
+    const model = SPEAKER_MODELS.find((m) => m.id === id);
+    if (!model) throw localError("Modelo de voz desconhecido.");
+    await mkdir(this.speakerDir, { recursive: true });
+    await this.download(SPEAKER_MODEL_URL(model.file), this.speakerModelPath(id), `falantes:${id}`, onProgress, model.sizeMb * 0.9 * 1e6);
+  }
+
+  async removeSpeakerModel(id: SpeakerModelId): Promise<void> {
+    await rm(this.speakerModelPath(id), { force: true });
+  }
+
+  /**
+   * Separa as vozes de um WAV 16 kHz mono. Usa o modelo pedido ou, se não estiver baixado,
+   * qualquer outro já baixado. Devolve os turnos (tempo decorrido do áudio).
+   */
+  async diarize(
+    wavPath: string,
+    options: { model: SpeakerModelId; speakers: number; threads: number },
+    onProgress: (percent: number) => void,
+    signal?: AbortSignal
+  ): Promise<SpeakerTurn[]> {
+    const files = this.diarizationFiles();
+    if (!files) throw localError("A separação de vozes não está incluída nesta instalação do Ouve. Atualize o Ouve.");
+    const model = [options.model, ...SPEAKER_MODELS.map((m) => m.id)].find((id) => existsSync(this.speakerModelPath(id)));
+    if (!model) throw localError("Baixe o modelo de separação de vozes em Provedores de IA → IA no seu computador.");
+    const args = diarizationArgs(wavPath, {
+      segmentationModel: files.segmentation,
+      embeddingModel: this.speakerModelPath(model),
+      speakers: options.speakers,
+      threads: options.threads
+    });
+    return new Promise((resolve, reject) => {
+      const child = (this.deps.spawnImpl ?? spawn)(files.exe, args, { stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
+      let stdout = "";
+      let stderr = "";
+      const onAbort = () => child.kill();
+      signal?.addEventListener("abort", onAbort, { once: true });
+      child.stdout?.on("data", (d: Buffer) => {
+        stdout += d.toString();
+      });
+      child.stderr?.on("data", (d: Buffer) => {
+        const text = d.toString();
+        stderr = (stderr + text).slice(-4000);
+        const pct = parseProgress(text);
+        if (pct !== undefined) onProgress(pct);
+      });
+      child.on("error", (e: Error & { code?: string }) => {
+        signal?.removeEventListener("abort", onAbort);
+        reject(localError(`O Windows ou o antivírus impediu a separação de vozes de abrir (${e.code ?? e.message}).`));
+      });
+      child.on("close", (code: number | null) => {
+        signal?.removeEventListener("abort", onAbort);
+        if (signal?.aborted) return reject(new OuveError("cancelled", "Separação de vozes cancelada."));
+        if (code !== 0) {
+          const tail = stderr
+            .trim()
+            .split(/\r?\n/)
+            .filter((l) => !l.startsWith("progress"))
+            .slice(-2)
+            .join(" · ")
+            .slice(0, 300);
+          return reject(localError(`A separação de vozes falhou (código ${code}).${tail ? ` Detalhe: ${tail}` : ""}`));
+        }
+        onProgress(100);
+        resolve(parseSherpaTurns(stdout));
+      });
+    });
   }
 
   /** Baixa o instalador oficial do Ollama e o abre. A instalação é confirmada pela pessoa. */

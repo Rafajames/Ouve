@@ -86,7 +86,7 @@ export const LOCAL_SERVERS: LocalServerInfo[] = [
     ],
     models: WHISPER_MODELS.map((m) => ({ name: m.name, sizeGb: Math.round(m.sizeMb / 100) / 10, minRamGb: m.minRamGb, note: m.note })),
     limitations: [
-      "Não separa as vozes (sem diarização): todas as falas ficam sem participante — atribua manualmente.",
+      "O Whisper não separa as vozes; no desktop, o Ouve separa no computador (sherpa-onnx) se o modelo de vozes estiver baixado.",
       "Horários são por bloco de áudio, não por frase.",
       "Usa a memória e o processador do computador durante a transcrição."
     ]

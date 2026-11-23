@@ -22,3 +22,5 @@ apps/desktop/release/
 # whisper.cpp compilado no CI (D-082)
 apps/desktop/vendor/whisper/*
 !apps/desktop/vendor/whisper/.gitkeep
+apps/desktop/vendor/diarization/*
+!apps/desktop/vendor/diarization/.gitkeep

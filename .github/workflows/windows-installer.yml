@@ -10,6 +10,8 @@ permissions:
 
 env:
   WHISPER_CPP_TAG: v1.9.5
+  # Separação de vozes local (D-087): sherpa-onnx (Apache-2.0), versão fixa.
+  SHERPA_ONNX_TAG: v1.13.8
 
 jobs:
   build:
@@ -49,6 +51,37 @@ jobs:
           ./apps/desktop/vendor/whisper/whisper-server.exe --help > help.txt 2>&1 || true
           head -5 help.txt
           grep -q -- "--inference-path" help.txt
+      # Separação de vozes (D-087): só o executável estático do sherpa-onnx (sem DLLs nem Visual C++)
+      # e o modelo de segmentação pyannote 3.0 (MIT, ~6 MB; a versão int8 perdeu uma voz no teste). Os modelos de voz são baixados sob pedido.
+      - name: Baixar sherpa-onnx (separação de vozes)
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://github.com/k2-fsa/sherpa-onnx/releases/download"
+          pkg="sherpa-onnx-${SHERPA_ONNX_TAG}-win-x64-static-MT-Release"
+          curl -fsSL -o sherpa.tar.bz2 "$base/$SHERPA_ONNX_TAG/$pkg.tar.bz2"
+          tar xjf sherpa.tar.bz2 "$pkg/bin/sherpa-onnx-offline-speaker-diarization.exe"
+          curl -fsSL -o seg.tar.bz2 "$base/speaker-segmentation-models/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2"
+          tar xjf seg.tar.bz2
+          mkdir -p apps/desktop/vendor/diarization
+          cp "$pkg/bin/sherpa-onnx-offline-speaker-diarization.exe" apps/desktop/vendor/diarization/
+          cp sherpa-onnx-pyannote-segmentation-3-0/model.onnx apps/desktop/vendor/diarization/segmentation.onnx
+          cp sherpa-onnx-pyannote-segmentation-3-0/LICENSE apps/desktop/vendor/diarization/LICENSE-pyannote-segmentation.txt
+          curl -fsSL -o apps/desktop/vendor/diarization/LICENSE-sherpa-onnx.txt "https://raw.githubusercontent.com/k2-fsa/sherpa-onnx/$SHERPA_ONNX_TAG/LICENSE"
+          rm -rf sherpa.tar.bz2 seg.tar.bz2 "$pkg" sherpa-onnx-pyannote-segmentation-3-0
+      - name: Conferir separação de vozes (teste com áudio real)
+        shell: bash
+        run: |
+          set -euo pipefail
+          d=apps/desktop/vendor/diarization
+          ls -la $d
+          curl -fsSL -o voz.onnx "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_campplus_sv_zh_en_16k-common_advanced.onnx"
+          curl -fsSL -o teste.wav "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/0-four-speakers-zh.wav"
+          $d/sherpa-onnx-offline-speaker-diarization.exe --clustering.num-clusters=4 --segmentation.pyannote-model=$d/segmentation.onnx \
+            --segmentation.num-threads=1 --embedding.model=voz.onnx --embedding.num-threads=1 teste.wav > saida.txt
+          grep -E "speaker_0[0-3]" saida.txt | head -5
+          test "$(grep -oE 'speaker_[0-9]+' saida.txt | sort -u | wc -l)" -eq 4
+          rm -f voz.onnx teste.wav saida.txt
       - name: Gerar instalador (NSIS, sem assinatura)
         run: pnpm --filter @ouve/desktop package
         env:

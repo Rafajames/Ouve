@@ -103,4 +103,4 @@ O backlog foi reorganizado para iniciar implementação sem exigir validação m
 - [x] Transcrição local com um clique no desktop (whisper.cpp embutido, modelo baixado pela interface) e instalação do Ollama pelo Ouve (D-082).
 - [ ] Validar no Windows real: whisper-server embutido, modelos, desempenho por hardware e instalador do Ollama (P-039).
 - [ ] **Melhoria futura (sem data — pedido do James em 22/11/2026):** Whisper dentro do próprio Ouve, sem instalar nada (Transformers.js + WebGPU/WASM), funcionando também na web e na extensão. Custos: download de 40 MB a 1,5 GB na primeira vez e lentidão em PCs modestos em gravações longas; sem separação de vozes. Ideia de uso: “modo privado” para arquivos curtos.
-- [ ] Separação de vozes (diarização) local — hoje só provedores externos separam participantes.
+- [x] Separação de vozes (diarização) local no desktop (sherpa-onnx, D-087), perfis de desempenho (D-088) e teclas 1–9 (D-089). Web/extensão: P-045.

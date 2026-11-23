@@ -2,7 +2,15 @@
  * Contrato IPC entre renderer e processo principal. Canais em allowlist;
  * o renderer nunca recebe chaves de API nem caminhos de arquivos temporários.
  */
-import type { HardwareInfo, LocalProbeResult, WhisperModelName } from "@ouve/providers";
+import type {
+  HardwareInfo,
+  LocalProbeResult,
+  MachineInfo,
+  PerformanceProfile,
+  ProfileChoice,
+  SpeakerModelId,
+  WhisperModelName
+} from "@ouve/providers";
 import type {
   AiTask,
   CompletionRequest,
@@ -10,7 +18,8 @@ import type {
   ConnectionTestResult,
   ProviderConfig,
   ProviderProtocol,
-  ProviderSegment
+  ProviderSegment,
+  SpeakerTurn
 } from "@ouve/core";
 
 export interface DesktopSource {
@@ -51,6 +60,14 @@ export interface AppSettings {
   keepReportsInSession: boolean;
   /** Menu lateral recolhido. */
   sidebarCollapsed: boolean;
+  /** Perfil de desempenho da IA local (D-088): automático pelo hardware ou escolhido. */
+  performanceProfile: ProfileChoice;
+  /** Separar as vozes automaticamente no computador (D-087) quando disponível. */
+  autoDiarization: boolean;
+  /** Número de pessoas na sessão (0 = descobrir sozinho). */
+  speakerCount: number;
+  /** Nomes das teclas 1–9 para marcar quem está falando (posição 0 = tecla 1). */
+  speakerKeys: string[];
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -70,7 +87,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   exportNotes: true,
   exportEvidence: true,
   keepReportsInSession: true,
-  sidebarCollapsed: false
+  sidebarCollapsed: false,
+  performanceProfile: "auto",
+  autoDiarization: true,
+  speakerCount: 0,
+  speakerKeys: []
 };
 
 export interface ProviderSummary {
@@ -135,7 +156,21 @@ export interface LocalAiState {
   activeModel?: WhisperModelName;
   installedModels: Array<{ name: WhisperModelName; sizeMb: number }>;
   canInstallOllama: boolean;
+  diarizationBundled: boolean;
+  installedSpeakerModels: SpeakerModelId[];
 }
+
+/** Resultado da medição do computador (D-088). */
+export interface MachineReport {
+  machine: MachineInfo;
+  recommended: PerformanceProfile;
+  reason: string;
+  /** Perfil em uso (escolhido ou automático). */
+  active: PerformanceProfile;
+  threads: number;
+}
+
+export type DiarizationSource = { kind: "live" } | { kind: "import"; token: string };
 
 export interface LocalStatus {
   results: LocalProbeResult[];
@@ -211,8 +246,20 @@ export interface OuveBridge {
       stopWhisper(): Promise<IpcResult<void>>;
       ensureWhisper(): Promise<IpcResult<void>>;
       installOllama(): Promise<IpcResult<void>>;
+      /** Mede o computador e devolve o perfil recomendado (D-088). */
+      machine(rerun?: boolean): Promise<IpcResult<MachineReport>>;
+      downloadSpeakerModel(id: SpeakerModelId): Promise<IpcResult<void>>;
+      removeSpeakerModel(id: SpeakerModelId): Promise<IpcResult<void>>;
       onProgress(listener: (task: string, percent: number) => void): () => void;
     };
+  };
+  /** Somente no desktop: separação de vozes local (D-087). */
+  diarization?: {
+    /** Grava (temporário) um bloco da captura ao vivo, para separar as vozes ao encerrar. */
+    appendLive(index: number, wav: Uint8Array): Promise<IpcResult<void>>;
+    resetLive(): Promise<IpcResult<void>>;
+    run(source: DiarizationSource, speakers: number): Promise<IpcResult<SpeakerTurn[]>>;
+    cancel(): Promise<IpcResult<void>>;
   };
   /** Somente no desktop: verificação e instalação manual de atualizações. */
   updates?: {
@@ -253,6 +300,13 @@ export const IPC = {
   localEnsureWhisper: "local:ensure-whisper",
   localInstallOllama: "local:install-ollama",
   localProgress: "local:progress",
+  localMachine: "local:machine",
+  localDownloadSpeakerModel: "local:download-speaker-model",
+  localRemoveSpeakerModel: "local:remove-speaker-model",
+  diarizationAppendLive: "diarization:append-live",
+  diarizationResetLive: "diarization:reset-live",
+  diarizationRun: "diarization:run",
+  diarizationCancel: "diarization:cancel",
   checkUpdates: "updates:check",
   installUpdate: "updates:install",
   updateProgress: "updates:progress"

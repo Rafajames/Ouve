@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -148,6 +148,39 @@ describe("MediaService (ffmpeg real)", () => {
       // 10 s de MP3 a 32 kbps ≈ 40 KB (o WAV equivalente teria ~320 KB).
       expect(bytes.byteLength).toBeLessThan(80_000);
       await service.release(media.token);
+    },
+    30_000
+  );
+
+  it.skipIf(!available)(
+    "gera o WAV inteiro 16 kHz mono para a separação de vozes, junto com os pedaços",
+    async () => {
+      const audio = join(dir, "vozes.wav");
+      execFileSync(ffmpeg, [
+        "-y",
+        "-loglevel",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=300:duration=12",
+        "-ac",
+        "2",
+        "-ar",
+        "44100",
+        audio
+      ]);
+      const service = new MediaService(ffmpeg);
+      const media = await service.register(audio, DEFAULT_MEDIA_LIMITS);
+      const full = await service.fullWav(media.token);
+      const bytes = readFileSync(full);
+      expect(bytes.readUInt32LE(24)).toBe(16_000);
+      expect(bytes.readUInt16LE(22)).toBe(1);
+      expect(Math.abs(bytes.length - 44 - 12 * 32_000)).toBeLessThan(2_000);
+      // A extração em pedaços continua funcionando depois do WAV inteiro.
+      expect(await service.extract(media.token, 5, undefined, "mp3")).toHaveLength(3);
+      await service.release(media.token);
+      expect(existsSync(full)).toBe(false);
     },
     30_000
   );

@@ -9,3 +9,4 @@ export * from "./quick-setup.js";
 export * from "./import-plan.js";
 export * from "./local.js";
 export * from "./selection.js";
+export * from "./performance.js";

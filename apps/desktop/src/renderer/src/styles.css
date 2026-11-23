@@ -2493,3 +2493,21 @@ li.running .step-dot {
     display: none;
   }
 }
+
+/* Perfil de desempenho e teclas de falante (D-087/D-088) */
+.perf-card {
+  margin-bottom: 10px;
+  gap: 6px;
+}
+.row.wrap {
+  flex-wrap: wrap;
+}
+.speaker-keys .chip.active {
+  background: var(--accent, #2563eb);
+  border-color: var(--accent, #2563eb);
+  color: #fff;
+}
+.speaker-keys kbd {
+  font: 600 11px/1 var(--font-mono, monospace);
+  opacity: 0.75;
+}

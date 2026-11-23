@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { mkdtemp, readFile, rename, rm, stat } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
@@ -152,10 +152,9 @@ export class MediaService {
     format: "wav" | "mp3" = "wav"
   ): Promise<ExtractedSegment[]> {
     const entry = this.entry(token);
-    if (entry.dir) return entry.segments;
-    const dir = await mkdtemp(join(tmpdir(), "ouve-"));
-    entry.dir = dir;
-    entry.format = format;
+    if (entry.format) return entry.segments;
+    entry.dir ??= await mkdtemp(join(tmpdir(), "ouve-"));
+    const dir = entry.dir;
     const controller = new AbortController();
     this.controllers.set(token, controller);
     // MP3 32 kbps mono: ~2,4 MB a cada 10 min, abaixo dos limites por pedido dos provedores.
@@ -204,6 +203,7 @@ export class MediaService {
         retryable: false
       });
     }
+    entry.format = format;
     entry.segments = parseSegmentList(await readFile(join(dir, "lista.csv"), "utf8"), format);
     return entry.segments;
   }
@@ -212,6 +212,24 @@ export class MediaService {
     const entry = this.entry(token);
     if (!entry.dir || !entry.segments[index]) throw new OuveError("invalid-input", "Segmento inexistente.", { retryable: false });
     return new Uint8Array(await readFile(join(entry.dir, `seg${String(index).padStart(5, "0")}.${entry.format ?? "wav"}`)));
+  }
+
+  /**
+   * Áudio inteiro em um único WAV 16 kHz mono (temporário), para a separação de vozes,
+   * que precisa ouvir a gravação toda para reconhecer a mesma pessoa do começo ao fim.
+   */
+  async fullWav(token: string, signal?: AbortSignal): Promise<string> {
+    const entry = this.entry(token);
+    entry.dir ??= await mkdtemp(join(tmpdir(), "ouve-"));
+    const target = join(entry.dir, "completo.wav");
+    if (existsSync(target)) return target;
+    const part = join(entry.dir, "completo.part.wav");
+    const args = ["-hide_banner", "-nostdin", "-loglevel", "error", "-y", "-i", entry.path, "-map", "0:a:0", "-vn", "-sn", "-dn"];
+    const result = await run(this.ffmpeg, [...args, "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", part], signal ? { signal } : {});
+    if (result.code !== 0)
+      throw new OuveError("invalid-input", "Não foi possível preparar o áudio para separar as vozes.", { retryable: false });
+    await rename(part, target);
+    return target;
   }
 
   /** Cancela extração e apaga arquivos temporários. */

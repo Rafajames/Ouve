@@ -3,7 +3,7 @@ import { formatTimestamp } from "@ouve/shared";
 import { Icon } from "@ouve/ui";
 import { EmptyState, LevelMeter, Messages, Page, SpeakersPanel, Tabs, TranscriptView } from "../components";
 import { errorMessage, useApp, useSession } from "../hooks";
-import { ContextSelect, HintBanner, MarkerBar, MarkerList, MetricsPanel, StagesPanel } from "../insights";
+import { ContextSelect, HintBanner, MarkerBar, MarkerList, MetricsPanel, SpeakerKeysBar, StagesPanel } from "../insights";
 
 function formatDuration(ms: number): string {
   const total = Math.max(1, Math.round(ms / 1000));
@@ -272,6 +272,12 @@ export function SessionScreen() {
           <Messages />
           <HintBanner />
           <MarkerBar compact />
+          <SpeakerKeysBar />
+          {s.diarizePercent !== undefined && (
+            <p className="muted small-text" role="status">
+              <Icon name="users" size={13} /> Separando as vozes no seu computador… {s.diarizePercent}%
+            </p>
+          )}
 
           <div className="tabs-row">
             <Tabs

@@ -11,6 +11,7 @@ import {
 import {
   LiveHintEngine,
   MarkerStore,
+  SpeakerMarks,
   StageTimer,
   TranscriptStore,
   emptyAnalysis,
@@ -19,9 +20,10 @@ import {
   type MeetingAnalysis,
   type ReportContext,
   type ReportDocument,
-  type SessionStatus
+  type SessionStatus,
+  type SpeakerTurn
 } from "@ouve/core";
-import { planImport } from "@ouve/providers";
+import { PROFILE_SPECS, planImport, type ProfileSpec } from "@ouve/providers";
 import {
   buildReport,
   exportDocx,
@@ -36,7 +38,7 @@ import {
 } from "@ouve/reports";
 import { createId, formatTimestamp, sleep, toOuveError } from "@ouve/shared";
 import { TranscriptionPipeline, type PipelineStats } from "@ouve/transcription";
-import type { AppSettings, ImportedMedia } from "../../shared/ipc";
+import type { AppSettings, DiarizationSource, ImportedMedia } from "../../shared/ipc";
 import { IpcCompletionProvider, IpcTranscriptionProvider, bridge, unwrap } from "./bridge";
 
 export type SessionMode = "none" | "live" | "import";
@@ -70,6 +72,10 @@ export interface SessionSnapshot {
   hint?: LiveHint | undefined;
   /** Formatos já exportados do relatório atual. */
   exported: ExportFormat[];
+  /** Tecla (1–9) do falante marcado agora na captura ao vivo. */
+  speakerKey?: number | undefined;
+  /** Separação de vozes local em andamento (0–100). */
+  diarizePercent?: number | undefined;
 }
 
 /**
@@ -136,6 +142,11 @@ export class SessionController {
   private settings?: AppSettings;
   private timer?: ReturnType<typeof setInterval>;
   private archive: LibraryEntry[] = [];
+  /** Marcação manual de quem está falando (teclas 1–9). */
+  readonly speakerMarks = new SpeakerMarks();
+  /** Grava o áudio ao vivo em temporário para separar as vozes ao encerrar. */
+  private recordLive = false;
+  private autoTurns: SpeakerTurn[] = [];
 
   constructor() {
     this.store.subscribe(() => this.bump());
@@ -149,6 +160,11 @@ export class SessionController {
     this.markers.clear();
     this.stages.reset();
     this.hints.reset();
+    this.speakerMarks.clear();
+    this.recordLive = false;
+    this.autoTurns = [];
+    void bridge().diarization?.cancel();
+    void bridge().diarization?.resetLive();
   }
 
   subscribe = (listener: () => void): (() => void) => {
@@ -218,6 +234,94 @@ export class SessionController {
     await this.stages.measure("prepare", () => unwrap(managed.ensureWhisper()), "Ligando a transcrição local");
   }
 
+  // ---------- Separação de vozes e perfil (D-087/D-088) ----------
+
+  /** Perfil de desempenho em uso e se a separação de vozes local está pronta. */
+  private async localCapabilities(settings: AppSettings): Promise<{ spec: ProfileSpec; diarization: boolean }> {
+    const managed = bridge().local?.managed;
+    if (!managed || !bridge().diarization) return { spec: PROFILE_SPECS.equilibrado, diarization: false };
+    try {
+      const [machine, state] = await Promise.all([unwrap(managed.machine()), unwrap(managed.state())]);
+      return {
+        spec: PROFILE_SPECS[machine.active],
+        diarization: settings.autoDiarization && state.diarizationBundled && state.installedSpeakerModels.length > 0
+      };
+    } catch {
+      return { spec: PROFILE_SPECS.equilibrado, diarization: false };
+    }
+  }
+
+  /** Nome de cada tecla de falante (configurável); sem nome, "Pessoa N". */
+  speakerKeyName(key: number): string {
+    return this.settings?.speakerKeys[key - 1]?.trim() || `Pessoa ${key}`;
+  }
+
+  private keyNames(): Record<string, string> {
+    const names: Record<string, string> = {};
+    for (let k = 1; k <= 9; k++) names[`tecla:${k}`] = this.speakerKeyName(k);
+    return names;
+  }
+
+  /** Dá nome a uma tecla (vale para as próximas sessões) e renomeia o falante dela, se já existir. */
+  async renameSpeakerKey(key: number, name: string): Promise<void> {
+    const settings = this.settings ?? (await this.loadSettings());
+    const keys = Array.from({ length: 9 }, (_, i) => settings.speakerKeys[i] ?? "");
+    keys[key - 1] = name.replace(/\s+/g, " ").trim().slice(0, 40);
+    this.settings = await unwrap(bridge().settings.save({ ...settings, speakerKeys: keys }));
+    const id = this.store.speakerIdForLabel(`tecla:${key}`);
+    if (id && keys[key - 1]) this.renameSpeaker(id, keys[key - 1] as string);
+    this.bump();
+  }
+
+  /** Marca quem está falando agora (1–9) ou ninguém (0), no tempo decorrido da captura. */
+  markSpeaker(key: number): void {
+    if (this.snap.mode !== "live" || !this.capture) return;
+    this.speakerMarks.mark(key, this.capture.capturedMs);
+    this.set({ speakerKey: this.speakerMarks.current() });
+    this.applyKeyTurns();
+  }
+
+  /** Reaplica falantes (automático e teclas) aos trechos que chegaram depois. */
+  private reapplySpeakers(): void {
+    if (this.autoTurns.length) this.store.applySpeakerTurns(this.autoTurns, "auto");
+    this.applyKeyTurns();
+  }
+
+  private applyKeyTurns(): void {
+    if (this.speakerMarks.isEmpty()) return;
+    this.store.applySpeakerTurns(this.speakerMarks.toTurns(this.sessionDurationMs()), "keys", this.keyNames());
+  }
+
+  /** Separa as vozes no computador e aplica aos trechos. Falha não interrompe a sessão. */
+  private async runDiarization(source: DiarizationSource): Promise<void> {
+    const api = bridge().diarization;
+    const managed = bridge().local?.managed;
+    if (!api) return;
+    const off = managed?.onProgress((task, pct) => {
+      if (task === "separando-vozes") this.set({ diarizePercent: pct });
+    });
+    this.set({ diarizePercent: 0 });
+    try {
+      const turns = await this.stages.measure(
+        "diarize",
+        () => unwrap(api.run(source, this.settings?.speakerCount ?? 0)),
+        "No seu computador; o áudio não sai daqui"
+      );
+      this.autoTurns = turns;
+      this.store.applySpeakerTurns(turns, "auto");
+      const people = new Set(turns.map((t) => t.label)).size;
+      if (people > 0)
+        this.message("info", `Vozes separadas: ${people} pessoa(s). Renomeie em Participantes (ex.: “Falante 1” → “Testemunha”).`);
+      else this.message("warning", "A separação de vozes não encontrou falas. Atribua os falantes manualmente.");
+    } catch (error) {
+      const e = toOuveError(error);
+      if (e.code !== "cancelled") this.message("warning", `Não foi possível separar as vozes: ${e.message}`);
+    } finally {
+      off?.();
+      this.set({ diarizePercent: undefined });
+    }
+  }
+
   // ---------- Captura ao vivo ----------
 
   async startLive(options: LiveStartOptions): Promise<void> {
@@ -226,6 +330,7 @@ export class SessionController {
     const providerId = this.requireTranscriptionProvider(settings);
     this.resetLocal();
     await this.ensureLocalTranscription(providerId);
+    this.recordLive = (await this.localCapabilities(settings)).diarization;
     this.set({
       ...newSnapshot(),
       mode: "live",
@@ -259,7 +364,13 @@ export class SessionController {
       ...(source ? { source } : {}),
       ...(mic ? { microphone: mic } : {}),
       chunkMs: settings.liveChunkSeconds * 1000,
-      onChunk: (chunk) =>
+      onChunk: (chunk) => {
+        if (this.recordLive)
+          void bridge()
+            .diarization?.appendLive(chunk.index, chunk.wav)
+            .then((r) => {
+              if (!r.ok) this.recordLive = false;
+            });
         this.pipeline?.enqueue({
           index: chunk.index,
           offsetMs: chunk.offsetMs,
@@ -267,7 +378,8 @@ export class SessionController {
           mimeType: "audio/wav",
           data: chunk.wav,
           silent: chunk.silent
-        }),
+        });
+      },
       onLevel: (level) => {
         if (Math.abs(level - this.snap.level) > 0.01) this.set({ level });
       },
@@ -287,6 +399,7 @@ export class SessionController {
     this.timer = setInterval(() => {
       const capturedMs = this.capture?.capturedMs ?? this.snap.capturedMs;
       const patch: Partial<SessionSnapshot> = { capturedMs };
+      this.applyKeyTurns();
       if (this.settings?.liveHints && this.snap.status === "capturing" && !this.snap.hint) {
         const hint = this.hints.evaluate(this.store.segments(), capturedMs);
         if (hint) patch.hint = hint;
@@ -325,7 +438,9 @@ export class SessionController {
     this.set({ status: "processing", level: 0, capturedMs: captured });
     this.set({ hint: undefined });
     await this.stages.measure("transcribe", async () => this.pipeline?.whenIdle(), "Blocos restantes após encerrar");
-    this.set({ status: "completed" });
+    this.applyKeyTurns();
+    if (this.recordLive) await this.runDiarization({ kind: "live" });
+    this.set({ status: "completed", speakerKey: undefined });
   }
 
   // ---------- Importação ----------
@@ -355,9 +470,12 @@ export class SessionController {
       const started = Date.now();
       // Modo rápido: pedaços, formato e paralelismo escolhidos pela IA configurada (D-068).
       const providers = await unwrap(bridge().providers.list());
+      const local = await this.localCapabilities(settings);
       const plan = settings.importAuto
         ? planImport(providers.find((p) => p.config.id === providerId)?.config)
         : { segmentSeconds: settings.importSegmentSeconds, format: "wav" as const, concurrency: 2, reason: "" };
+      // IA local: o perfil do computador decide quantos pedaços ao mesmo tempo (D-088).
+      if (providerId === "local-whisper-cpp") plan.concurrency = local.spec.localConcurrency;
       this.set({
         importPlanLabel: `Pedaços de ${Math.round(plan.segmentSeconds / 60)} min em ${plan.format.toUpperCase()}, ${plan.concurrency} ao mesmo tempo`
       });
@@ -371,6 +489,9 @@ export class SessionController {
       if (!this.snap.importInfo) return true;
       this.set({ importInfo: { ...this.snap.importInfo, phase: "transcribing", segments: segments.length } });
       this.pipeline = this.createPipeline(providerId, settings.language, plan.concurrency);
+      // PCs fortes: separa as vozes junto com a transcrição; no perfil Leve, só depois (D-088).
+      const diarize = () => this.runDiarization({ kind: "import", token: media.token });
+      const parallelDiarization = local.diarization && !local.spec.sequentialDiarization ? diarize() : undefined;
       for (const segment of segments) {
         // Alimenta a fila aos poucos para não manter o arquivo inteiro na memória.
         while ((this.pipeline.stats().queued ?? 0) + (this.pipeline.stats().running ?? 0) >= plan.concurrency + 1) await sleep(200, signal);
@@ -385,6 +506,10 @@ export class SessionController {
       }
       await this.pipeline.whenIdle();
       this.stages.end("transcribe", this.pipeline.stats().failed > 0 ? "failed" : "done");
+      if (parallelDiarization) {
+        await parallelDiarization;
+        this.reapplySpeakers();
+      } else if (local.diarization) await diarize();
       if (this.snap.importInfo)
         this.set({ importInfo: { ...this.snap.importInfo, phase: "done" }, status: "completed", processingMs: Date.now() - started });
       if (this.pipeline.stats().failed > 0)
@@ -406,6 +531,7 @@ export class SessionController {
 
   cancelImport(): void {
     this.importAbort?.abort();
+    void bridge().diarization?.cancel();
     this.pipeline?.cancel();
     this.set({ status: "cancelled" });
   }
@@ -414,7 +540,10 @@ export class SessionController {
     const count = this.pipeline?.retryFailed() ?? 0;
     if (count > 0 && this.snap.mode === "live" && this.snap.status === "completed") {
       this.set({ status: "processing" });
-      void this.pipeline?.whenIdle().then(() => this.set({ status: "completed" }));
+      void this.pipeline?.whenIdle().then(() => {
+        this.reapplySpeakers();
+        this.set({ status: "completed" });
+      });
     }
     return count;
   }

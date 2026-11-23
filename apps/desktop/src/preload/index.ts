@@ -55,12 +55,21 @@ const bridge: OuveBridge = {
       stopWhisper: () => invoke(IPC.localStopWhisper),
       ensureWhisper: () => invoke(IPC.localEnsureWhisper),
       installOllama: () => invoke(IPC.localInstallOllama),
+      machine: (rerun) => invoke(IPC.localMachine, rerun === true),
+      downloadSpeakerModel: (id) => invoke(IPC.localDownloadSpeakerModel, id),
+      removeSpeakerModel: (id) => invoke(IPC.localRemoveSpeakerModel, id),
       onProgress: (listener) => {
         const wrapped = (_: unknown, task: string, percent: number) => listener(task, percent);
         ipcRenderer.on(IPC.localProgress, wrapped);
         return () => ipcRenderer.removeListener(IPC.localProgress, wrapped);
       }
     }
+  },
+  diarization: {
+    appendLive: (index, wav) => invoke(IPC.diarizationAppendLive, index, wav),
+    resetLive: () => invoke(IPC.diarizationResetLive),
+    run: (source, speakers) => invoke(IPC.diarizationRun, source, speakers),
+    cancel: () => invoke(IPC.diarizationCancel)
   },
   updates: {
     check: () => invoke(IPC.checkUpdates),
