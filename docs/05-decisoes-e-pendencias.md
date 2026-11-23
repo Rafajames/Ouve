@@ -145,3 +145,17 @@ Toda nova decisão deve registrar contexto, opções, decisão, justificativa, i
 | P-038 | Atualizar a `main` (fast-forward a partir de `desenvolvimento/mvp`) após revisão do James. | — | Pendente |
 | D-082 | IA local com um clique no desktop Windows: (1) o servidor do whisper.cpp (MIT, versão fixa v1.9.5) é compilado no GitHub Actions — estático, AVX2, sem DLLs — e embutido no instalador; o usuário escolhe um modelo (base, small, medium, large-v3-turbo), que é baixado de huggingface.co/ggerganov/whisper.cpp para a pasta de dados do Ouve; o Ouve liga o servidor em 127.0.0.1:8178 ao usar e o desliga ao fechar. (2) “Instalar Ollama” baixa o instalador oficial (ollama.com) e o abre; a pessoa confirma; depois o modelo é baixado pelo Ouve. Downloads só de endereços fixos e por clique do usuário. A versão v1.9.5 não publica binários para Windows, por isso a compilação no CI. | Pedido do James: instalar sem terminal. Opção “Whisper dentro do app” ficou como melhoria futura (docs/15). | Aceita; não validado em Windows real (P-039) |
 | P-039 | Validar em Windows real o whisper-server embutido (CPUs sem AVX2 não rodam esta compilação), o download de modelos, o desempenho e o instalador do Ollama. | — | Pendente |
+
+## Novas decisões — 23/11/2026 (redesign da interface — docs/18)
+| ID | Decisão | Origem | Status |
+|---|---|---|---|
+| D-083 | **Relatórios desta execução**: ao descartar uma sessão que tem relatório, o relatório (com a transcrição, sem áudio) vai para a página “Relatórios” e fica **só na memória** até fechar o Ouve — nada em disco. Pode ser desligado em Configurações → Privacidade (`keepReportsInSession`, padrão ligado). Excluir o relatório da sessão atual descarta a sessão sem guardar. Não altera D-005/D-039: continua sem histórico permanente. | Prompt mestre de redesign §9 (10–20 relatórios por dia; “não implemente armazenamento permanente obrigatório”). | Aceita |
+| D-084 | Termo de uso versão 2 (`TERMS_VERSION = 2`): o item de histórico passa a dizer que os relatórios ficam na memória até fechar o app (desligável). Quem já aceitou a versão 1 vê o termo uma única vez de novo. | Consequência de D-083 (transparência). | Aceita |
+| D-085 | Novo padrão visual (docs/18): menu lateral compacto e recolhível, cabeçalho único por página com indicador global de estado, páginas que ocupam a janela com rolagem só interna, cor de destaque verde-azulada, componentes `Page`, `Panel`, `Tabs`, `Drawer`, `EmptyState`, `StatusBadge`. Navegação: Início, Nova reunião, Importar arquivo, Sessão atual (só quando existe), Relatórios; Sistema: Provedores de IA, Configurações, Ajuda. | Prompt mestre de redesign. | Aceita; validado por E2E em 1280×720, 1366×768, 1440×900 e 1920×1080 (Linux/Electron) |
+| D-086 | Na Nova reunião do desktop, “Aba do navegador” deixa de ser opção (só funciona pela extensão); a orientação aparece como nota. Na web continua “Aba ou tela” pelo seletor do navegador. | Regra “não apresentar opções que não funcionem no ambiente”. | Aceita |
+
+| ID | Pendência | Próximo passo | Status |
+|---|---|---|---|
+| P-040 | Validar o redesign em Windows real, com escala de tela de 125% e 150% e monitores pequenos. | Abrir o instalador de teste e percorrer todas as páginas. | Pendente |
+| P-041 | Arrastar e soltar arquivo na importação (desktop precisa de canal IPC para o caminho do arquivo; web pode usar o `File`). | Avaliar junto com a validação de arquivos no main. | Pendente |
+| P-042 | Levar a nova estrutura de navegação para a página da extensão (hoje só recebeu os tokens e a marca). | — | Pendente |

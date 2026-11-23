@@ -11,7 +11,7 @@ const STEPS: Array<{ icon: IconName; title: string; text: string; action?: { lab
   {
     icon: "record",
     title: "Ao vivo ou por arquivo",
-    text: "Em “Nova sessão”, escolha o microfone, uma tela, janela ou aba — mesmo que a reunião esteja em outro programa ou monitor. Ou importe uma gravação de áudio ou vídeo em “Importar arquivo”."
+    text: "Em “Nova reunião”, escolha o microfone, uma tela, janela ou aba — mesmo que a reunião esteja em outro programa ou monitor. Ou importe uma gravação de áudio ou vídeo em “Importar arquivo”."
   },
   {
     icon: "providers",

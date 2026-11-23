@@ -36,7 +36,7 @@ pnpm build:extension      # gera apps/extension/dist/chrome e dist/firefox
 pnpm test:e2e             # E2E (no Linux sem tela: xvfb-run -a pnpm test:e2e)
 ```
 
-Uso: em **Provedores de IA**, cadastre um provedor com sua chave e escolha quem faz a transcrição e a análise. Depois use **Nova sessão** (tela, janela ou microfone) ou **Importar arquivo**. Detalhes em [Ambiente](docs/11-ambiente-e-configuracao.md).
+Uso: em **Provedores de IA**, cadastre um provedor com sua chave e escolha quem faz a transcrição e a análise. Depois use **Nova reunião** (tela, janela ou microfone) ou **Importar arquivo**. Detalhes em [Ambiente](docs/11-ambiente-e-configuracao.md).
 
 ## Autoria
 Idealizado e desenvolvido por **Rafajames** (https://github.com/Rafajames). © 2026 — todos os direitos reservados. Ver [AUTORIA.md](AUTORIA.md) e a [linha do tempo do desenvolvimento](docs/linha-do-tempo.md).
@@ -69,6 +69,7 @@ Idealizado e desenvolvido por **Rafajames** (https://github.com/Rafajames). © 2
 - [Ambiente](docs/11-ambiente-e-configuracao.md)
 - [Testes e aceite](docs/12-plano-de-testes-e-aceite.md)
 - [UX e telas](docs/13-experiencia-e-telas.md)
+- [Padrão visual (redesign)](docs/18-padrao-visual.md)
 - [Privacidade](docs/14-privacidade-legal-e-dados.md)
 - [Backlog](docs/15-backlog-inicial.md)
 - [Plano de execução](docs/16-plano-de-execucao.md)

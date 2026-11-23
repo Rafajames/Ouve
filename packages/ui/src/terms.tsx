@@ -11,7 +11,7 @@ export const TERMS_ITEMS: string[] = [
   "Vou usar o Ouve apenas para reuniões, audiências, entrevistas ou aulas em que eu tenha autorização para captar e transcrever o áudio.",
   "Sou responsável por informar os participantes sobre a gravação e a transcrição, conforme as regras do meu órgão ou instituição.",
   "Entendo que o Ouve usa somente o áudio — não grava a tela nem imagens — e que o áudio é enviado em blocos ao provedor de IA que eu configurar, sob os termos desse provedor.",
-  "Entendo que o Ouve não guarda histórico: áudio e transcrição são descartados ao encerrar a sessão, e só ficam salvos os relatórios que eu exportar.",
+  "Entendo que o Ouve não guarda histórico em disco: o áudio é descartado ao encerrar a sessão, os relatórios ficam só na memória até eu fechar o aplicativo (posso desligar isso nas configurações) e só ficam salvos os relatórios que eu exportar.",
   "Sei que o conteúdo gerado por IA pode conter erros e que devo revisá-lo antes de usar."
 ];
 

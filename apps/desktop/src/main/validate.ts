@@ -75,7 +75,9 @@ export function parseSettings(raw: unknown): AppSettings {
     exportMetrics: bool("exportMetrics"),
     exportMarkers: bool("exportMarkers"),
     exportNotes: bool("exportNotes"),
-    exportEvidence: bool("exportEvidence")
+    exportEvidence: bool("exportEvidence"),
+    keepReportsInSession: bool("keepReportsInSession"),
+    sidebarCollapsed: bool("sidebarCollapsed")
   };
   if (r.onboardingDone === true) settings.onboardingDone = true;
   if (

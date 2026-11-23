@@ -47,6 +47,10 @@ export interface AppSettings {
   exportEvidence: boolean;
   /** Apresentação inicial concluída ou dispensada. */
   onboardingDone?: boolean;
+  /** Mantém, só na memória até fechar o app, os relatórios de sessões descartadas (D-083). */
+  keepReportsInSession: boolean;
+  /** Menu lateral recolhido. */
+  sidebarCollapsed: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -64,7 +68,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   exportMetrics: true,
   exportMarkers: true,
   exportNotes: true,
-  exportEvidence: true
+  exportEvidence: true,
+  keepReportsInSession: true,
+  sidebarCollapsed: false
 };
 
 export interface ProviderSummary {

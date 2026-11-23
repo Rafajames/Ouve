@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { formatTimestamp } from "@ouve/shared";
 import { Icon } from "@ouve/ui";
-import { LevelMeter, Messages, Page, SpeakersPanel, TranscriptView } from "../components";
+import { EmptyState, LevelMeter, Messages, Page, SpeakersPanel, Tabs, TranscriptView } from "../components";
 import { errorMessage, useApp, useSession } from "../hooks";
 import { ContextSelect, HintBanner, MarkerBar, MarkerList, MetricsPanel, StagesPanel } from "../insights";
 
@@ -134,22 +134,19 @@ export function SessionScreen() {
   if (s.mode === "none") {
     return (
       <Page title="Sessão atual">
-        <div className="panel">
-          <div className="empty-state">
-            <span className="empty-icon">
-              <Icon name="wave" size={28} />
-            </span>
-            <strong>Nenhuma sessão em andamento</strong>
-            <span>Inicie uma captura ao vivo ou importe uma gravação para ver a transcrição aqui.</span>
-            <div className="row">
-              <button className="primary" onClick={() => navigate("new")}>
-                <Icon name="record" /> Nova sessão ao vivo
-              </button>
-              <button onClick={() => navigate("import")}>
-                <Icon name="upload" /> Importar arquivo
-              </button>
-            </div>
-          </div>
+        <div className="center-stage">
+          <EmptyState
+            icon="wave"
+            title="Nenhuma sessão em andamento"
+            text="Inicie uma reunião ou importe uma gravação para ver a transcrição aqui."
+          >
+            <button className="primary small" onClick={() => navigate("new")}>
+              <Icon name="record" size={14} /> Nova reunião
+            </button>
+            <button className="small" onClick={() => navigate("import")}>
+              <Icon name="upload" size={14} /> Importar arquivo
+            </button>
+          </EmptyState>
         </div>
       </Page>
     );
@@ -160,19 +157,26 @@ export function SessionScreen() {
   const pending = s.stats.queued + s.stats.running;
 
   const discard = async () => {
-    if (!window.confirm("Descartar a sessão apaga áudio, transcrição e relatório não exportados. Continuar?")) return;
+    const keeps = !!s.report && controller.keepsReports;
+    if (
+      !window.confirm(
+        keeps
+          ? "Descartar a sessão apaga o áudio e a transcrição. O relatório continua em Relatórios até você fechar o Ouve. Continuar?"
+          : "Descartar a sessão apaga áudio, transcrição e relatório não exportados. Continuar?"
+      )
+    )
+      return;
     await controller.discard();
     navigate("home");
   };
 
   return (
     <Page
-      fit
       title={s.title || "Sessão"}
       subtitle={`${live ? "Ao vivo" : "Arquivo importado"} · ${s.sourceLabel}`}
       actions={
-        <button className="danger" onClick={() => void discard()}>
-          <Icon name="trash" /> Descartar sessão
+        <button className="small danger" onClick={() => void discard()}>
+          <Icon name="trash" size={14} /> Descartar sessão
         </button>
       }
     >
@@ -269,39 +273,19 @@ export function SessionScreen() {
           <HintBanner />
           <MarkerBar compact />
 
-          <div className="tabs" role="tablist">
-            <button
-              role="tab"
-              aria-selected={tab === "transcript"}
-              className={tab === "transcript" ? "tab active" : "tab"}
-              onClick={() => setTab("transcript")}
-            >
-              <Icon name="transcript" /> Transcrição
-            </button>
-            <button
-              role="tab"
-              aria-selected={tab === "speakers"}
-              className={tab === "speakers" ? "tab active" : "tab"}
-              onClick={() => setTab("speakers")}
-            >
-              <Icon name="users" /> Participantes ({controller.store.speakerList().length})
-            </button>
-            <button
-              role="tab"
-              aria-selected={tab === "markers"}
-              className={tab === "markers" ? "tab active" : "tab"}
-              onClick={() => setTab("markers")}
-            >
-              <Icon name="flag" /> Marcadores ({controller.markers.list().length})
-            </button>
-            <button
-              role="tab"
-              aria-selected={tab === "metrics"}
-              className={tab === "metrics" ? "tab active" : "tab"}
-              onClick={() => setTab("metrics")}
-            >
-              <Icon name="chart" /> Métricas
-            </button>
+          <div className="tabs-row">
+            <Tabs
+              label="Conteúdo da sessão"
+              idPrefix="ses"
+              value={tab}
+              onChange={setTab}
+              items={[
+                { id: "transcript", label: "Transcrição", icon: "transcript" },
+                { id: "speakers", label: "Participantes", icon: "users", count: controller.store.speakerList().length },
+                { id: "markers", label: "Marcadores", icon: "flag", count: controller.markers.list().length },
+                { id: "metrics", label: "Métricas", icon: "chart" }
+              ]}
+            />
             {tab === "transcript" && controller.store.segments().length > 0 && (
               <span className="muted small-text">Clique duas vezes em um trecho para corrigir.</span>
             )}

@@ -5,6 +5,10 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from "@playwright/test";
 import { locateFfmpeg } from "../src/main/media-service";
+
+/** Item do menu lateral (evita colidir com links de mesmo nome dentro da página). */
+const nav = (p: Page, name: string) =>
+  p.getByRole("navigation", { name: "Navegação principal" }).getByRole("button", { name, exact: true });
 import { startMockProvider, type MockProvider } from "./mock-provider";
 
 let app: ElectronApplication;
@@ -45,12 +49,12 @@ test("pede o termo de uso só no primeiro uso", async () => {
   await expect(page.getByText("Idealizado e desenvolvido por Rafajames")).toBeVisible();
   await page.getByRole("button", { name: "Aceitar e começar" }).click();
   await expect(page.getByRole("heading", { name: "Bem-vindo ao Ouve" })).toHaveCount(0);
-  await expect.poll(() => readFileSync(join(work, "userdata", "settings.json"), "utf8")).toContain('"termsAcceptedVersion": 1');
+  await expect.poll(() => readFileSync(join(work, "userdata", "settings.json"), "utf8")).toContain('"termsAcceptedVersion": 2');
 });
 
 test("tela inicial explica o produto sem prometer captura de vídeo", async () => {
-  await expect(page.getByRole("heading", { name: "Transforme conversas em informação" })).toBeVisible();
-  await expect(page.getByText("O Ouve usa somente o áudio — nunca grava a tela.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Nova reunião/ }).first()).toBeVisible();
+  await expect(page.getByText(/somente o áudio — nunca grava a tela/)).toBeVisible();
   await expect(page.getByRole("heading", { name: /Cole sua chave de IA/ })).toBeVisible();
 });
 
@@ -64,15 +68,15 @@ test("alterna o tema e mantém a preferência", async () => {
 });
 
 test("configura provedor compatível local e testa a conexão", async () => {
-  await page.getByRole("button", { name: "Provedores de IA", exact: true }).click();
+  await nav(page, "Provedores de IA").click();
   await page.getByRole("button", { name: "Adicionar provedor" }).click();
-  await page.getByLabel("Tipo", { exact: true }).selectOption("openai-compatible");
+  await page.getByLabel("Provedor", { exact: true }).selectOption("openai-compatible");
   await page.getByLabel("Nome", { exact: true }).fill("Servidor de teste");
   await page.getByLabel(/Endpoint/).fill(mock.url);
   await page.getByLabel("Modelo para análise/relatório").fill("mock-chat");
   await page.getByLabel("Modelo para transcrição").fill("mock-transcribe");
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
-  await expect(page.locator(".provider strong", { hasText: "Servidor de teste" })).toBeVisible();
+  await expect(page.locator(".provider-name", { hasText: "Servidor de teste" })).toBeVisible();
   await page.getByLabel("Provedor de transcrição").selectOption({ label: "Servidor de teste" });
   await page.getByLabel("Provedor de análise").selectOption({ label: "Servidor de teste" });
   await page.getByRole("button", { name: "Testar conexão" }).click();
@@ -81,7 +85,7 @@ test("configura provedor compatível local e testa a conexão", async () => {
 });
 
 test("nova sessão não pede termo de novo e lista fontes sem miniaturas", async () => {
-  await page.getByRole("button", { name: "Nova sessão", exact: true }).click();
+  await nav(page, "Nova reunião").click();
   const start = page.getByRole("button", { name: "Iniciar captura de áudio" });
   await expect(page.getByText(/descarta a imagem e processa somente o som/)).toBeVisible();
   await expect(page.locator("img")).toHaveCount(0);
@@ -91,7 +95,7 @@ test("nova sessão não pede termo de novo e lista fontes sem miniaturas", async
 });
 
 test("importa áudio, transcreve, analisa com validação e exporta PDF/DOCX", async () => {
-  await page.getByRole("button", { name: "Importar arquivo", exact: true }).click();
+  await nav(page, "Importar arquivo").click();
   await page.getByRole("button", { name: "Escolher arquivo" }).click();
   await expect(page.locator(".status-pill")).toHaveText(/Concluído/, { timeout: 60_000 });
   await expect(page.getByText(/Maria vai enviar o parecer/).first()).toBeVisible();
@@ -117,12 +121,13 @@ test("importa áudio, transcreve, analisa com validação e exporta PDF/DOCX", a
   if (process.env.OUVE_E2E_SCREENSHOTS) await page.screenshot({ path: join(process.env.OUVE_E2E_SCREENSHOTS, "sessao.png") });
 
   await page.getByRole("button", { name: "Analisar e gerar relatório" }).click();
+  await expect(page.getByText(/aviso\(s\) do validador/)).toBeVisible();
+  await page.getByRole("tab", { name: /Tarefas/ }).click();
   await expect(page.locator("input.item-title").first()).toBeVisible();
   await expect(page.locator('input[value="Enviar parecer"]')).toBeVisible();
   await expect(page.locator('input[aria-label="Responsável"][value="Maria"]')).toBeVisible();
   // "Pedro" não aparece na transcrição: o validador remove o responsável inventado.
   await expect(page.locator('input[aria-label="Responsável"][value="Pedro"]')).toHaveCount(0);
-  await expect(page.getByText(/aviso\(s\) do validador/)).toBeVisible();
   if (process.env.OUVE_E2E_SCREENSHOTS)
     await page.screenshot({ path: join(process.env.OUVE_E2E_SCREENSHOTS, "relatorio.png"), fullPage: true });
 
@@ -134,12 +139,31 @@ test("importa áudio, transcreve, analisa com validação e exporta PDF/DOCX", a
 });
 
 test("descarta a sessão e não deixa conteúdo salvo no perfil", async () => {
-  await page.getByRole("button", { name: "Sessão atual", exact: true }).click();
+  await nav(page, "Sessão atual").click();
   page.once("dialog", (d) => void d.accept());
   await page.getByRole("button", { name: "Descartar sessão" }).click();
-  await expect(page.getByRole("heading", { name: "Transforme conversas em informação" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Relatórios recentes" })).toBeVisible();
+  await expect(nav(page, "Sessão atual")).toHaveCount(0);
   const userData = join(work, "userdata");
   const stored = existsSync(join(userData, "providers.json")) ? readFileSync(join(userData, "providers.json"), "utf8") : "";
   expect(stored).not.toContain("Maria");
-  expect(existsSync(join(userData, "settings.json"))).toBe(true);
+  expect(readFileSync(join(userData, "settings.json"), "utf8")).not.toContain("Maria");
+});
+
+test("relatórios desta execução: lista, pesquisa, abre e exclui (só memória)", async () => {
+  await nav(page, "Relatórios").click();
+  const row = page.locator("tbody tr", { hasText: "audiencia" });
+  await expect(row).toBeVisible();
+  await expect(row.getByText(/Exportado \(PDF, DOCX\)/)).toBeVisible();
+  await page.getByLabel("Pesquisar relatórios").fill("nada-disso");
+  await expect(page.getByText("Nada encontrado")).toBeVisible();
+  await page.getByLabel("Pesquisar relatórios").fill("audi");
+  await row.getByRole("button", { name: "Abrir audiencia" }).click();
+  await expect(page.getByText(/Guardado nesta execução/)).toBeVisible();
+  await page.getByRole("tab", { name: /Tarefas/ }).click();
+  await expect(page.locator('input[value="Enviar parecer"]')).toBeVisible();
+  await page.getByRole("button", { name: "Relatórios" }).first().click();
+  page.once("dialog", (d) => void d.accept());
+  await page.locator("tbody tr", { hasText: "audiencia" }).getByRole("button", { name: "Excluir audiencia" }).click();
+  await expect(page.getByText("Nenhum relatório nesta execução")).toBeVisible();
 });

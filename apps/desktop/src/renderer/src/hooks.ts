@@ -3,12 +3,15 @@ import type { AppSettings, ProviderSummary, SecretProtection } from "../../share
 import { bridge, hasBridge, unwrap } from "./bridge";
 import type { SessionController, SessionSnapshot } from "./session-controller";
 
-export type Screen = "home" | "new" | "session" | "report" | "import" | "providers" | "settings" | "help";
+export type Screen = "home" | "new" | "session" | "reports" | "report" | "import" | "providers" | "settings" | "help";
 
 export interface AppContextValue {
   controller: SessionController;
   navigate: (screen: Screen) => void;
   notify: (text: string, kind?: "info" | "error") => void;
+  /** Relatório aberto na tela de leitura: id da biblioteca ou null para o da sessão atual. */
+  reportId: string | null;
+  openReport: (id: string | null) => void;
 }
 
 export const AppContext = createContext<AppContextValue | null>(null);

@@ -1,87 +1,170 @@
-import { Page } from "../components";
-import { QuickSetup } from "../QuickSetup";
 import { Icon } from "@ouve/ui";
+import { EmptyState, Page, Panel, StatusBadge } from "../components";
+import { QuickSetup } from "../QuickSetup";
+import { isWeb } from "../bridge";
 import { useApp, useSession, type AppData } from "../hooks";
+import { contextLabel, formatLength, formatWhen, reportRows } from "../report-rows";
+
+function greeting(hour = new Date().getHours()): string {
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
+const PROTECTION: Record<string, string> = {
+  "os-encrypted": "Cifradas pelo sistema operacional",
+  "memory-only": "Só na memória (sem criptografia do sistema)",
+  "session-only": "Só nesta aba (apagadas ao fechar)",
+  "browser-profile": "Lembradas neste navegador (sem criptografia do sistema)"
+};
 
 export function HomeScreen({ data }: { data: AppData }) {
-  const { navigate } = useApp();
+  const { navigate, controller, openReport } = useApp();
   const session = useSession();
-  const providerName = (id?: string) => data.providers.find((p) => p.config.id === id)?.config.displayName;
-  const transcription = providerName(data.settings?.transcriptionProviderId);
-  const analysis = providerName(data.settings?.analysisProviderId);
+  const provider = (id?: string) => data.providers.find((p) => p.config.id === id)?.config;
+  const transcription = provider(data.settings?.transcriptionProviderId);
+  const analysis = provider(data.settings?.analysisProviderId);
   const ready = !!transcription;
+  const recent = reportRows(controller, session).slice(0, 6);
+  const live = session.mode === "live" && (session.status === "capturing" || session.status === "paused");
 
   return (
-    <Page
-      title="Transforme conversas em informação"
-      subtitle="Transcreva e organize reuniões, audiências, entrevistas e aulas. O Ouve usa somente o áudio — nunca grava a tela."
-    >
-      {!ready && <QuickSetup onDone={data.reload} />}
+    <Page title={`${greeting()}!`} subtitle="O Ouve transcreve e organiza conversas usando somente o áudio — nunca grava a tela.">
+      <div className="home">
+        <div className="home-actions">
+          <button className="action-tile primary-tile" onClick={() => navigate("new")}>
+            <span className="tile-icon">
+              <Icon name="record" size={20} />
+            </span>
+            <span className="tile-text">
+              <strong>Nova reunião</strong>
+              <span>Grave e transcreva ao vivo: microfone, tela, janela ou aba.</span>
+            </span>
+            <Icon name="arrowRight" size={16} className="tile-arrow" />
+          </button>
+          <button className="action-tile" onClick={() => navigate("import")}>
+            <span className="tile-icon">
+              <Icon name="upload" size={20} />
+            </span>
+            <span className="tile-text">
+              <strong>Importar arquivo</strong>
+              <span>Transcreva uma gravação de áudio ou vídeo já existente.</span>
+            </span>
+            <Icon name="arrowRight" size={16} className="tile-arrow" />
+          </button>
+        </div>
 
-      <div className="cards">
-        <button className="card action" onClick={() => navigate("new")}>
-          <span className="card-icon">
-            <Icon name="record" size={22} />
-          </span>
-          <strong>Nova sessão ao vivo</strong>
-          <span className="muted">Escolha uma tela ou janela como fonte de áudio, com microfone opcional.</span>
-        </button>
-        <button className="card action" onClick={() => navigate("import")}>
-          <span className="card-icon">
-            <Icon name="upload" size={22} />
-          </span>
-          <strong>Importar gravação</strong>
-          <span className="muted">MP3, WAV, M4A, AAC, OGG, FLAC, MP4, MOV, MKV ou WebM (somente o áudio é usado).</span>
-        </button>
-      </div>
+        <div className="home-grid">
+          <Panel
+            title="Relatórios recentes"
+            icon="library"
+            className="recent-panel"
+            actions={
+              recent.length > 0 && (
+                <button className="small ghost" onClick={() => navigate("reports")}>
+                  Ver todos <Icon name="arrowRight" size={13} />
+                </button>
+              )
+            }
+            flush
+          >
+            {recent.length === 0 ? (
+              <EmptyState
+                icon="report"
+                title="Nenhum relatório ainda"
+                text="Faça uma reunião ou importe um arquivo. Depois da transcrição, clique em “Analisar e gerar relatório”."
+              />
+            ) : (
+              <ul className="recent-list">
+                {recent.map((r) => (
+                  <li key={r.id ?? "atual"}>
+                    <button className="recent-row" onClick={() => openReport(r.id)}>
+                      <Icon name={r.origin === "live" ? "record" : "upload"} size={15} className="muted-icon" />
+                      <span className="recent-title">{r.title}</span>
+                      <span className="recent-meta">
+                        {contextLabel(r.context)} · {formatLength(r.durationMs)} · {formatWhen(r.createdAt)}
+                      </span>
+                      {r.id === null ? (
+                        <StatusBadge tone="accent">Sessão atual</StatusBadge>
+                      ) : r.exported.length ? (
+                        <StatusBadge tone="ok" icon="check">
+                          Exportado
+                        </StatusBadge>
+                      ) : (
+                        <StatusBadge tone="neutral">Não exportado</StatusBadge>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
 
-      {session.mode !== "none" && (
-        <div className="panel">
-          <h2>Sessão atual</h2>
-          <p>
-            {session.title} — {session.stats.done} blocos transcritos{session.report ? " · relatório gerado" : ""}
-          </p>
-          <div className="row">
-            <button onClick={() => navigate("session")}>Abrir sessão</button>
-            {session.report && <button onClick={() => navigate("report")}>Abrir relatório</button>}
+          <div className="home-side">
+            {session.mode !== "none" && (
+              <Panel title="Sessão atual" icon="transcript">
+                <p className="ellipsis">
+                  <strong>{session.title || "Sessão"}</strong>
+                </p>
+                <p className="muted small-text">
+                  {live
+                    ? session.status === "capturing"
+                      ? "Gravando agora"
+                      : "Gravação pausada"
+                    : session.status === "processing"
+                      ? "Processando o arquivo"
+                      : `${session.stats.done} blocos transcritos`}
+                  {session.report ? " · relatório gerado" : ""}
+                </p>
+                <button className="small" onClick={() => navigate("session")}>
+                  Abrir sessão <Icon name="arrowRight" size={13} />
+                </button>
+              </Panel>
+            )}
+            {ready ? (
+              <Panel
+                title="Inteligência artificial"
+                icon="providers"
+                actions={
+                  <button className="small ghost" onClick={() => navigate("providers")}>
+                    Alterar
+                  </button>
+                }
+              >
+                <dl className="kv">
+                  <dt>Transcrição</dt>
+                  <dd>
+                    <StatusBadge tone="ok" icon="check">
+                      {transcription.displayName}
+                    </StatusBadge>
+                  </dd>
+                  <dt>Relatório</dt>
+                  <dd>
+                    {analysis ? (
+                      <StatusBadge tone="ok" icon="check">
+                        {analysis.displayName}
+                      </StatusBadge>
+                    ) : (
+                      <StatusBadge tone="warn" icon="alert">
+                        Não configurado
+                      </StatusBadge>
+                    )}
+                  </dd>
+                  <dt>Chaves</dt>
+                  <dd className="small-text">{PROTECTION[data.protection ?? ""] ?? "—"}</dd>
+                </dl>
+              </Panel>
+            ) : (
+              <QuickSetup onDone={data.reload} compact />
+            )}
+            <div className="privacy-note">
+              <Icon name="shield" size={15} />
+              <span>
+                Sem conta e sem servidor do Ouve. O áudio vai só para a IA que você escolheu e nunca é guardado.{" "}
+                {isWeb() ? "Na versão web, a captura usa o seletor do navegador." : ""}
+              </span>
+            </div>
           </div>
-        </div>
-      )}
-
-      <div className="grid-2">
-        <div className="panel">
-          <h2>
-            <Icon name="providers" /> Provedores
-          </h2>
-          <dl className="kv">
-            <dt>Transcrição</dt>
-            <dd>{transcription ?? "não configurado"}</dd>
-            <dt>Análise</dt>
-            <dd>{analysis ?? "não configurado"}</dd>
-            <dt>Proteção das chaves</dt>
-            <dd>
-              {data.protection === "os-encrypted"
-                ? "criptografia do sistema operacional"
-                : data.protection === "memory-only"
-                  ? "somente memória (sem criptografia do SO)"
-                  : data.protection === "session-only"
-                    ? "só nesta aba (apagadas ao fechar)"
-                    : data.protection === "browser-profile"
-                      ? "lembradas neste navegador (sem criptografia do SO)"
-                      : "—"}
-            </dd>
-          </dl>
-        </div>
-        <div className="panel">
-          <h2>
-            <Icon name="shield" /> Privacidade
-          </h2>
-          <ul className="plain">
-            <li>Sem conta, sem servidor do Ouve e sem histórico permanente.</li>
-            <li>O áudio é enviado somente ao provedor de IA que você configurou.</li>
-            <li>Ao descartar a sessão ou fechar o app, áudio e transcrição são apagados da memória e dos temporários.</li>
-            <li>Você decide se e onde salvar o relatório.</li>
-          </ul>
         </div>
       </div>
     </Page>

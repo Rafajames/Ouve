@@ -31,15 +31,18 @@ export function QuickSetup({ onDone, compact = false }: { onDone: () => void | P
 
   return (
     <div className="panel quick-setup">
-      <h2>
-        <Icon name="sparkles" /> {compact ? "Configuração rápida" : "Cole sua chave de IA e pronto"}
-      </h2>
-      <p className="muted">
-        O Ouve reconhece a IA pela chave, testa a conexão e escolhe os modelos sozinho. Funciona com Google Gemini (tem plano gratuito),
-        OpenAI, Claude e Grok.
-      </p>
+      <header className="panel-head">
+        <h2>
+          <Icon name="key" size={15} /> Cole sua chave de IA e pronto
+        </h2>
+      </header>
+      {!compact && (
+        <p className="muted small-text">
+          O Ouve reconhece a IA pela chave (Google Gemini, OpenAI, Claude ou Grok), testa a conexão e escolhe os modelos sozinho.
+        </p>
+      )}
       <form
-        className="row"
+        className="row nowrap"
         onSubmit={(e) => {
           e.preventDefault();
           if (key.trim() && !busy) void connect();
@@ -49,28 +52,26 @@ export function QuickSetup({ onDone, compact = false }: { onDone: () => void | P
           type="password"
           autoComplete="off"
           aria-label="Chave de API"
-          placeholder="Cole aqui a chave (ex.: AQ.… ou AIza… do Gemini)"
+          placeholder="Cole aqui a chave (ex.: AIza… do Gemini)"
           value={key}
           onChange={(e) => setKey(e.target.value)}
-          style={{ flex: 1 }}
+          className="grow"
         />
         <button className="primary" type="submit" disabled={!key.trim() || busy}>
-          <Icon name="check" /> {busy ? "Conectando…" : "Conectar"}
+          {busy ? "Conectando…" : "Conectar"}
         </button>
       </form>
-      {!compact && (
-        <p className="muted small-text">
-          Não tem chave? Gere uma grátis no{" "}
-          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">
-            Google AI Studio
-          </a>
-          .{" "}
-          {isWeb()
-            ? "A chave fica só nesta aba (apagada ao fechar), a menos que você escolha lembrar neste navegador,"
-            : "A chave fica cifrada neste computador"}{" "}
-          e só é enviada para a própria IA.
-        </p>
-      )}
+      <p className="muted small-text">
+        Não tem chave? Gere uma grátis no{" "}
+        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">
+          Google AI Studio <Icon name="external" size={11} />
+        </a>
+        .{" "}
+        {isWeb()
+          ? "A chave fica só nesta aba (apagada ao fechar), a menos que você escolha lembrar neste navegador,"
+          : "A chave fica cifrada neste computador"}{" "}
+        e só é enviada para a própria IA.
+      </p>
       {error && (
         <p className="warn-text" role="alert">
           <Icon name="alert" size={14} /> {error}
@@ -82,7 +83,7 @@ export function QuickSetup({ onDone, compact = false }: { onDone: () => void | P
           <div>
             <strong>{result.message}</strong>
             {result.notes.map((n) => (
-              <p key={n} className="muted small-text" style={{ margin: "4px 0 0" }}>
+              <p key={n} className="muted small-text">
                 {n}
               </p>
             ))}

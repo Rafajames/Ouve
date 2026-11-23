@@ -1,5 +1,7 @@
 # 13 — Experiência do usuário e telas
 
+> **23/11/2026:** a interface implementada segue o [padrão visual do docs/18](18-padrao-visual.md). Este documento guarda a visão original de telas.
+
 ## 1. Navegação principal
 1. Início.
 2. Nova análise.

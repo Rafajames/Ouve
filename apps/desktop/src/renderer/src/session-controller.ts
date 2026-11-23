@@ -68,6 +68,20 @@ export interface SessionSnapshot {
   context: ReportContext;
   /** Aviso discreto atual (regras locais). */
   hint?: LiveHint | undefined;
+  /** Formatos já exportados do relatório atual. */
+  exported: ExportFormat[];
+}
+
+/**
+ * Relatório de uma sessão já descartada, mantido só na memória até fechar o app
+ * (D-083). Áudio nunca é mantido; nada é gravado em disco.
+ */
+export interface LibraryEntry {
+  id: string;
+  report: ReportDocument;
+  origin: "live" | "import";
+  sourceLabel: string;
+  exported: ExportFormat[];
 }
 
 const EMPTY_STATS: PipelineStats = { queued: 0, running: 0, done: 0, skipped: 0, failed: 0, transcribedUntilMs: 0 };
@@ -88,7 +102,8 @@ function newSnapshot(): SessionSnapshot {
     stats: EMPTY_STATS,
     messages: [],
     analysisStatus: "idle",
-    context: "general"
+    context: "general",
+    exported: []
   };
 }
 
@@ -99,6 +114,8 @@ export interface LiveStartOptions {
   sourceLabel: string;
   includeMicrophone: boolean;
   microphoneDeviceId?: string;
+  /** Tipo de sessão escolhido antes de iniciar (padrão: configurações). */
+  context?: ReportContext;
 }
 
 /**
@@ -118,6 +135,7 @@ export class SessionController {
   private importAbort?: AbortController;
   private settings?: AppSettings;
   private timer?: ReturnType<typeof setInterval>;
+  private archive: LibraryEntry[] = [];
 
   constructor() {
     this.store.subscribe(() => this.bump());
@@ -159,6 +177,16 @@ export class SessionController {
 
   get hasContent(): boolean {
     return this.store.segments().length > 0 || this.snap.mode !== "none";
+  }
+
+  /** Relatórios de sessões descartadas ficam na lista desta execução? */
+  get keepsReports(): boolean {
+    return this.settings?.keepReportsInSession !== false;
+  }
+
+  /** Mantém as preferências atuais (ex.: guardar relatórios) sincronizadas com a interface. */
+  syncSettings(settings: AppSettings): void {
+    this.settings = settings;
   }
 
   private async loadSettings(): Promise<AppSettings> {
@@ -205,7 +233,7 @@ export class SessionController {
       title: options.title || "Sessão ao vivo",
       sourceLabel: options.sourceLabel,
       microphone: options.includeMicrophone,
-      context: settings.defaultContext
+      context: options.context ?? settings.defaultContext
     });
 
     const devices = navigator.mediaDevices as unknown as MediaDevicesLike;
@@ -302,7 +330,7 @@ export class SessionController {
 
   // ---------- Importação ----------
 
-  async startImport(): Promise<boolean> {
+  async startImport(context?: ReportContext): Promise<boolean> {
     const settings = await this.loadSettings();
     const providerId = this.requireTranscriptionProvider(settings);
     const media = await unwrap(bridge().media.open());
@@ -315,7 +343,7 @@ export class SessionController {
       status: "processing",
       title: media.name.replace(/\.[^.]+$/, ""),
       sourceLabel: media.name,
-      context: settings.defaultContext,
+      context: context ?? settings.defaultContext,
       importInfo: { ...media, phase: "extracting", processedMs: 0, segments: 0 }
     });
     this.importAbort = new AbortController();
@@ -507,9 +535,11 @@ export class SessionController {
     };
   }
 
-  async exportReport(format: ExportFormat, sections?: SectionKey[]): Promise<string | null> {
+  async exportReport(format: ExportFormat, sections?: SectionKey[], entryId?: string): Promise<string | null> {
     if (!this.settings) await this.loadSettings();
-    const report = this.currentReport();
+    const entry = entryId ? this.archive.find((e) => e.id === entryId) : undefined;
+    if (entryId && !entry) throw new Error("Este relatório não está mais disponível.");
+    const report = entry ? entry.report : this.currentReport();
     if (!report) throw new Error("Gere ou crie um relatório antes de exportar.");
     const options = this.exportOptions(sections);
     const bytes = await this.stages.measure(
@@ -530,7 +560,41 @@ export class SessionController {
       },
       format.toUpperCase()
     );
-    return unwrap(bridge().files.save(exportFileName(report.title, format), bytes));
+    const path = await unwrap(bridge().files.save(exportFileName(report.title, format), bytes));
+    if (path) {
+      if (entry) {
+        if (!entry.exported.includes(format)) entry.exported = [...entry.exported, format];
+        this.archive = [...this.archive];
+        this.bump();
+      } else if (!this.snap.exported.includes(format)) this.set({ exported: [...this.snap.exported, format] });
+    }
+    return path;
+  }
+
+  // ---------- Relatórios desta execução (memória) ----------
+
+  /** Relatórios de sessões descartadas, mais recentes primeiro. */
+  library(): LibraryEntry[] {
+    return this.archive;
+  }
+
+  libraryEntry(id: string): LibraryEntry | undefined {
+    return this.archive.find((e) => e.id === id);
+  }
+
+  updateLibraryEntry(id: string, update: (report: ReportDocument) => ReportDocument): void {
+    this.archive = this.archive.map((e) => (e.id === id ? { ...e, report: update(e.report) } : e));
+    this.bump();
+  }
+
+  removeFromLibrary(id: string): void {
+    this.archive = this.archive.filter((e) => e.id !== id);
+    this.bump();
+  }
+
+  clearLibrary(): void {
+    this.archive = [];
+    this.bump();
   }
 
   // ---------- Contexto, marcadores e avisos ----------
@@ -568,7 +632,22 @@ export class SessionController {
 
   // ---------- Descarte ----------
 
-  async discard(): Promise<void> {
+  /** Descarta a sessão. Por padrão o relatório (se houver) vai para a lista desta execução (D-083). */
+  async discard(options: { keepReport?: boolean } = {}): Promise<void> {
+    const report = this.currentReport();
+    const keep = options.keepReport ?? this.settings?.keepReportsInSession !== false;
+    if (report && this.snap.mode !== "none" && keep) {
+      this.archive = [
+        {
+          id: createId("rel"),
+          report: { ...report, title: this.snap.title || report.title, durationMs: report.durationMs ?? this.sessionDurationMs() },
+          origin: (this.snap.mode === "live" ? "live" : "import") as LibraryEntry["origin"],
+          sourceLabel: this.snap.sourceLabel,
+          exported: this.snap.exported
+        },
+        ...this.archive
+      ].slice(0, 500);
+    }
     clearInterval(this.timer);
     this.analysisAbort?.abort();
     this.importAbort?.abort();

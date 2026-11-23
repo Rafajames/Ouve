@@ -14,22 +14,31 @@ import {
 } from "@ouve/capture";
 import type { DesktopSource } from "../../../shared/ipc";
 import { bridge, capturePlatformEnv, isWeb, unwrap } from "../bridge";
-import { LevelMeter, Page } from "../components";
+import { LevelMeter, Page, Panel, StatusBadge } from "../components";
+import { LANGUAGES } from "../languages";
+import { REPORT_CONTEXTS, type ReportContext } from "@ouve/core";
 import { errorMessage, useApp, useSession, type AppData } from "../hooks";
 
-type SourceKind = "screen" | "window" | "tab" | "microphone" | "browser";
+type SourceKind = "screen" | "window" | "microphone" | "browser";
+
+interface KindDef {
+  kind: SourceKind;
+  label: string;
+  hint: string;
+  icon: IconName;
+}
 
 /** Versão web: o seletor de aba/janela/tela é o do próprio navegador, como no Google Meet. */
-const WEB_KINDS: Array<{ kind: SourceKind; label: string; hint: string; icon: IconName }> = [
-  { kind: "browser", label: "Aba ou tela", hint: "Seletor do navegador", icon: "tab" },
-  { kind: "microphone", label: "Somente microfone", hint: "Sem fonte compartilhada", icon: "mic" }
+const WEB_KINDS: KindDef[] = [
+  { kind: "browser", label: "Aba ou tela", hint: "Escolha no seletor do navegador a aba ou a tela com o som da reunião.", icon: "tab" },
+  { kind: "microphone", label: "Somente microfone", hint: "Capta a sua voz e quem estiver perto do computador.", icon: "mic" }
 ];
 
-const KINDS: Array<{ kind: SourceKind; label: string; hint: string; icon: IconName }> = [
-  { kind: "screen", label: "Tela inteira", hint: "Escolha um monitor", icon: "monitor" },
-  { kind: "window", label: "Janela", hint: "Escolha um aplicativo", icon: "window" },
-  { kind: "tab", label: "Aba do navegador", hint: "Pela extensão do Ouve", icon: "tab" },
-  { kind: "microphone", label: "Somente microfone", hint: "Sem fonte compartilhada", icon: "mic" }
+/** Desktop: aba do navegador só pela extensão, por isso não aparece como opção aqui. */
+const KINDS: KindDef[] = [
+  { kind: "screen", label: "Tela inteira", hint: "Capta o som reproduzido pelo computador enquanto a reunião acontece.", icon: "monitor" },
+  { kind: "window", label: "Janela", hint: "Escolha o programa da reunião (Teams, Meet, Zoom…).", icon: "window" },
+  { kind: "microphone", label: "Somente microfone", hint: "Capta a sua voz e quem estiver perto do computador.", icon: "mic" }
 ];
 
 const makeStream = (tracks: MediaStreamTrackLike[]) =>
@@ -94,6 +103,7 @@ export function NewSessionScreen({ data }: { data: AppData }) {
   const [micId, setMicId] = useState<string>("");
   const [title, setTitle] = useState("");
   const [starting, setStarting] = useState(false);
+  const [context, setContext] = useState<ReportContext>(data.settings?.defaultContext ?? "general");
   const test = useAudioTest();
 
   const platform = detectPlatform(capturePlatformEnv());
@@ -119,7 +129,7 @@ export function NewSessionScreen({ data }: { data: AppData }) {
 
   const visible = sources.filter((s) => s.kind === kind);
   const needsSource = kind === "screen" || kind === "window";
-  const canStart = !!providerName && !starting && !busy && (needsSource ? !!selected : kind === "microphone" || kind === "browser");
+  const canStart = !!providerName && !starting && !busy && (needsSource ? !!selected : true);
 
   const devices = navigator.mediaDevices as unknown as MediaDevicesLike;
   const testSource = () => {
@@ -147,6 +157,7 @@ export function NewSessionScreen({ data }: { data: AppData }) {
         ...(needsSource && selected ? { sourceId: selected.id } : kind === "browser" ? { sourceId: "browser" } : {}),
         sourceLabel: needsSource && selected ? selected.name : kind === "browser" ? "Fonte do navegador" : "Microfone",
         includeMicrophone: kind === "microphone" || mic,
+        context,
         ...(micId ? { microphoneDeviceId: micId } : {})
       });
       navigate("session");
@@ -157,102 +168,93 @@ export function NewSessionScreen({ data }: { data: AppData }) {
     }
   };
 
+  const settings = data.settings;
+  const kinds = isWeb() ? WEB_KINDS : KINDS;
+  const languageLabel = LANGUAGES.find((l) => l.value === settings?.language)?.label ?? settings?.language ?? "—";
+
   return (
-    <Page
-      title="Nova sessão"
-      subtitle="Selecione de onde vem o áudio. A tela é usada apenas para escolher a fonte: o Ouve descarta a imagem e processa somente o som."
-    >
+    <Page title="Nova reunião" subtitle="Escolha de onde vem o som, confira o resumo e comece.">
       {busy && (
         <div className="callout">
-          Há uma captura em andamento. <button onClick={() => navigate("session")}>Abrir sessão</button>
+          <Icon name="info" size={15} />
+          <span>Há uma gravação em andamento.</span>
+          <button className="small" onClick={() => navigate("session")}>
+            Abrir sessão
+          </button>
         </div>
       )}
-      <div className="panel">
-        <label className="field">
-          <span>Título da sessão</span>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ex.: Audiência de conciliação — processo 123"
-            maxLength={200}
-          />
-        </label>
-      </div>
-
-      <div className="panel">
-        <h2>Fonte de áudio</h2>
-        <div className="choices" role="radiogroup" aria-label="Tipo de fonte">
-          {(isWeb() ? WEB_KINDS : KINDS).map((k) => (
-            <button
-              key={k.kind}
-              role="radio"
-              aria-checked={kind === k.kind}
-              className={kind === k.kind ? "choice selected" : "choice"}
-              onClick={() => {
-                setKind(k.kind);
-                setSelected(null);
-              }}
-            >
-              <span className="choice-icon">
-                <Icon name={k.icon} size={20} />
-              </span>
-              <strong>{k.label}</strong>
-              <small>{k.hint}</small>
-            </button>
-          ))}
-        </div>
-
-        {needsSource && (
-          <>
-            <div className="row between">
-              <p className="muted">{caps["source-audio"].note}</p>
-              <button className="small" onClick={() => void refresh()}>
-                <Icon name="refresh" size={14} /> Atualizar lista
+      <div className="split">
+        <Panel title="De onde vem o áudio?" icon="volume" className="source-panel">
+          <div className="choices" role="radiogroup" aria-label="Tipo de fonte">
+            {kinds.map((k) => (
+              <button
+                key={k.kind}
+                role="radio"
+                aria-checked={kind === k.kind}
+                className={kind === k.kind ? "choice selected" : "choice"}
+                onClick={() => {
+                  setKind(k.kind);
+                  setSelected(null);
+                }}
+              >
+                <span className="choice-icon">
+                  <Icon name={k.icon} size={18} />
+                </span>
+                <span className="choice-text">
+                  <strong>{k.label}</strong>
+                  <small>{k.hint}</small>
+                </span>
               </button>
-            </div>
-            {visible.length === 0 ? (
-              <p className="empty">Nenhuma {kind === "screen" ? "tela" : "janela"} encontrada.</p>
-            ) : (
-              <ul className="source-list" role="listbox" aria-label="Fontes disponíveis">
-                {visible.map((s) => (
-                  <li key={s.id}>
-                    <button
-                      role="option"
-                      aria-selected={selected?.id === s.id}
-                      className={selected?.id === s.id ? "source selected" : "source"}
-                      onClick={() => setSelected(s)}
-                    >
-                      <Icon name={s.kind === "screen" ? "monitor" : "window"} size={16} /> {s.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
-        )}
-        {kind === "browser" && (
-          <div className="callout">
-            <Icon name="info" size={16} />
-            <span>
-              Ao iniciar, o navegador abre o seletor. Escolha a <strong>aba</strong> e deixe marcado “Compartilhar áudio da aba”, ou a{" "}
-              <strong>tela inteira</strong> com “Compartilhar áudio do sistema” (Windows). Janelas avulsas não trazem áudio no navegador. O
-              volume do Windows não interfere; o volume do próprio vídeo, sim.
-            </span>
+            ))}
           </div>
-        )}
-        {kind === "tab" && (
-          <div className="callout">
-            Para capturar o áudio de uma aba, use a extensão do Ouve para Chrome. No aplicativo desktop, escolha a janela do navegador ou a
-            tela inteira. O Firefox não oferece captura de áudio de abas.
-          </div>
-        )}
 
-        {kind !== "tab" && (
+          {needsSource && (
+            <div className="source-picker">
+              <div className="row between">
+                <span className="field-label">{kind === "screen" ? "Qual tela?" : "Qual janela?"}</span>
+                <button className="small ghost" onClick={() => void refresh()}>
+                  <Icon name="refresh" size={13} /> Atualizar lista
+                </button>
+              </div>
+              {visible.length === 0 ? (
+                <p className="empty">Nenhuma {kind === "screen" ? "tela" : "janela"} encontrada.</p>
+              ) : (
+                <ul className="source-list" role="listbox" aria-label="Fontes disponíveis">
+                  {visible.map((s) => (
+                    <li key={s.id}>
+                      <button
+                        role="option"
+                        aria-selected={selected?.id === s.id}
+                        className={selected?.id === s.id ? "source selected" : "source"}
+                        onClick={() => setSelected(s)}
+                      >
+                        <Icon name={s.kind === "screen" ? "monitor" : "window"} size={15} /> <span className="ellipsis">{s.name}</span>
+                        {selected?.id === s.id && <Icon name="check" size={14} className="source-check" />}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {!caps["source-audio"].supported && <p className="warn-text small-text">{caps["source-audio"].note}</p>}
+            </div>
+          )}
+          {kind === "browser" && (
+            <div className="callout">
+              <Icon name="info" size={15} />
+              <span>
+                Ao iniciar, o navegador abre o seletor. Escolha a <strong>aba</strong> e deixe marcado “Compartilhar áudio da aba”, ou a{" "}
+                <strong>tela inteira</strong> com “Compartilhar áudio do sistema” (Windows). Janelas avulsas não trazem áudio no navegador.
+              </span>
+            </div>
+          )}
+
           <div className="mic-row">
-            {kind !== "microphone" && (
+            {kind !== "microphone" ? (
               <label className="check">
                 <input type="checkbox" checked={mic} onChange={(e) => setMic(e.target.checked)} /> Incluir meu microfone
               </label>
+            ) : (
+              <span className="field-label">Microfone</span>
             )}
             {(mic || kind === "microphone") && (
               <select aria-label="Microfone" value={micId} onChange={(e) => setMicId(e.target.value)}>
@@ -265,40 +267,114 @@ export function NewSessionScreen({ data }: { data: AppData }) {
               </select>
             )}
           </div>
-        )}
 
-        {kind !== "tab" && (
           <div className="test-row">
-            <button disabled={test.running || (needsSource && !selected)} onClick={testSource}>
-              <Icon name="wave" /> {test.running ? "Testando…" : "Testar áudio (5 s)"}
+            <button className="small" disabled={test.running || (needsSource && !selected)} onClick={testSource}>
+              <Icon name="wave" size={14} /> {test.running ? "Testando…" : "Testar áudio (5 s)"}
             </button>
             {test.running && <LevelMeter level={test.level} />}
-            {test.result && <span className="muted">{test.result}</span>}
+            {test.result && <span className="muted small-text">{test.result}</span>}
           </div>
-        )}
-      </div>
 
-      <div className="panel">
-        <h2>Antes de começar</h2>
-        {!providerName && (
-          <p className="warn-text">
-            Nenhum provedor de transcrição selecionado. <button onClick={() => navigate("providers")}>Configurar</button>
+          <p className="footnote">
+            <Icon name="shield" size={13} /> A tela serve só para escolher a fonte: o Ouve descarta a imagem e processa somente o som.
+            {!isWeb() && " Para captar uma aba do navegador, use a extensão do Ouve para Chrome."}
           </p>
-        )}
-        {providerName && (
-          <p className="muted">
-            <Icon name="info" size={14} /> O áudio será enviado em blocos para <strong>{providerName}</strong>. Lembre-se de informar os
-            participantes.
-          </p>
-        )}
-        {transcriber?.protocol === "gemini" && (
-          <p className="muted small-text">
-            <Icon name="shield" size={13} /> {GEMINI_FREE_TIER_NOTE}
-          </p>
-        )}
-        <button className="primary large" disabled={!canStart} onClick={() => void start()}>
-          <Icon name="record" /> {starting ? "Iniciando…" : "Iniciar captura de áudio"}
-        </button>
+        </Panel>
+
+        <Panel title="Resumo" icon="check" className="start-panel">
+          <label className="field">
+            <span>Nome da reunião</span>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ex.: Audiência de conciliação — processo 123"
+              maxLength={200}
+            />
+          </label>
+          <label className="field">
+            <span>Tipo de reunião</span>
+            <select value={context} onChange={(e) => setContext(e.target.value as ReportContext)} aria-label="Tipo de reunião">
+              {REPORT_CONTEXTS.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label} — {c.hint}
+                </option>
+              ))}
+            </select>
+          </label>
+          <dl className="kv">
+            <dt>IA de transcrição</dt>
+            <dd>
+              {providerName ? (
+                <StatusBadge tone="ok" icon="check">
+                  {providerName}
+                </StatusBadge>
+              ) : (
+                <button className="small" onClick={() => navigate("providers")}>
+                  <Icon name="alert" size={13} /> Configurar IA
+                </button>
+              )}
+            </dd>
+            {transcriber && (
+              <>
+                <dt>Modelo</dt>
+                <dd className="ellipsis">{transcriber.transcriptionModel || transcriber.model || "automático"}</dd>
+              </>
+            )}
+            <dt>Idioma</dt>
+            <dd>{languageLabel}</dd>
+          </dl>
+          {settings && (
+            <details className="advanced">
+              <summary>Opções avançadas</summary>
+              <label className="field">
+                <span>Idioma falado</span>
+                <select
+                  aria-label="Idioma falado"
+                  value={settings.language}
+                  onChange={(e) => void data.saveSettings({ ...settings, language: e.target.value })}
+                >
+                  {LANGUAGES.map((l) => (
+                    <option key={l.value} value={l.value}>
+                      {l.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                <span>Tamanho dos blocos enviados à IA (segundos)</span>
+                <input
+                  type="number"
+                  min={5}
+                  max={120}
+                  value={settings.liveChunkSeconds}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    if (v >= 5 && v <= 120) void data.saveSettings({ ...settings, liveChunkSeconds: v });
+                  }}
+                />
+              </label>
+              <p className="muted small-text">Blocos menores mostram o texto mais rápido, mas fazem mais pedidos à IA.</p>
+            </details>
+          )}
+          <div className="start-foot">
+            {providerName && (
+              <p className="muted small-text">
+                <Icon name="info" size={13} /> O áudio vai em blocos para <strong>{providerName}</strong>. Lembre-se de informar os
+                participantes.
+              </p>
+            )}
+            {transcriber?.protocol === "gemini" && <p className="muted small-text">{GEMINI_FREE_TIER_NOTE}</p>}
+            {providerName && needsSource && !selected && (
+              <p className="warn-text small-text">
+                <Icon name="info" size={13} /> Escolha {kind === "screen" ? "a tela" : "a janela"} ao lado para começar.
+              </p>
+            )}
+            <button className="primary large" disabled={!canStart} onClick={() => void start()}>
+              <Icon name="record" /> {starting ? "Iniciando…" : "Iniciar captura de áudio"}
+            </button>
+          </div>
+        </Panel>
       </div>
     </Page>
   );

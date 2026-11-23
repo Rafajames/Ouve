@@ -1,99 +1,115 @@
-/* Tokens de design do Ouve, compartilhados por desktop e extensão. */
+/* Tokens de design do Ouve, compartilhados por desktop, web e extensão (padrão visual: docs/18). */
 :root,
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0f1115;
-  --surface: #171a21;
-  --surface-2: #1e222b;
-  --surface-3: #252a35;
-  --border: #2a2f3a;
-  --text: #e8eaf0;
-  --muted: #9aa3b2;
-  --accent: #5b8cff;
-  --accent-2: #7aa2ff;
-  --accent-soft: rgba(91, 140, 255, 0.12);
-  --accent-line: rgba(91, 140, 255, 0.38);
-  --danger: #ef5d5d;
-  --danger-soft: rgba(239, 93, 93, 0.12);
-  --warn: #f2b84b;
-  --warn-soft: rgba(242, 184, 75, 0.12);
-  --ok: #4cc38a;
-  --ok-soft: rgba(76, 195, 138, 0.12);
-  --rec-bg: #3a1214;
-  --rec-fg: #ffd9d9;
-  --rec-line: #5a1f1f;
-  --pause-bg: #3a2c10;
-  --pause-fg: #ffe6b3;
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  --radius: 12px;
+  --bg: #121314;
+  --sidebar: #0d0e0f;
+  --surface: #18191b;
+  --surface-2: #1f2123;
+  --surface-3: #282a2d;
+  --border: #2a2c30;
+  --border-strong: #3a3d42;
+  --text: #ebebe8;
+  --muted: #9b9ea4;
+  --faint: #858890;
+  --accent: #34b8a8;
+  --accent-2: #5fd3c4;
+  --on-accent: #04211d;
+  --accent-soft: rgba(52, 184, 168, 0.12);
+  --accent-line: rgba(52, 184, 168, 0.4);
+  --danger: #f07070;
+  --danger-soft: rgba(240, 112, 112, 0.12);
+  --warn: #e9b456;
+  --warn-soft: rgba(233, 180, 86, 0.12);
+  --ok: #57c78f;
+  --ok-soft: rgba(87, 199, 143, 0.12);
+  --rec-bg: #3a1416;
+  --rec-fg: #ffd6d6;
+  --rec-line: #5c2224;
+  --pause-bg: #3a2d12;
+  --pause-fg: #ffe5b0;
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f4f6fa;
+  --bg: #f7f7f5;
+  --sidebar: #efefec;
   --surface: #ffffff;
-  --surface-2: #f0f2f7;
-  --surface-3: #e6e9f0;
-  --border: #dde1ea;
-  --text: #171a21;
-  --muted: #5d6676;
-  --accent: #3d6fe8;
-  --accent-2: #2f5bc9;
-  --accent-soft: rgba(61, 111, 232, 0.09);
-  --accent-line: rgba(61, 111, 232, 0.35);
-  --danger: #c93434;
-  --danger-soft: rgba(201, 52, 52, 0.08);
-  --warn: #a8700a;
+  --surface-2: #f3f3f0;
+  --surface-3: #e9e9e5;
+  --border: #e4e4df;
+  --border-strong: #d0d0ca;
+  --text: #1c1d1f;
+  --muted: #62656b;
+  --faint: #66696f;
+  --accent: #0f766e;
+  --accent-2: #0b5f58;
+  --on-accent: #ffffff;
+  --accent-soft: rgba(15, 118, 110, 0.08);
+  --accent-line: rgba(15, 118, 110, 0.35);
+  --danger: #c2372f;
+  --danger-soft: rgba(194, 55, 47, 0.08);
+  --warn: #9a6400;
   --warn-soft: rgba(214, 150, 20, 0.12);
-  --ok: #1f8f5b;
-  --ok-soft: rgba(31, 143, 91, 0.1);
-  --rec-bg: #fde7e7;
-  --rec-fg: #8f1d1d;
-  --rec-line: #f3c2c2;
-  --pause-bg: #fdf1d8;
-  --pause-fg: #7a5208;
-  --shadow: 0 10px 30px rgba(20, 30, 60, 0.12);
+  --ok: #1d7f4f;
+  --ok-soft: rgba(29, 127, 79, 0.09);
+  --rec-bg: #fde8e7;
+  --rec-fg: #8f1f1a;
+  --rec-line: #f2c4c1;
+  --pause-bg: #fcf0d6;
+  --pause-fg: #74500a;
+  --shadow: 0 12px 32px rgba(28, 29, 31, 0.12);
+  --shadow-sm: 0 1px 2px rgba(28, 29, 31, 0.06);
 }
 
 @media (prefers-color-scheme: light) {
   :root[data-theme="system"] {
     color-scheme: light;
-    --bg: #f4f6fa;
+    --bg: #f7f7f5;
+    --sidebar: #efefec;
     --surface: #ffffff;
-    --surface-2: #f0f2f7;
-    --surface-3: #e6e9f0;
-    --border: #dde1ea;
-    --text: #171a21;
-    --muted: #5d6676;
-    --accent: #3d6fe8;
-    --accent-2: #2f5bc9;
-    --accent-soft: rgba(61, 111, 232, 0.09);
-    --accent-line: rgba(61, 111, 232, 0.35);
-    --danger: #c93434;
-    --danger-soft: rgba(201, 52, 52, 0.08);
-    --warn: #a8700a;
+    --surface-2: #f3f3f0;
+    --surface-3: #e9e9e5;
+    --border: #e4e4df;
+    --border-strong: #d0d0ca;
+    --text: #1c1d1f;
+    --muted: #62656b;
+    --faint: #66696f;
+    --accent: #0f766e;
+    --accent-2: #0b5f58;
+    --on-accent: #ffffff;
+    --accent-soft: rgba(15, 118, 110, 0.08);
+    --accent-line: rgba(15, 118, 110, 0.35);
+    --danger: #c2372f;
+    --danger-soft: rgba(194, 55, 47, 0.08);
+    --warn: #9a6400;
     --warn-soft: rgba(214, 150, 20, 0.12);
-    --ok: #1f8f5b;
-    --ok-soft: rgba(31, 143, 91, 0.1);
-    --rec-bg: #fde7e7;
-    --rec-fg: #8f1d1d;
-    --rec-line: #f3c2c2;
-    --pause-bg: #fdf1d8;
-    --pause-fg: #7a5208;
-    --shadow: 0 10px 30px rgba(20, 30, 60, 0.12);
+    --ok: #1d7f4f;
+    --ok-soft: rgba(29, 127, 79, 0.09);
+    --rec-bg: #fde8e7;
+    --rec-fg: #8f1f1a;
+    --rec-line: #f2c4c1;
+    --pause-bg: #fcf0d6;
+    --pause-fg: #74500a;
+    --shadow: 0 12px 32px rgba(28, 29, 31, 0.12);
+    --shadow-sm: 0 1px 2px rgba(28, 29, 31, 0.06);
   }
 }
 
 :root {
-  font-family:
-    "Segoe UI",
-    system-ui,
-    -apple-system,
-    Roboto,
-    sans-serif;
-  font-size: 14px;
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+  --mono: "Cascadia Mono", "SF Mono", Consolas, ui-monospace, monospace;
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.45;
   background: var(--bg);
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
 svg {
   flex-shrink: 0;
@@ -108,25 +124,26 @@ svg {
   background: var(--bg);
 }
 .terms-card {
-  max-width: 620px;
+  max-width: 580px;
   width: 100%;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 28px;
+  border-radius: var(--radius-lg);
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   box-shadow: var(--shadow);
 }
 .terms-head {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   align-items: center;
 }
 .terms-head h1 {
-  margin: 0 0 4px;
-  font-size: 22px;
+  margin: 0 0 2px;
+  font-size: 19px;
+  font-weight: 600;
 }
 .terms-head p,
 .terms-note {
@@ -139,7 +156,7 @@ svg {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 .terms-list li {
   display: flex;
@@ -149,13 +166,13 @@ svg {
 }
 .terms-list svg {
   color: var(--ok);
-  margin-top: 3px;
+  margin-top: 2px;
 }
 .terms-note {
   display: flex;
   gap: 8px;
   align-items: flex-start;
-  font-size: 13px;
+  font-size: 12px;
 }
 .terms-card button {
   justify-content: center;

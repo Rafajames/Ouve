@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { Icon } from "@ouve/ui";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { Icon, type IconName } from "@ouve/ui";
 import { formatTimestamp } from "@ouve/shared";
 import { markerLabel, segmentForMarker } from "@ouve/core";
 import { useApp, useSession } from "./hooks";
@@ -9,24 +9,215 @@ export function Page({
   subtitle,
   actions,
   children,
-  fit = false
+  scroll = false,
+  className
 }: {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
   children: ReactNode;
-  /** Ocupa exatamente a altura da janela, sem rolagem da página (só áreas internas rolam). */
-  fit?: boolean;
+  /** Corpo com rolagem própria (textos longos). Por padrão a página ocupa a janela e só áreas internas rolam. */
+  scroll?: boolean;
+  className?: string;
 }) {
   return (
-    <section className={fit ? "page fit" : "page"}>
+    <section className={`page${className ? ` ${className}` : ""}`} aria-labelledby="page-title">
       <header className="page-head">
-        <div>
-          <h1>{title}</h1>
-          {subtitle && <p className="muted">{subtitle}</p>}
+        <div className="page-title">
+          <h1 id="page-title">{title}</h1>
+          {subtitle && <p>{subtitle}</p>}
         </div>
-        {actions && <div className="page-actions">{actions}</div>}
+        <div className="page-actions">
+          <SessionChip />
+          {actions}
+        </div>
       </header>
+      <div className={scroll ? "page-body scroll main-scroll" : "page-body main-scroll"}>{children}</div>
+    </section>
+  );
+}
+
+/** Indicador global de captura/processamento no cabeçalho de qualquer página. */
+function SessionChip() {
+  const { navigate } = useApp();
+  const s = useSession();
+  const live = s.mode === "live" && (s.status === "capturing" || s.status === "paused");
+  const processing = s.mode === "import" && s.status === "processing";
+  const analyzing = s.analysisStatus === "running";
+  if (!live && !processing && !analyzing) return null;
+  const label = live
+    ? `${s.status === "capturing" ? "Gravando" : "Pausado"} · ${formatTimestamp(s.capturedMs)}`
+    : processing
+      ? "Processando arquivo"
+      : "Gerando relatório";
+  return (
+    <button
+      className={`session-chip ${live ? s.status : "busy"}`}
+      onClick={() => navigate(analyzing && !live && !processing ? "report" : "session")}
+      title="Abrir a sessão atual"
+    >
+      {live ? <span className="rec-dot" aria-hidden /> : <span className="spinner" aria-hidden />}
+      <span aria-live="polite">{label}</span>
+    </button>
+  );
+}
+
+export interface TabItem<T extends string> {
+  id: T;
+  label: string;
+  icon?: IconName;
+  count?: number;
+}
+
+/** Abas acessíveis (setas do teclado alternam). */
+export function Tabs<T extends string>({
+  items,
+  value,
+  onChange,
+  label,
+  vertical = false,
+  idPrefix = "tab"
+}: {
+  items: Array<TabItem<T>>;
+  value: T;
+  onChange: (id: T) => void;
+  label: string;
+  vertical?: boolean;
+  idPrefix?: string;
+}) {
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const keys = vertical ? ["ArrowUp", "ArrowDown"] : ["ArrowLeft", "ArrowRight"];
+    if (!keys.includes(e.key)) return;
+    e.preventDefault();
+    const i = items.findIndex((t) => t.id === value);
+    const next = items[(i + (e.key === keys[1] ? 1 : items.length - 1)) % items.length]!;
+    onChange(next.id);
+    requestAnimationFrame(() => document.getElementById(`${idPrefix}-${next.id}`)?.focus());
+  };
+  return (
+    <div
+      className={vertical ? "tabs vertical" : "tabs"}
+      role="tablist"
+      aria-label={label}
+      aria-orientation={vertical ? "vertical" : "horizontal"}
+      onKeyDown={onKey}
+    >
+      {items.map((t) => (
+        <button
+          key={t.id}
+          id={`${idPrefix}-${t.id}`}
+          role="tab"
+          aria-selected={value === t.id}
+          tabIndex={value === t.id ? 0 : -1}
+          className={value === t.id ? "tab active" : "tab"}
+          onClick={() => onChange(t.id)}
+        >
+          {t.icon && <Icon name={t.icon} size={15} />}
+          <span>{t.label}</span>
+          {t.count !== undefined && <span className="count">{t.count}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Painel lateral modal (configurações secundárias). Esc ou clique fora fecham. */
+export function Drawer({
+  title,
+  onClose,
+  children,
+  footer
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  footer?: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    ref.current?.querySelector<HTMLElement>("input, select, textarea, button:not(.drawer-close)")?.focus();
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") closeRef.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      previous?.focus?.();
+    };
+  }, []);
+  return (
+    <div className="drawer-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" ref={ref}>
+        <header className="drawer-head">
+          <h2 id="drawer-title">{title}</h2>
+          <button className="icon-only ghost drawer-close" aria-label="Fechar" onClick={onClose}>
+            <Icon name="x" size={16} />
+          </button>
+        </header>
+        <div className="drawer-body">{children}</div>
+        {footer && <footer className="drawer-foot">{footer}</footer>}
+      </div>
+    </div>
+  );
+}
+
+export function EmptyState({ icon, title, text, children }: { icon: IconName; title: string; text?: string; children?: ReactNode }) {
+  return (
+    <div className="empty-state">
+      <span className="empty-icon">
+        <Icon name={icon} size={22} />
+      </span>
+      <strong>{title}</strong>
+      {text && <span>{text}</span>}
+      {children && <div className="row center">{children}</div>}
+    </div>
+  );
+}
+
+export type Tone = "ok" | "warn" | "danger" | "accent" | "neutral";
+
+/** Estado com ícone + texto (nunca só cor). */
+export function StatusBadge({ tone, icon, children }: { tone: Tone; icon?: IconName; children: ReactNode }) {
+  return (
+    <span className={`badge ${tone}`}>
+      {icon && <Icon name={icon} size={12} />}
+      {children}
+    </span>
+  );
+}
+
+/** Cartão compacto com título opcional. */
+export function Panel({
+  title,
+  icon,
+  actions,
+  children,
+  className,
+  flush = false
+}: {
+  title?: string;
+  icon?: IconName;
+  actions?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  flush?: boolean;
+}) {
+  return (
+    <section className={`panel${flush ? " flush" : ""}${className ? ` ${className}` : ""}`}>
+      {(title || actions) && (
+        <header className="panel-head">
+          {title && (
+            <h2>
+              {icon && <Icon name={icon} size={15} />}
+              {title}
+            </h2>
+          )}
+          {actions && <div className="panel-actions">{actions}</div>}
+        </header>
+      )}
       {children}
     </section>
   );
@@ -74,13 +265,7 @@ export function TranscriptView({ editable = true }: { editable?: boolean }) {
 
   if (segments.length === 0)
     return (
-      <div className="empty-state">
-        <span className="empty-icon">
-          <Icon name="wave" size={28} />
-        </span>
-        <strong>Aguardando a transcrição</strong>
-        <span>Os trechos aparecem aqui conforme cada bloco de áudio é processado pelo provedor.</span>
-      </div>
+      <EmptyState icon="wave" title="Aguardando a transcrição" text="Os trechos aparecem aqui conforme cada bloco de áudio é processado." />
     );
 
   return (

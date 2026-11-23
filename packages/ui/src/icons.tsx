@@ -38,7 +38,23 @@ const PATHS = {
   chart: "M3 3v18h18M7 15l4-4 3 3 5-6",
   help: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4.5M12 17.5h.01",
   cpu: "M6 6h12v12H6zM9 9h6v6H9zM9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4",
-  lock: "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4"
+  lock: "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4",
+  search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5",
+  sidebar: "M3 4h18v16H3zM9 4v16",
+  sort: "M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3",
+  eye: "M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  external: "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
+  chevronDown: "M6 9l6 6 6-6",
+  chevronLeft: "M15 6l-6 6 6 6",
+  edit: "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4",
+  calendar: "M4 6h16v15H4zM4 10h16M8 3v4M16 3v4",
+  library: "M5 3h10l4 4v14H5zM15 3v4h4M9 12h6M9 16h6M9 8h2",
+  key: "M15 9a3 3 0 1 0 0-.01M13 11l-9 9M7 17l2 2M10 14l2 2",
+  globe: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20",
+  arrowRight: "M5 12h14M13 6l6 6-6 6",
+  palette: "M12 22a10 10 0 1 1 10-10c0 2.2-1.8 3-3.5 3H16a2 2 0 0 0-1.5 3.3A2 2 0 0 1 12 22zM7.5 11h.01M10.5 7h.01M15 7.5h.01",
+  volume: "M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12",
+  archive: "M3 4h18v4H3zM5 8v12h14V8M10 12h4"
 } as const;
 
 export type IconName = keyof typeof PATHS;
@@ -63,18 +79,18 @@ export function Icon({ name, size = 18, ...rest }: { name: IconName; size?: numb
   );
 }
 
-/** Marca do Ouve: ondas sonoras estilizadas. */
-export function BrandMark({ size = 36 }: { size?: number }) {
+/** Marca do Ouve: um “O” que escuta — anel com ondas sonoras no centro, na cor de destaque do tema. */
+export function BrandMark({ size = 28 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id="ouve-g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#5b8cff" />
-          <stop offset="1" stopColor="#8b5cf6" />
-        </linearGradient>
-      </defs>
-      <rect width="40" height="40" rx="11" fill="url(#ouve-g)" />
-      <path d="M11 20v0M15 15v10M20 10v20M25 14v12M29 18v4" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
+    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" focusable="false" className="brand-mark">
+      <rect width="40" height="40" rx="10" style={{ fill: "var(--accent, #0f766e)" }} />
+      <circle cx="20" cy="20" r="11" fill="none" strokeWidth="2.4" style={{ stroke: "var(--on-accent, #fff)", opacity: 0.35 }} />
+      <path
+        d="M14.5 20v0M17.25 16.5v7M20 13.5v13M22.75 16v8M25.5 19v2"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        style={{ stroke: "var(--on-accent, #fff)" }}
+      />
     </svg>
   );
 }
